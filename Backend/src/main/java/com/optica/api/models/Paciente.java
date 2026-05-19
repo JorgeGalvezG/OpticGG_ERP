@@ -1,6 +1,7 @@
 package com.optica.api.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.optica.api.models.enums.Tienda;
 import com.optica.api.models.enums.TipoDestacado;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -33,6 +34,9 @@ public class Paciente {
 
     @Column(name = "es_destacado")
     private Boolean esDestacado = false;
+
+    @Enumerated(EnumType.STRING)
+    private Tienda tienda;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_destacado")

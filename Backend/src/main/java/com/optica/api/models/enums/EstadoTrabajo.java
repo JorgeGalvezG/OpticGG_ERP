@@ -1,2 +1,2 @@
 package com.optica.api.models.enums;
-public enum EstadoTrabajo { EN_PROCESO, LISTO, ENTREGADO }
+public enum EstadoTrabajo { PENDIENTE, LABORATORIO,LISTO, ENTREGADO }

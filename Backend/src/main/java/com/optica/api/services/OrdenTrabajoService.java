@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class OrdenTrabajoService {
@@ -17,11 +18,16 @@ public class OrdenTrabajoService {
     @Autowired
     private OrdenTrabajoRepository ordenRepository;
 
+    // Para la Vista de Lista
     public Page<OrdenTrabajo> listarPorTiendaYEstado(Tienda tienda, EstadoTrabajo estado, int page, int size) {
         return ordenRepository.findByTiendaAndEstado(tienda, estado, PageRequest.of(page, size));
     }
 
-    // @Transactional asegura que si la base de datos se corta a la mitad, no guarde datos corruptos
+    // Para el Tablero Kanban
+    public List<OrdenTrabajo> obtenerTodasPorTienda(Tienda tienda) {
+        return ordenRepository.findByTienda(tienda);
+    }
+
     @Transactional
     public OrdenTrabajo actualizarEstado(Long id, OrdenActualizarDTO request) {
         OrdenTrabajo orden = ordenRepository.findById(id)

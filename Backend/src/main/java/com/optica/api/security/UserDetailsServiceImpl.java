@@ -33,7 +33,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new User(
                 usuario.getUsername(),
                 usuario.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
+                Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
         );
     }
 }

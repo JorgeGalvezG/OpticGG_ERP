@@ -1,6 +1,7 @@
 package com.optica.api.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.optica.api.models.enums.Tienda;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,10 @@ public class Proveedor {
 
     @Column(length = 20)
     private String ruc;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Tienda tienda;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     @Column(name = "fecha_registro", updatable = false, insertable = false)

@@ -1,15 +1,22 @@
 package com.optica.api.services;
 
-import com.optica.api.dto.VentaRequestDTO;
+import com.optica.api.dto.NuevaVentaCompletaDTO;
+import com.optica.api.models.*;
 import com.optica.api.models.OrdenTrabajo;
 import com.optica.api.models.Paciente;
 import com.optica.api.models.Usuario;
 import com.optica.api.models.Venta;
+
 import com.optica.api.models.enums.EstadoTrabajo;
+import com.optica.api.models.enums.EstadoPago;
+
+import com.optica.api.models.enums.TipoMovimiento;
+import com.optica.api.repositories.*;
 import com.optica.api.repositories.OrdenTrabajoRepository;
 import com.optica.api.repositories.PacienteRepository;
 import com.optica.api.repositories.UsuarioRepository;
 import com.optica.api.repositories.VentaRepository;
+
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,53 +27,91 @@ import java.time.format.DateTimeFormatter;
 
 @Service
 public class VentaService {
-
     @Autowired private VentaRepository ventaRepository;
     @Autowired private OrdenTrabajoRepository ordenTrabajoRepository;
     @Autowired private PacienteRepository pacienteRepository;
     @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired private ConsultaRepository consultaRepository;
+    @Autowired private HistorialClinicoRepository historialClinicoRepository;
+    @Autowired private MovimientoCajaRepository movimientoCajaRepository;
 
-    // @Transactional garantiza que si falla la Orden, no se guarde la Venta. ¡Todo o nada!
     @Transactional
-    public Venta procesarNuevaVenta(VentaRequestDTO request) {
+    public Venta procesarNuevaVenta(NuevaVentaCompletaDTO dto) {
 
-        // 1. Buscamos al Cliente y al Vendedor en la BD
-        Paciente cliente = pacienteRepository.findById(request.getClienteId())
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+        // 1. Validar que existan paciente y vendedor
+        Paciente paciente = pacienteRepository.findById(dto.getPacienteId())
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + dto.getPacienteId()));
 
-        Usuario vendedor = usuarioRepository.findById(request.getVendedorId())
-                .orElseThrow(() -> new RuntimeException("Vendedor no encontrado"));
+        Usuario vendedor = usuarioRepository.findById(dto.getVendedorId())
+                .orElseThrow(() -> new RuntimeException("Vendedor no encontrado: " + dto.getVendedorId()));
 
-        // 2. Calculamos el saldo matemáticamente
-        BigDecimal saldo = request.getMontoTotal().subtract(request.getMontoACuenta());
+        // 2. Crear consulta básica
+        Consulta consulta = new Consulta();
+        consulta.setPaciente(paciente);
+        consulta.setVendedor(vendedor);
+        consulta.setMotivo("Venta de Lentes");
+        Consulta consultaGuardada = consultaRepository.save(consulta);
 
-        // 3. Creamos y guardamos la VENTA
-        Venta nuevaVenta = new Venta();
-        nuevaVenta.setCliente(cliente);
-        nuevaVenta.setVendedor(vendedor);
-        nuevaVenta.setMontoTotal(request.getMontoTotal());
-        nuevaVenta.setMontoACuenta(request.getMontoACuenta());
-        nuevaVenta.setMontoSaldo(saldo);
-        nuevaVenta.setTienda(request.getTienda());
-        nuevaVenta.setEstado(EstadoTrabajo.EN_PROCESO);
+        // 3. Crear historial clínico (receta)
+        HistorialClinico historial = new HistorialClinico();
+        historial.setConsulta(consultaGuardada);
+        historial.setGraduacionOd(dto.getGraduacionOd());
+        historial.setGraduacionOi(dto.getGraduacionOi());
+        historial.setTipoLuna(dto.getTipoLuna());
+        historial.setEsLunaCliente(dto.getEsLunaCliente());
+        historial.setMontura(dto.getMontura());
+        historial.setEsMonturaCliente(dto.getEsMonturaCliente());
+        historial.setObservaciones(dto.getObservaciones());
+        historialClinicoRepository.save(historial);
 
-        Venta ventaGuardada = ventaRepository.save(nuevaVenta);
+        // 4. Crear la venta (control de dinero)
+        BigDecimal saldo = dto.getMontoTotal().subtract(dto.getMontoACuenta());
 
-        // 4. CREAMOS LA ORDEN DE TRABAJO AUTOMÁTICAMENTE
+        Venta venta = new Venta();
+        venta.setCliente(paciente);
+        venta.setVendedor(vendedor);
+        venta.setTienda(dto.getTienda());
+        venta.setMontoTotal(dto.getMontoTotal());
+        venta.setMontoACuenta(dto.getMontoACuenta());
+        venta.setMontoSaldo(saldo);
+        venta.setMetodoPago(dto.getMetodoPago());
+
+        // Estado de pago automático
+        if (saldo.compareTo(BigDecimal.ZERO) <= 0) {
+            venta.setEstado(EstadoPago.PAGADO);
+        } else if (dto.getMontoACuenta().compareTo(BigDecimal.ZERO) > 0) {
+            venta.setEstado(EstadoPago.PARCIAL);
+        } else {
+            venta.setEstado(EstadoPago.PENDIENTE);
+        }
+
+        Venta ventaGuardada = ventaRepository.save(venta);
+
+        // 5. Crear orden de trabajo (Kanban)
+        String codigoOrden = "OT-" + LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+
         OrdenTrabajo orden = new OrdenTrabajo();
-        // Generamos un código único para la orden (Ej: OT-20260317-1245)
-        String codigoOrden = "OT-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm"));
-
         orden.setNumeroOrden(codigoOrden);
-        orden.setCliente(cliente);
-        orden.setVenta(ventaGuardada); // Enlazamos la orden a la venta
-        orden.setMontoTotal(ventaGuardada.getMontoTotal());
-        orden.setMontoACuenta(ventaGuardada.getMontoACuenta());
-        orden.setMontoSaldo(ventaGuardada.getMontoSaldo());
-        orden.setTienda(ventaGuardada.getTienda());
-        orden.setEstado(EstadoTrabajo.EN_PROCESO);
-
+        orden.setCliente(paciente);
+        orden.setVenta(ventaGuardada);
+        orden.setTienda(dto.getTienda());
+        orden.setMontoTotal(dto.getMontoTotal());
+        orden.setMontoACuenta(dto.getMontoACuenta());
+        orden.setMontoSaldo(saldo);
+        orden.setEstado(EstadoTrabajo.PENDIENTE);
         ordenTrabajoRepository.save(orden);
+
+        // 6. Registrar ingreso en caja automáticamente si hay pago a cuenta
+        if (dto.getMontoACuenta().compareTo(BigDecimal.ZERO) > 0) {
+            MovimientoCaja ingreso = new MovimientoCaja();
+            ingreso.setTipo(TipoMovimiento.ENTRADA);
+            ingreso.setMonto(dto.getMontoACuenta());
+            ingreso.setDescripcion("Venta (" + dto.getMetodoPago() + ") - Orden: " + codigoOrden);
+            ingreso.setUsuario(vendedor);
+            ingreso.setTienda(dto.getTienda());
+            movimientoCajaRepository.save(ingreso);
+        }
 
         return ventaGuardada;
     }

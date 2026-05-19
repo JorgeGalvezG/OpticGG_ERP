@@ -1,5 +1,6 @@
 package com.optica.api.controllers;
-import com.optica.api.dto.VentaRequestDTO;
+
+import com.optica.api.dto.NuevaVentaCompletaDTO;
 import com.optica.api.models.Venta;
 import com.optica.api.services.VentaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,7 @@ public class VentaController {
     @Autowired private VentaService ventaService;
 
     @PostMapping("/nueva")
-    public ResponseEntity<Venta> crearVenta(@RequestBody VentaRequestDTO request) {
+    public ResponseEntity<Venta> crearVentaGigante(@RequestBody NuevaVentaCompletaDTO request) {
         return ResponseEntity.ok(ventaService.procesarNuevaVenta(request));
     }
 }

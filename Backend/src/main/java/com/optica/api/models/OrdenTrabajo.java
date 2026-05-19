@@ -34,7 +34,7 @@ public class OrdenTrabajo {
     private Venta venta;
 
     @Enumerated(EnumType.STRING)
-    private EstadoTrabajo estado = EstadoTrabajo.EN_PROCESO;
+    private EstadoTrabajo estado = EstadoTrabajo.PENDIENTE;
 
     @Column(name = "monto_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoTotal;

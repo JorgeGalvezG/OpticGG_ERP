@@ -40,11 +40,16 @@ public class JwtUtil {
 
     public <T> T extraerClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extraerTodasLasClaims(token);
-        return claimsResolver.apply(claims);
+         return claimsResolver.apply(claims);
+       // return claimsResolver.apply(extraerTodasLasClaims(token));
     }
 
     private Claims extraerTodasLasClaims(String token) {
-        return Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token).getBody();
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     private Boolean tokenExpirado(String token) {

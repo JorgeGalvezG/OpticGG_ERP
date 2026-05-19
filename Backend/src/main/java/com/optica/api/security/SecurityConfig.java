@@ -23,24 +23,37 @@ public class SecurityConfig {
     // Encriptador militar para las contraseñas
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
     // Las Reglas del Club
-    @Bean
+   @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configure(http)) // Permitir peticiones desde Flutter
+
                 .csrf(csrf -> csrf.disable()) // Desactivar protección web tradicional (usamos tokens)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // La taquilla de Login es PÚBLICA
+                        .requestMatchers("/api/usuarios/**").permitAll()
+                        .requestMatchers("/api/pacientes/**").permitAll()
+                        .requestMatchers("/api/ordenes/**").permitAll()
+                        .requestMatchers("/api/caja/**").permitAll()
+                        .requestMatchers("/api/proveedores/**").permitAll()
+                        .requestMatchers("/api/compras/**").permitAll()
+                        .requestMatchers("/api/dashboard/**").permitAll()
+                        .requestMatchers("/api/ventas/**").permitAll()
                         .anyRequest().authenticated() // TODO lo demás es PRIVADO
+
                 );
 
         // Ponemos a nuestro Guardián (Filtro JWT) en la puerta principal
@@ -48,4 +61,6 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+
 }

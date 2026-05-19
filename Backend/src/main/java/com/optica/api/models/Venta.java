@@ -2,7 +2,7 @@ package com.optica.api.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.optica.api.models.enums.EstadoTrabajo;
+import com.optica.api.models.enums.EstadoPago; // Cambiado
 import com.optica.api.models.enums.Tienda;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,11 +19,10 @@ public class Venta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // FetchType.LAZY e IgnoreProperties es el combo perfecto para velocidad sin errores
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Paciente cliente;
+    private Paciente cliente; // Mapeado a la tabla pacientes
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vendedor_id", nullable = false)
@@ -40,7 +39,10 @@ public class Venta {
     private BigDecimal montoSaldo = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    private EstadoTrabajo estado = EstadoTrabajo.EN_PROCESO;
+    private EstadoPago estado = EstadoPago.PENDIENTE;
+
+    @Column(name = "metodo_pago", length = 50)
+    private String metodoPago; // EFECTIVO, YAPE, PLIN, TARJETA, TRANSFERENCIA
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
