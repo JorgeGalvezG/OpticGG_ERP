@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,8 @@ public class DashboardController {
         BigDecimal ingresosMes;
         BigDecimal egresosMes;
 
+        LocalDateTime hace14Dias = LocalDateTime.now().minusDays(14);
+
         if (tiendaStr.equalsIgnoreCase("ALL")) {
 
             // Métodos de pago hoy — global
@@ -63,8 +66,8 @@ public class DashboardController {
 
             ingresosHoy      = cajaRepository.sumarPorTipoHoyGlobal(TipoMovimiento.ENTRADA);
             egresosHoy       = cajaRepository.sumarPorTipoHoyGlobal(TipoMovimiento.SALIDA);
-            ingresosQuincena = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.ENTRADA);
-            egresosQuincena  = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.SALIDA);
+            ingresosQuincena = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.ENTRADA, hace14Dias);
+            egresosQuincena  = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.SALIDA, hace14Dias);
             ingresosMes      = cajaRepository.sumarPorTipoMesActualGlobal(TipoMovimiento.ENTRADA);
             egresosMes       = cajaRepository.sumarPorTipoMesActualGlobal(TipoMovimiento.SALIDA);
 
@@ -89,8 +92,8 @@ public class DashboardController {
 
             ingresosHoy      = cajaRepository.sumarPorTiendaYTipoHoy(tiendaEnum, TipoMovimiento.ENTRADA);
             egresosHoy       = cajaRepository.sumarPorTiendaYTipoHoy(tiendaEnum, TipoMovimiento.SALIDA);
-            ingresosQuincena = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.ENTRADA);
-            egresosQuincena  = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.SALIDA);
+            ingresosQuincena = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.ENTRADA, hace14Dias);
+            egresosQuincena  = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.SALIDA, hace14Dias);
             ingresosMes      = cajaRepository.sumarPorTiendaYTipoMesActual(tiendaEnum, TipoMovimiento.ENTRADA);
             egresosMes       = cajaRepository.sumarPorTiendaYTipoMesActual(tiendaEnum, TipoMovimiento.SALIDA);
         }

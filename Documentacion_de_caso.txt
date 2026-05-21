@@ -1,0 +1,28 @@
+# Documentación de Caso: Corrección de Error de Compilación y Carga de Contexto
+
+## Descripción del Problema
+Al intentar compilar y ejecutar los tests, el sistema fallaba con una `IllegalStateException` debido a que el ApplicationContext no podía cargarse. La raíz del problema era una `SemanticException` en Hibernate 7.2.4 generada por consultas JPQL no válidas en `MovimientoCajaRepository`.
+
+## Cambios Aplicados
+
+### 1. Persistencia y Consultas (JPQL)
+- **Archivo**: `src/main/java/com/optica/api/repositories/MovimientoCajaRepository.java`
+- **Cambio**: Se eliminó la aritmética de fechas directa en JPQL (`CURRENT_DATE - 14`), la cual ya no es soportada en las versiones recientes de Hibernate.
+- **Solución**: Se refactorizaron los métodos de consulta para la quincena para que acepten un parámetro `LocalDateTime fechaInicio`.
+
+### 2. Controlador de Dashboard
+- **Archivo**: `src/main/java/com/optica/api/controllers/DashboardController.java`
+- **Cambio**: Se actualizó la lógica para calcular la fecha de hace 14 días en Java utilizando `LocalDateTime.now().minusDays(14)`.
+- **Solución**: Se pasan ahora estos objetos de fecha calculados a los métodos del repositorio correspondientes.
+
+### 3. Configuración de Dependencias (Maven)
+- **Archivo**: `pom.xml`
+- **Cambio**: Se eliminó la declaración duplicada de la dependencia `spring-boot-starter-security`.
+- **Impacto**: Se eliminaron los warnings de Maven y se mejoró la estabilidad del build.
+
+### 4. Verificación
+- Se ejecutó `.\mvnw test` obteniendo un resultado de **BUILD SUCCESS**, confirmando que el contexto de Spring Boot carga correctamente y las consultas son válidas para Hibernate.
+
+---
+**Estado**: Resuelto
+**Fecha**: 21 de mayo de 2026
