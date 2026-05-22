@@ -75,6 +75,15 @@ public class VentaService {
         venta.setMontoACuenta(dto.getMontoACuenta());
         venta.setMontoSaldo(saldo);
         venta.setMetodoPago(dto.getMetodoPago());
+        
+        // Copiar campos de historial a la venta
+        venta.setGraduacionOd(dto.getGraduacionOd());
+        venta.setGraduacionOi(dto.getGraduacionOi());
+        venta.setTipoLuna(dto.getTipoLuna());
+        venta.setEsLunaCliente(dto.getEsLunaCliente());
+        venta.setMontura(dto.getMontura());
+        venta.setEsMonturaCliente(dto.getEsMonturaCliente());
+        venta.setObservaciones(dto.getObservaciones());
 
         // Estado de pago automático
         if (saldo.compareTo(BigDecimal.ZERO) <= 0) {
@@ -100,6 +109,17 @@ public class VentaService {
         orden.setMontoACuenta(dto.getMontoACuenta());
         orden.setMontoSaldo(saldo);
         orden.setEstado(EstadoTrabajo.PENDIENTE);
+        
+        // Copiar campos de historial a la orden
+        orden.setGraduacionOd(dto.getGraduacionOd());
+        orden.setGraduacionOi(dto.getGraduacionOi());
+        orden.setTipoLuna(dto.getTipoLuna());
+        orden.setEsLunaCliente(dto.getEsLunaCliente());
+        orden.setMontura(dto.getMontura());
+        orden.setEsMonturaCliente(dto.getEsMonturaCliente());
+        orden.setObservaciones(dto.getObservaciones());
+        orden.setMetodoPago(dto.getMetodoPago());
+
         ordenTrabajoRepository.save(orden);
 
         // 6. Registrar ingreso en caja automáticamente si hay pago a cuenta
@@ -114,5 +134,46 @@ public class VentaService {
         }
 
         return ventaGuardada;
+    }
+
+    @Transactional
+    public Venta registrarPagoSaldo(com.optica.api.dto.PagoSaldoDTO dto) {
+        OrdenTrabajo orden = ordenTrabajoRepository.findById(dto.getOrdenId())
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada: " + dto.getOrdenId()));
+
+        Venta venta = orden.getVenta();
+        if (venta == null) {
+            throw new RuntimeException("Esta orden no tiene una venta asociada");
+        }
+
+        // 1. Actualizar saldos en la venta
+        BigDecimal nuevoAcuenta = venta.getMontoACuenta().add(dto.getMonto());
+        BigDecimal nuevoSaldo = venta.getMontoTotal().subtract(nuevoAcuenta);
+
+        venta.setMontoACuenta(nuevoAcuenta);
+        venta.setMontoSaldo(nuevoSaldo);
+
+        if (nuevoSaldo.compareTo(BigDecimal.ZERO) <= 0) {
+            venta.setEstado(EstadoPago.PAGADO);
+        } else {
+            venta.setEstado(EstadoPago.PARCIAL);
+        }
+        ventaRepository.save(venta);
+
+        // 2. Actualizar saldos en la orden
+        orden.setMontoACuenta(nuevoAcuenta);
+        orden.setMontoSaldo(nuevoSaldo);
+        ordenTrabajoRepository.save(orden);
+
+        // 3. Registrar movimiento en caja
+        MovimientoCaja ingreso = new MovimientoCaja();
+        ingreso.setTipo(TipoMovimiento.ENTRADA);
+        ingreso.setMonto(dto.getMonto());
+        ingreso.setDescripcion("Pago de Saldo (" + dto.getMetodoPago() + ") - Orden: " + orden.getNumeroOrden());
+        ingreso.setUsuario(venta.getVendedor());
+        ingreso.setTienda(venta.getTienda());
+        movimientoCajaRepository.save(ingreso);
+
+        return venta;
     }
 }

@@ -19,6 +19,8 @@ dependencies:
   pdf: ^3.11.0
   printing: ^5.12.0
   shared_preferences: ^2.2.2   # Para guardar el Token y no pedir login a cada rato
+  path_provider: ^2.1.5
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:

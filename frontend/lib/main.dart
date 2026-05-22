@@ -30,18 +30,18 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProveedoresProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
       ],
-      child: const OpticGGApp(),
+      child: const OpticaCubasApp(),
     ),
   );
 }
 
-class OpticGGApp extends StatelessWidget {
-  const OpticGGApp({super.key});
+class OpticaCubasApp extends StatelessWidget {
+  const OpticaCubasApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OpticGG ERP',
+      title: 'Óptica Cubas ERP',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: AppColors.primary,

@@ -14,6 +14,7 @@ class OrdenTrabajo {
   final bool? esMonturaCliente;
   final String? graduacionOd;
   final String? graduacionOi;
+  final String? observaciones;
 
   OrdenTrabajo({
     required this.id,
@@ -29,6 +30,7 @@ class OrdenTrabajo {
     this.esMonturaCliente,
     this.graduacionOd,
     this.graduacionOi,
+    this.observaciones,
   });
 
   factory OrdenTrabajo.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class OrdenTrabajo {
       esMonturaCliente: json['esMonturaCliente'],
       graduacionOd: json['graduacionOd'],
       graduacionOi: json['graduacionOi'],
+      observaciones: json['observaciones'],
     );
   }
 }

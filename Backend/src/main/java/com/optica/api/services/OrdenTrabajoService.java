@@ -36,4 +36,8 @@ public class OrdenTrabajoService {
         orden.setEstado(request.getNuevoEstado());
         return ordenRepository.save(orden);
     }
+
+    public List<OrdenTrabajo> obtenerHistorialPorPaciente(Long pacienteId) {
+        return ordenRepository.findByClienteIdOrderByFechaDesc(pacienteId);
+    }
 }

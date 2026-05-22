@@ -15,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passController = TextEditingController();
   bool _isAdmin = true;
   String _selectedStore = 'C1';
+  bool _obscurePassword = true; // ← NUEVO: Estado para ocultar/ver contraseña
 
   void _submitLogin() async {
     final user = _userController.text.trim();
@@ -42,10 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 850; // Ajusté un poco el punto de quiebre
+    final isDesktop = screenWidth > 850;
 
     return Scaffold(
-      backgroundColor: isDesktop ? AppColors.gray900 : null,
+      backgroundColor: isDesktop ? AppColors.gray900 : Colors.white,
       body: Container(
         width: double.infinity,
         decoration: isDesktop ? null : const BoxDecoration(gradient: AppColors.loginGradient),
@@ -55,17 +56,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // =========================================================
-  // 💻 DISEÑO PARA PC (Con el panel derecho MEJORADO)
+  // 💻 DISEÑO PARA PC (Con BANNER DE IMAGEN)
   // =========================================================
   Widget _buildDesktopLayout() {
     return Center(
       child: Container(
-        width: 860,
-        height: 560, // Un poco más alto para que respiren las nuevas tarjetas
+        width: 900,
+        height: 600,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 50, offset: Offset(0, 20))],
+          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 40, offset: Offset(0, 15))],
         ),
         child: Row(
           children: [
@@ -73,63 +74,53 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(
               flex: 5,
               child: Padding(
-                padding: const EdgeInsets.all(40.0),
+                padding: const EdgeInsets.all(48.0),
                 child: _buildFormContent(),
               ),
             ),
-            // Mitad Derecha: Panel Premium "Llamativo"
+            // Mitad Derecha: Banner de Imagen de Óptica
             Expanded(
               flex: 4,
               child: ClipRRect(
                 borderRadius: const BorderRadius.horizontal(right: Radius.circular(24)),
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    // 1. Fondo Gradiente
-                    Container(decoration: const BoxDecoration(gradient: AppColors.loginGradient)),
-
-                    // 2. Elementos decorativos (Círculos abstractos) para romper lo genérico
-                    Positioned(
-                      top: -60, right: -40,
-                      child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.03))),
+                    Image.network(
+                      'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&q=80&w=1000',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(color: AppColors.gray800),
                     ),
-                    Positioned(
-                      bottom: -80, left: -60,
-                      child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.05), width: 2))),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.black.withOpacity(0.7),
+                            Colors.transparent,
+                          ],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
+                      ),
                     ),
-
-                    // 3. Contenido (Textos y Tarjetas Glass)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 40),
+                    const Padding(
+                      padding: EdgeInsets.all(32.0),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Gestión completa\npara tu óptica', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.5)),
-                          const SizedBox(height: 12),
-                          Text('ERP con historial clínico, ventas, órdenes automáticas y caja integrada.', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, height: 1.5)),
-                          const SizedBox(height: 36),
-
-                          // Las nuevas tarjetas "Glassmorphism"
-                          const _GlassFeatureCard(
-                            icon: Icons.auto_awesome_mosaic_rounded,
-                            title: 'Órdenes automáticas',
-                            desc: 'Al registrar una venta, la orden se genera sola.',
+                          Text(
+                            'Excelencia Visual',
+                            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(height: 16),
-                          const _GlassFeatureCard(
-                            icon: Icons.timeline_rounded,
-                            title: 'Timeline del paciente',
-                            desc: 'Historial clínico y compras en una sola vista.',
-                          ),
-                          const SizedBox(height: 16),
-                          const _GlassFeatureCard(
-                            icon: Icons.account_balance_wallet_rounded,
-                            title: 'Caja integrada',
-                            desc: 'Pagos a proveedores se reflejan como salidas.',
+                          SizedBox(height: 8),
+                          Text(
+                            'Solución integral para la gestión de tu óptica.',
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
                           ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -150,16 +141,15 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(height: 20),
-              Icon(Icons.remove_red_eye, color: Colors.white, size: 56),
-              SizedBox(height: 16),
-              Text('OpticGG', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
-              Text('ERP · Sistema de Gestión Óptica', style: TextStyle(color: Colors.white70, fontSize: 13)),
+              const Icon(Icons.visibility_off_outlined, color: AppColors.primaryLight, size: 64),
+              const SizedBox(height: 16),
+              const Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -1)),
+              const Text('SISTEMA DE GESTIÓN INTEGRAL', style: TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 1.2)),
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
+          padding: const EdgeInsets.fromLTRB(24, 40, 24, 48),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
@@ -174,28 +164,37 @@ class _LoginScreenState extends State<LoginScreen> {
   // EL FORMULARIO REUTILIZABLE
   // =========================================================
   Widget _buildFormContent() {
-    final isDesktop = MediaQuery.of(context).size.width > 800;
+    final isDesktop = MediaQuery.of(context).size.width > 850;
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (isDesktop) ...[
             Row(
               children: [
-                Container(width: 44, height: 44, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)), child: const Center(child: Icon(Icons.remove_red_eye, color: Colors.white))),
-                const SizedBox(width: 12),
-                const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('OpticGG', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.gray900, letterSpacing: -0.5)), Text('ERP · Sistema de Gestión', style: TextStyle(fontSize: 12, color: AppColors.gray400))]),
+                Container(
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+                  child: const Center(child: Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 28)),
+                ),
+                const SizedBox(width: 14),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Óptica Cubas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
+                    Text('GESTIÓN EMPRESARIAL', style: TextStyle(fontSize: 10, color: AppColors.gray400, letterSpacing: 1)),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 48),
           ],
 
-          const Text('Bienvenido 👋', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.gray900, letterSpacing: -0.5)),
-          const SizedBox(height: 4),
-          const Text('Ingresa con tu cuenta para continuar', style: TextStyle(color: AppColors.gray500, fontSize: 14)),
-          const SizedBox(height: 28),
+          const Text('Bienvenido 👋', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.gray900)),
+          const SizedBox(height: 6),
+          const Text('Por favor, inicia sesión para continuar.', style: TextStyle(color: AppColors.gray500, fontSize: 15)),
+          const SizedBox(height: 32),
 
           Container(
             padding: const EdgeInsets.all(4),
@@ -207,54 +206,39 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
-          const Text('Usuario', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700)),
-          const SizedBox(height: 8),
+          _buildLabel('Usuario'),
           TextField(
             controller: _userController,
-            decoration: InputDecoration(
-              hintText: 'Ej: admin',
-              filled: true, fillColor: AppColors.gray50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-            ),
+            decoration: _inputStyle(Icons.person_outline, 'Ej: admin'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          const Text('Contraseña', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700)),
-          const SizedBox(height: 8),
+          _buildLabel('Contraseña'),
           TextField(
             controller: _passController,
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: '••••••••',
-              filled: true, fillColor: AppColors.gray50,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+            obscureText: _obscurePassword, // ← DINÁMICO
+            decoration: _inputStyle(
+              Icons.lock_outline, 
+              '••••••••',
+              suffix: IconButton(
+                icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: AppColors.gray400),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           if (!_isAdmin) ...[
-            const Text('Tienda asignada', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700)),
-            const SizedBox(height: 8),
+            _buildLabel('Tienda asignada'),
             DropdownButtonFormField<String>(
               value: _selectedStore,
-              decoration: InputDecoration(
-                filled: true, fillColor: AppColors.gray50,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-              ),
+              decoration: _inputStyle(Icons.storefront_outlined, ''),
               items: ['C1', 'C2', 'C3'].map((String value) => DropdownMenuItem<String>(value: value, child: Text('Tienda $value'))).toList(),
               onChanged: (newValue) => setState(() => _selectedStore = newValue!),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
           ],
 
           const SizedBox(height: 12),
@@ -263,23 +247,45 @@ class _LoginScreenState extends State<LoginScreen> {
               builder: (context, auth, child) {
                 return SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      foregroundColor: Colors.white,
                       elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: auth.isLoading ? null : _submitLogin,
                     child: auth.isLoading
                         ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Ingresar al sistema', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.3)),
+                        : const Text('Ingresar al sistema', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 );
               }
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, left: 4),
+      child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700)),
+    );
+  }
+
+  InputDecoration _inputStyle(IconData icon, String hint, {Widget? suffix}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(icon, size: 20, color: AppColors.gray400),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: AppColors.gray50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
     );
   }
 
@@ -294,54 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(8),
           boxShadow: isActive ? [const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0,2))] : [],
         ),
-        child: Center(child: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: isActive ? AppColors.primary : AppColors.gray500))),
-      ),
-    );
-  }
-}
-
-// =========================================================
-// NUEVA TARJETA "GLASSMORPHISM" PARA LOS FEATURES
-// =========================================================
-class _GlassFeatureCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String desc;
-
-  const _GlassFeatureCard({required this.icon, required this.title, required this.desc});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06), // Fondo translúcido
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1), // Borde de cristal
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: Colors.white, size: 22),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(desc, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13, height: 1.4)),
-              ],
-            ),
-          )
-        ],
+        child: Center(child: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isActive ? AppColors.primary : AppColors.gray500))),
       ),
     );
   }

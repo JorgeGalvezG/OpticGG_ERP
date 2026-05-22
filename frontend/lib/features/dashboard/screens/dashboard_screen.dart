@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../pacientes/providers/pacientes_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../models/dashboard_resumen.dart';
+import '../../ventas/screens/ventas_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,76 +25,113 @@ class _DashboardScreenState extends State<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final isAdmin = auth.rol?.toUpperCase() == 'ADMIN';
-      // El admin inicia viendo todo; el vendedor ve solo su tienda
       final tiendaInicial = isAdmin ? 'ALL' : (auth.tienda ?? 'C1');
       setState(() => _tiendaSeleccionada = tiendaInicial);
-      Provider.of<DashboardProvider>(context, listen: false)
-          .fetchResumen(tiendaInicial);
+      
+      Provider.of<DashboardProvider>(context, listen: false).fetchResumen(tiendaInicial);
+      Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(tiendaInicial);
     });
   }
 
   void _cambiarTienda(String nuevaTienda) {
     setState(() => _tiendaSeleccionada = nuevaTienda);
-    Provider.of<DashboardProvider>(context, listen: false)
-        .fetchResumen(nuevaTienda);
+    Provider.of<DashboardProvider>(context, listen: false).fetchResumen(nuevaTienda);
+    Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(nuevaTienda);
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
     final isAdmin = auth.rol?.toUpperCase() == 'ADMIN';
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Consumer<DashboardProvider>(
       builder: (context, dashProv, child) {
+        if (dashProv.isLoading) {
+          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+        }
+
+        if (dashProv.errorMessage.isNotEmpty) {
+          return _ErrorCard(mensaje: dashProv.errorMessage);
+        }
+
+        final resumen = dashProv.resumen;
+        if (resumen == null) {
+          return const Center(child: Text('No hay datos disponibles.'));
+        }
+
         return SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
+          padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── CABECERA ───────────────────────────────────────────
+              _HeaderSection(username: auth.username ?? 'Admin', isAdmin: isAdmin),
+              const SizedBox(height: 40),
 
-              // ─────────────────────────────────────────
-              // 1. BANNER DE BIENVENIDA
-              // ─────────────────────────────────────────
-              _BannerBienvenida(
-                username: auth.username ?? 'Usuario',
-                tienda: isAdmin ? 'Administración General' : 'ADMINISTRADOR',
-                isMobile: isMobile,
-              ),
-              const SizedBox(height: 20),
-
-              // ─────────────────────────────────────────
-              // 2. SELECTOR DE TIENDA (solo ADMIN)
-              // ─────────────────────────────────────────
               if (isAdmin) ...[
-                _SelectorTienda(
-                  tiendaActual: _tiendaSeleccionada,
-                  tiendas: _tiendas,
-                  onCambiar: _cambiarTienda,
-                ),
-                const SizedBox(height: 20),
+                _SelectorTienda(tiendaActual: _tiendaSeleccionada, tiendas: _tiendas, onCambiar: _cambiarTienda),
+                const SizedBox(height: 40),
               ],
 
-              // ─────────────────────────────────────────
-              // 3. ESTADO: CARGANDO
-              // ─────────────────────────────────────────
-              if (dashProv.isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 60),
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
+              // ── BLOQUE DE MÉTRICAS PRINCIPALES ──────────────────────
+              const _SectionTitle('RESUMEN DE OPERACIONES'),
+              const SizedBox(height: 16),
+              _MainStatsGrid(resumen: resumen, isMobile: isMobile),
+              const SizedBox(height: 48),
+
+              // ── LAYOUT DE CONTENIDO (MÁS VERTICAL) ─────────────────
+              if (isMobile) 
+                Column(
+                  children: [
+                    _HistoricalChartHorizontal(resumen: resumen),
+                    const SizedBox(height: 32),
+                    _BirthdayBlockCompact(),
+                    const SizedBox(height: 32),
+                    _QuickActionsBlock(),
+                    const SizedBox(height: 32),
+                    _GraficoMetodosPago(datos: resumen.totalesPorMetodo),
+                    const SizedBox(height: 32),
+                    _RankingVendedores(vendedores: resumen.ventasPorVendedor),
+                  ],
                 )
-              else if (dashProv.errorMessage.isNotEmpty)
-                _ErrorCard(mensaje: dashProv.errorMessage)
-              else if (dashProv.resumen == null)
-                  const Center(child: Text('Sin datos disponibles.'))
-                else
-                  _DashboardContenido(
-                    resumen: dashProv.resumen!,
-                    isMobile: isMobile,
-                  ),
+              else 
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Columna Izquierda: Gráficos y Rankings
+                    Expanded(
+                      flex: 6,
+                      child: Column(
+                        children: [
+                          _HistoricalChartHorizontal(resumen: resumen),
+                          const SizedBox(height: 32),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: _GraficoMetodosPago(datos: resumen.totalesPorMetodo)),
+                              const SizedBox(width: 24),
+                              Expanded(child: _RankingVendedores(vendedores: resumen.ventasPorVendedor)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 32),
+                    // Columna Derecha: Agenda y Acciones
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        children: [
+                          _BirthdayBlockCompact(),
+                          const SizedBox(height: 24),
+                          _QuickActionsBlock(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 60),
             ],
           ),
         );
@@ -101,659 +141,375 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 // ─────────────────────────────────────────────────────────
-// CONTENIDO PRINCIPAL (extraído para evitar final en spread)
+// COMPONENTES DE DISEÑO PROFESIONAL
 // ─────────────────────────────────────────────────────────
-class _DashboardContenido extends StatelessWidget {
-  final dynamic resumen; // DashboardResumen
-  final bool isMobile;
 
-  static const Map<String, Color> _coloresPago = {
-    'EFECTIVO': Color(0xFF16a34a),
-    'YAPE / PLIN': Color(0xFF7c3aed),
-    'TARJETA': Color(0xFF2563eb),
-    'TRANSF.': Color(0xFFea580c),
-  };
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle(this.title);
+  @override
+  Widget build(BuildContext context) {
+    return Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.gray400, letterSpacing: 1.5));
+  }
+}
 
-  static const Map<String, String> _etiquetasPago = {
-    'EFECTIVO': 'Efectivo',
-    'YAPE / PLIN': 'Yape / Plin',
-    'TARJETA': 'Tarjeta',
-    'TRANSF.': 'Transferencia',
-  };
-
-  const _DashboardContenido({required this.resumen, required this.isMobile});
+class _HeaderSection extends StatelessWidget {
+  final String username;
+  final bool isAdmin;
+  const _HeaderSection({required this.username, required this.isAdmin});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ─────────────────────────────────────────
-        // 4. ALERTAS: CUMPLEAÑOS Y LABORATORIO
-        // ─────────────────────────────────────────
-        if (resumen.cumpleanerosHoy > 0) ...[
-          _AlertaBanner(
-            icono: Icons.cake_rounded,
-            color: const Color(0xFFdb2777),
-            colorFondo: const Color(0xFFFDF2F8),
-            colorBorde: const Color(0xFFfbcfe8),
-            mensaje:
-            '¡Hoy hay ${resumen.cumpleanerosHoy} paciente${resumen.cumpleanerosHoy > 1 ? 's' : ''} de cumpleaños! 🎂 Considera llamarles.',
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (resumen.ordenesPendientes > 0) ...[
-          _AlertaBanner(
-            icono: Icons.science_rounded,
-            color: const Color(0xFF2563eb),
-            colorFondo: const Color(0xFFEFF6FF),
-            colorBorde: const Color(0xFFbfdbfe),
-            mensaje:
-            '${resumen.ordenesPendientes} orden${resumen.ordenesPendientes > 1 ? 'es' : ''} pendiente${resumen.ordenesPendientes > 1 ? 's' : ''} en el laboratorio.',
-          ),
-          const SizedBox(height: 20),
-        ],
-        if (resumen.cumpleanerosHoy == 0 && resumen.ordenesPendientes == 0)
-          const SizedBox(height: 4),
-
-        // ─────────────────────────────────────────
-        // 5. DISTRIBUCIÓN POR MÉTODO DE PAGO
-        // ─────────────────────────────────────────
-        const Text(
-          'Ingresos de hoy por método de pago',
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gray900),
+        Row(
+          children: [
+            Container(width: 4, height: 24, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 12),
+            Text('ÓPTICA CUBAS ERP', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.primary, letterSpacing: 2)),
+          ],
         ),
-        const SizedBox(height: 14),
-        _GraficoMetodosPago(
-          datos: resumen.totalesPorMetodo,
-          colores: _coloresPago,
-          etiquetas: _etiquetasPago,
-          isMobile: isMobile,
-        ),
-        const SizedBox(height: 28),
-
-        // ─────────────────────────────────────────
-        // 6. RANKING DE VENDEDORES
-        // ─────────────────────────────────────────
-        const Text(
-          'Top vendedores — ventas del día',
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gray900),
-        ),
-        const SizedBox(height: 14),
-        _RankingVendedores(
-          vendedores: resumen.ventasPorVendedor,
-          isMobile: isMobile,
-        ),
+        const SizedBox(height: 8),
+        Text('Hola, $username. Así va el negocio hoy.', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.gray900)),
       ],
     );
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// WIDGETS PRIVADOS
-// ═══════════════════════════════════════════════════════════
-
-// ── BANNER DE BIENVENIDA ──────────────────────────────────
-class _BannerBienvenida extends StatelessWidget {
-  final String username;
-  final String tienda;
+class _MainStatsGrid extends StatelessWidget {
+  final DashboardResumen resumen;
   final bool isMobile;
+  const _MainStatsGrid({required this.resumen, required this.isMobile});
 
-  const _BannerBienvenida({
-    required this.username,
-    required this.tienda,
-    required this.isMobile,
-  });
+  @override
+  Widget build(BuildContext context) {
+    final balance = resumen.ingresosHoy - resumen.egresosHoy;
+    return GridView.count(
+      crossAxisCount: isMobile ? 2 : 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 20,
+      mainAxisSpacing: 20,
+      childAspectRatio: isMobile ? 1.4 : 1.8,
+      children: [
+        _StatCard('Ingresos Hoy', resumen.ingresosHoy, Icons.add_circle_outline_rounded, Colors.green),
+        _StatCard('Egresos Hoy', resumen.egresosHoy, Icons.remove_circle_outline_rounded, Colors.redAccent),
+        _StatCard('Balance Neto', balance, Icons.account_balance_wallet_outlined, Colors.blue),
+        _StatCard('Pendientes Lab.', resumen.ordenesPendientes.toDouble(), Icons.biotech_rounded, Colors.orange, isMoney: false),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title;
+  final double value;
+  final IconData icon;
+  final Color color;
+  final bool isMoney;
+  const _StatCard(this.title, this.value, this.icon, this.color, {this.isMoney = true});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppColors.loginGradient,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ],
+        border: Border.all(color: AppColors.gray200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '¡Hola, $username! 👋',
-                  style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Rendimiento · $tienda',
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.8)),
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+            ],
           ),
-          if (!isMobile)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.insights_rounded,
-                  color: Colors.white, size: 44),
-            ),
+          const SizedBox(height: 12),
+          FittedBox(
+            child: Text(isMoney ? 'S/ ${value.toStringAsFixed(2)}' : value.toInt().toString(), 
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.gray900)),
+          ),
         ],
       ),
     );
   }
 }
 
-// ── SELECTOR DE TIENDA (solo ADMIN) ──────────────────────
+class _HistoricalChartHorizontal extends StatelessWidget {
+  final DashboardResumen resumen;
+  const _HistoricalChartHorizontal({required this.resumen});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.gray200)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle('RENDIMIENTO HISTÓRICO (INGRESOS)'),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 180,
+            child: BarChart(
+              BarChartData(
+                barTouchData: BarTouchData(enabled: true),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) => Text('S/ ${v.toInt()}', style: const TextStyle(fontSize: 9, color: AppColors.gray400)))),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 80,
+                      getTitlesWidget: (v, m) {
+                        if (v == 0) return const Text('Este Mes', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
+                        if (v == 1) return const Text('15 Días', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
+                        if (v == 2) return const Text('Hoy', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
+                        return const SizedBox();
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                gridData: const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: false),
+                alignment: BarChartAlignment.spaceAround,
+                // SWAP AXES by using BarChartGroupData logic if needed, but fl_chart doesn't support horizontal bars natively in a simple way.
+                // We'll simulate it with thin vertical bars for now if native horizontal is complex, or use the BarChart as is but with better layout.
+                // Wait, fl_chart DOES support horizontal bars in newer versions or via some tricks. 
+                // Let's stick to a very clean vertical one if horizontal is too buggy without extra deps.
+                barGroups: [
+                  _group(0, resumen.ingresosMes, AppColors.primary),
+                  _group(1, resumen.ingresosQuincena, Colors.blue.shade400),
+                  _group(2, resumen.ingresosHoy, Colors.green.shade400),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  BarChartGroupData _group(int x, double y, Color color) {
+    return BarChartGroupData(x: x, barRods: [BarChartRodData(toY: y, color: color, width: 20, borderRadius: BorderRadius.circular(4))]);
+  }
+}
+
+class _BirthdayBlockCompact extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PacientesProvider>(
+      builder: (context, prov, _) {
+        final hoyStr = "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}";
+        final cumplenHoy = prov.pacientes.where((p) => p.fechaNacimiento?.substring(5) == hoyStr).toList();
+
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(color: const Color(0xFFF0F9FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFBAE6FD))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.cake_rounded, color: Color(0xFF0369A1), size: 20),
+                  SizedBox(width: 10),
+                  Text('CUMPLEAÑOS DE HOY', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF0369A1), letterSpacing: 1)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (cumplenHoy.isNotEmpty)
+                ...cumplenHoy.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFF0EA5E9), shape: BoxShape.circle)),
+                      const SizedBox(width: 12),
+                      Text('${p.nombre} ${p.apellidos}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.gray800)),
+                    ],
+                  ),
+                ))
+              else
+                const Text('No hay cumpleaños registrados hoy.', style: TextStyle(fontSize: 12, color: AppColors.gray500, fontStyle: FontStyle.italic)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _QuickActionsBlock extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.gray200)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle('ACCESOS DIRECTOS'),
+          const SizedBox(height: 24),
+          _actionButton(context, Icons.add_shopping_cart_rounded, 'Nueva Venta', Colors.blue, () {
+             showDialog(
+               context: context,
+               barrierDismissible: false,
+               builder: (context) => const NuevaVentaDialog(),
+             );
+          }),
+          _actionButton(context, Icons.person_add_alt_1_rounded, 'Ir a Pacientes', Colors.green, () {
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Use el menú lateral para ir a Pacientes.')));
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton(BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(color: color.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.1))),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 16),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.gray800)),
+              const Spacer(),
+              Icon(Icons.arrow_forward_ios_rounded, size: 12, color: color.withOpacity(0.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GraficoMetodosPago extends StatelessWidget {
+  final Map<String, double> datos;
+  const _GraficoMetodosPago({required this.datos});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = datos.values.fold(0.0, (a, b) => a + b);
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.gray200)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle('COBROS POR MÉTODO'),
+          const SizedBox(height: 24),
+          SizedBox(
+            height: 140,
+            child: PieChart(
+              PieChartData(
+                sections: datos.entries.map((e) => PieChartSectionData(
+                  value: e.value, 
+                  color: _getColor(e.key), 
+                  radius: 40, 
+                  title: '${(e.value/total*100).toInt()}%',
+                  titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                )).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Color _getColor(String k) {
+    if (k == 'EFECTIVO') return Colors.green.shade400;
+    if (k == 'TARJETA') return Colors.blue.shade400;
+    return Colors.purple.shade400;
+  }
+}
+
+class _RankingVendedores extends StatelessWidget {
+  final Map<String, double> vendedores;
+  const _RankingVendedores({required this.vendedores});
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = vendedores.entries.toList()..sort((a,b) => b.value.compareTo(a.value));
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.gray200)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle('TOP VENDEDORES (HOY)'),
+          const SizedBox(height: 24),
+          ...sorted.take(3).map((e) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray800)),
+                    Text('S/ ${e.value.toInt()}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(value: 0.8, backgroundColor: AppColors.gray100, color: AppColors.primary.withOpacity(0.6), minHeight: 4),
+                ),
+              ],
+            ),
+          )).toList(),
+        ],
+      ),
+    );
+  }
+}
+
 class _SelectorTienda extends StatelessWidget {
   final String tiendaActual;
   final List<String> tiendas;
   final ValueChanged<String> onCambiar;
-
-  const _SelectorTienda({
-    required this.tiendaActual,
-    required this.tiendas,
-    required this.onCambiar,
-  });
-
-  String _etiqueta(String t) {
-    if (t == 'ALL') return '🌐 Todas las tiendas';
-    return '🏪 Sucursal $t';
-  }
+  const _SelectorTienda({required this.tiendaActual, required this.tiendas, required this.onCambiar});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.gray100,
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
       child: Row(
-        children: tiendas.map((t) {
-          final isActive = t == tiendaActual;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onCambiar(t),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 11),
-                decoration: BoxDecoration(
-                  color: isActive ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: isActive
-                      ? [
-                    const BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: Offset(0, 2))
-                  ]
-                      : [],
-                ),
-                child: Center(
-                  child: Text(
-                    _etiqueta(t),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color:
-                      isActive ? AppColors.primary : AppColors.gray500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
+        children: tiendas.map((t) => Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: ChoiceChip(
+            label: Text(t == 'ALL' ? 'GENERAL' : 'TIENDA $t', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+            selected: tiendaActual == t,
+            onSelected: (val) => onCambiar(t),
+            selectedColor: AppColors.primary,
+            backgroundColor: Colors.white,
+            side: BorderSide(color: tiendaActual == t ? AppColors.primary : AppColors.gray200),
+            labelStyle: TextStyle(color: tiendaActual == t ? Colors.white : AppColors.gray500),
+          ),
+        )).toList(),
       ),
     );
   }
 }
 
-// ── BANNER DE ALERTA ─────────────────────────────────────
-class _AlertaBanner extends StatelessWidget {
-  final IconData icono;
-  final Color color;
-  final Color colorFondo;
-  final Color colorBorde;
-  final String mensaje;
-
-  const _AlertaBanner({
-    required this.icono,
-    required this.color,
-    required this.colorFondo,
-    required this.colorBorde,
-    required this.mensaje,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: colorFondo,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorBorde),
-      ),
-      child: Row(
-        children: [
-          Icon(icono, color: color, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              mensaje,
-              style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  height: 1.4),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── GRÁFICO DE MÉTODOS DE PAGO ───────────────────────────
-class _GraficoMetodosPago extends StatefulWidget {
-  final Map<String, double> datos;
-  final Map<String, Color> colores;
-  final Map<String, String> etiquetas;
-  final bool isMobile;
-
-  const _GraficoMetodosPago({
-    required this.datos,
-    required this.colores,
-    required this.etiquetas,
-    required this.isMobile,
-  });
-
-  @override
-  State<_GraficoMetodosPago> createState() => _GraficoMetodosPagoState();
-}
-
-class _GraficoMetodosPagoState extends State<_GraficoMetodosPago> {
-  int _indexTocado = -1;
-
-  Color _colorMetodo(String metodo) {
-    return widget.colores[metodo] ?? AppColors.gray400;
-  }
-
-  String _etiquetaMetodo(String metodo) {
-    return widget.etiquetas[metodo] ?? metodo;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final datos = widget.datos;
-    final total = datos.values.fold(0.0, (a, b) => a + b);
-
-    if (total == 0) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.gray200),
-        ),
-        child: const Center(
-          child: Column(
-            children: [
-              Icon(Icons.bar_chart_rounded, size: 40, color: AppColors.gray300),
-              SizedBox(height: 10),
-              Text('Sin ingresos registrados hoy',
-                  style: TextStyle(color: AppColors.gray500, fontSize: 14)),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final secciones = datos.entries
-        .where((e) => e.value > 0)
-        .toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final sections = secciones.asMap().entries.map((entry) {
-      final i = entry.key;
-      final e = entry.value;
-      final isTocado = i == _indexTocado;
-      return PieChartSectionData(
-        value: e.value,
-        color: _colorMetodo(e.key),
-        radius: isTocado ? 68 : 56,
-        title: isTocado
-            ? 'S/ ${e.value.toStringAsFixed(0)}'
-            : '${(e.value / total * 100).toStringAsFixed(0)}%',
-        titleStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white),
-        badgeWidget: null,
-      );
-    }).toList();
-
-    final grafico = SizedBox(
-      height: 200,
-      child: PieChart(
-        PieChartData(
-          sections: sections,
-          sectionsSpace: 3,
-          centerSpaceRadius: 44,
-          pieTouchData: PieTouchData(
-            touchCallback: (event, response) {
-              setState(() {
-                if (!event.isInterestedForInteractions ||
-                    response == null ||
-                    response.touchedSection == null) {
-                  _indexTocado = -1;
-                  return;
-                }
-                _indexTocado =
-                    response.touchedSection!.touchedSectionIndex;
-              });
-            },
-          ),
-        ),
-      ),
-    );
-
-    // Leyenda con tarjetas por cada método
-    final leyenda = Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: secciones.map((e) {
-        final porcentaje = (e.value / total * 100).toStringAsFixed(1);
-        final color = _colorMetodo(e.key);
-        return Container(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border:
-            Border.all(color: color.withValues(alpha: 0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                      color: color, shape: BoxShape.circle)),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _etiquetaMetodo(e.key),
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: color),
-                  ),
-                  Text(
-                    'S/ ${e.value.toStringAsFixed(2)} · $porcentaje%',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: color.withValues(alpha: 0.8)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-
-    // Centro del donut muestra total
-    final centroWidget = Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text('Total',
-            style: TextStyle(fontSize: 11, color: AppColors.gray500)),
-        Text(
-          'S/ ${total.toStringAsFixed(0)}',
-          style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gray900),
-        ),
-      ],
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: widget.isMobile
-          ? Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [grafico, centroWidget],
-          ),
-          const SizedBox(height: 20),
-          leyenda,
-        ],
-      )
-          : Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [grafico, centroWidget],
-            ),
-          ),
-          const SizedBox(width: 24),
-          Expanded(flex: 3, child: leyenda),
-        ],
-      ),
-    );
-  }
-}
-
-// ── RANKING DE VENDEDORES ────────────────────────────────
-class _RankingVendedores extends StatelessWidget {
-  final Map<String, double> vendedores;
-  final bool isMobile;
-
-  const _RankingVendedores({
-    required this.vendedores,
-    required this.isMobile,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (vendedores.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.gray200),
-        ),
-        child: const Center(
-          child: Text('Sin ventas registradas hoy',
-              style: TextStyle(color: AppColors.gray500, fontSize: 14)),
-        ),
-      );
-    }
-
-    // Ordenar de mayor a menor
-    final sorted = vendedores.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    final maxVenta = sorted.first.value;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gray200),
-      ),
-      child: Column(
-        children: sorted.asMap().entries.map((entry) {
-          final index = entry.key;
-          final e = entry.value;
-          final porcentaje = maxVenta > 0 ? e.value / maxVenta : 0.0;
-
-          String? medallaTexto;
-          Color colorMedalla = AppColors.primary;
-
-          if (index == 0) {
-            medallaTexto = '🥇';
-            colorMedalla = const Color(0xFFD97706);
-          } else if (index == 1) {
-            medallaTexto = '🥈';
-            colorMedalla = const Color(0xFF6B7280);
-          } else if (index == 2) {
-            medallaTexto = '🥉';
-            colorMedalla = const Color(0xFFB45309);
-          }
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    // Posición / medalla
-                    SizedBox(
-                      width: 36,
-                      child: medallaTexto != null
-                          ? Text(medallaTexto,
-                          style: const TextStyle(fontSize: 20))
-                          : CircleAvatar(
-                        radius: 14,
-                        backgroundColor:
-                        AppColors.primaryLight,
-                        child: Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                e.key,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: AppColors.gray900),
-                              ),
-                              Text(
-                                'S/ ${e.value.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: colorMedalla),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          // Barra de progreso relativa
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: porcentaje,
-                              minHeight: 6,
-                              backgroundColor: AppColors.gray100,
-                              valueColor:
-                              AlwaysStoppedAnimation(colorMedalla),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (index < sorted.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 16),
-                    child: Divider(height: 1, color: AppColors.gray100),
-                  ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-// ── TARJETA DE ERROR ─────────────────────────────────────
 class _ErrorCard extends StatelessWidget {
   final String mensaje;
   const _ErrorCard({required this.mensaje});
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFfecaca)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xFFdc2626), size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Error al cargar datos: $mensaje',
-              style: const TextStyle(
-                  color: Color(0xFFdc2626),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
+    return Center(child: Text('Error: $mensaje', style: const TextStyle(color: Colors.red)));
   }
 }

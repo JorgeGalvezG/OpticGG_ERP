@@ -26,4 +26,26 @@ class VentasProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Registrar un pago de saldo pendiente
+  Future<bool> registrarPagoSaldo(int ordenId, double monto, String metodoPago) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await ApiService.post('/ventas/pago-saldo', {
+        'ordenId': ordenId,
+        'monto': monto,
+        'metodoPago': metodoPago,
+      });
+      _errorMessage = '';
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

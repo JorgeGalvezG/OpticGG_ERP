@@ -18,4 +18,9 @@ public class VentaController {
     public ResponseEntity<Venta> crearVentaGigante(@RequestBody NuevaVentaCompletaDTO request) {
         return ResponseEntity.ok(ventaService.procesarNuevaVenta(request));
     }
+
+    @PostMapping("/pago-saldo")
+    public ResponseEntity<Venta> registrarPagoSaldo(@RequestBody com.optica.api.dto.PagoSaldoDTO request) {
+        return ResponseEntity.ok(ventaService.registrarPagoSaldo(request));
+    }
 }

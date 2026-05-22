@@ -271,7 +271,7 @@ class _MainLayoutState extends State<MainLayout> {
           // Logo
           const Icon(Icons.remove_red_eye, color: Colors.white, size: 40),
           const Text(
-            'OpticGG',
+            'Óptica Cubas',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,

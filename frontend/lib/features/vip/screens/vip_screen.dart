@@ -14,8 +14,8 @@ class VipScreen extends StatefulWidget {
 }
 
 class _VipScreenState extends State<VipScreen> {
-  // 1. SET PARA CONTROLAR LA SELECCIÓN MÚLTIPLE DINÁMICA
   final Set<int> _seleccionados = {};
+  String _filtroTexto = "";
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _VipScreenState extends State<VipScreen> {
   // 2. LÓGICA DE ENVÍO SELECTIVO POR WHATSAPP
   void _enviarPromociones(List<Paciente> seleccionados) async {
     for (var p in seleccionados) {
-      final String mensaje = "¡Hola ${p.nombre}! ✨ Te saludamos de OpticGG. Por ser uno de nuestros clientes VIP, tienes un beneficio exclusivo del 20% en tus próximas resinas. ¡Te esperamos!";
+      final String mensaje = "¡Hola ${p.nombre}! ✨ Te saludamos de Óptica Cubas. Por ser uno de nuestros clientes VIP, tienes un beneficio exclusivo del 20% en tus próximas resinas. ¡Te esperamos!";
 
       // Limpiamos el número (asumiendo formato Perú +51)
       final String phone = p.telefono?.replaceAll(RegExp(r'\D'), '') ?? '';
@@ -51,7 +51,15 @@ class _VipScreenState extends State<VipScreen> {
 
     return Consumer<PacientesProvider>(
       builder: (context, provider, child) {
-        final vips = provider.pacientesVip;
+        var vips = provider.pacientesVip;
+
+        // APLICAR FILTRO LOCAL
+        if (_filtroTexto.isNotEmpty) {
+          vips = vips.where((p) => 
+            p.nombre.toLowerCase().contains(_filtroTexto) || 
+            p.apellidos.toLowerCase().contains(_filtroTexto)
+          ).toList();
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,43 +67,58 @@ class _VipScreenState extends State<VipScreen> {
             // CABECERA VIP DINÁMICA
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.star_rounded, color: AppColors.warning, size: 28),
-                          const SizedBox(width: 8),
-                          const Text('Pacientes VIP',
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: AppColors.warning, size: 28),
+                              const SizedBox(width: 8),
+                              const Text('Pacientes VIP',
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text('${_seleccionados.length} seleccionados para promoción',
+                              style: const TextStyle(fontSize: 13, color: AppColors.gray500, fontWeight: FontWeight.w600)),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text('${_seleccionados.length} seleccionados para promoción',
-                          style: const TextStyle(fontSize: 13, color: AppColors.gray500, fontWeight: FontWeight.w600)),
+
+                      // BOTÓN DE ACCIÓN SELECTIVA
+                      ElevatedButton.icon(
+                        onPressed: _seleccionados.isEmpty
+                            ? null
+                            : () {
+                          final listaAEnviar = vips.where((p) => _seleccionados.contains(p.id)).toList();
+                          _enviarPromociones(listaAEnviar);
+                        },
+                        icon: const Icon(Icons.chat_rounded, size: 20),
+                        label: Text(isMobile ? 'Enviar' : 'Enviar Promoción'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: AppColors.gray200,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                      ),
                     ],
                   ),
-
-                  // BOTÓN DE ACCIÓN SELECTIVA
-                  ElevatedButton.icon(
-                    onPressed: _seleccionados.isEmpty
-                        ? null
-                        : () {
-                      final listaAEnviar = vips.where((p) => _seleccionados.contains(p.id)).toList();
-                      _enviarPromociones(listaAEnviar);
-                    },
-                    icon: const Icon(Icons.chat_rounded, size: 20),
-                    label: Text(isMobile ? 'Enviar' : 'Enviar Promoción Seleccionada'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: AppColors.gray200,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+                  const SizedBox(height: 20),
+                  TextField(
+                    onChanged: (v) => setState(() => _filtroTexto = v.toLowerCase()),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar en clientes VIP...',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
                     ),
                   ),
                 ],

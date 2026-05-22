@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart'; // Asegúrate de tener esta dependencia
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants/api_constants.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8080/api';
+  static String get baseUrl => ApiConstants.baseUrl;
 
   // --- FUNCIÓN PRIVADA PARA OBTENER EL TOKEN ---
   // Esto evita repetir código en cada método

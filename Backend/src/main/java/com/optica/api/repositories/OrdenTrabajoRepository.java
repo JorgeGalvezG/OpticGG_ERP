@@ -22,4 +22,7 @@ public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long
 
     // Para TODAS las sedes (Admin)
     long countByEstado(EstadoTrabajo estado);
+
+    // 3. Obtener Historial de un Paciente
+    List<OrdenTrabajo> findByClienteIdOrderByFechaDesc(Long clienteId);
 }

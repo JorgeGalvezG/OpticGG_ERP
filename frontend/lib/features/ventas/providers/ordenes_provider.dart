@@ -29,6 +29,23 @@ class OrdenesProvider with ChangeNotifier {
       _isLoading = false; notifyListeners();
     }
   }
+
+  // Obtener historial de un paciente específico
+  Future<List<OrdenTrabajo>> fetchOrdenesPorPaciente(int pacienteId) async {
+    try {
+      print("📡 Llamando API: /ordenes/paciente/$pacienteId");
+      final response = await ApiService.get('/ordenes/paciente/$pacienteId');
+      print("✅ Respuesta recibida: $response");
+      final list = (response as List).map((i) => OrdenTrabajo.fromJson(i)).toList();
+      print("🧩 Mapeo completado: ${list.length} órdenes");
+      return list;
+    } catch (e, stack) {
+      print("❌ ERROR obteniendo historial: $e");
+      print(stack);
+      return [];
+    }
+  }
+
   //mover tarjeta de columna
   Future<bool> actualizarEstadoOrden(int ordenId, String nuevoEstado, String tienda) async {
     _isLoading = true; notifyListeners();

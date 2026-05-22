@@ -42,4 +42,10 @@ public class OrdenTrabajoController {
             @RequestBody OrdenActualizarDTO request) {
         return ResponseEntity.ok(ordenService.actualizarEstado(id, request));
     }
+
+    // GET /api/ordenes/paciente/12
+    @GetMapping("/paciente/{pacienteId}")
+    public ResponseEntity<List<OrdenTrabajo>> obtenerHistorialPaciente(@PathVariable Long pacienteId) {
+        return ResponseEntity.ok(ordenService.obtenerHistorialPorPaciente(pacienteId));
+    }
 }

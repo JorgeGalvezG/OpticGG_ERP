@@ -51,4 +51,26 @@ public class Venta {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     @Column(updatable = false, insertable = false)
     private LocalDateTime fecha;
+
+    // --- CAMPOS DE HISTORIAL PARA LA VENTA ---
+    @Column(name = "graduacion_od")
+    private String graduacionOd;
+
+    @Column(name = "graduacion_oi")
+    private String graduacionOi;
+
+    @Column(name = "tipo_luna")
+    private String tipoLuna;
+
+    @Column(name = "es_luna_cliente")
+    private Boolean esLunaCliente = false;
+
+    @Column(name = "montura")
+    private String montura;
+
+    @Column(name = "es_montura_cliente")
+    private Boolean esMonturaCliente = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String observaciones;
 }

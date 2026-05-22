@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import '../../ventas/models/orden_trabajo_model.dart';
+import '../../ventas/providers/ordenes_provider.dart';
 import '../models/paciente_model.dart';
 import '../providers/pacientes_provider.dart';
 import '../../ventas/screens/ventas_screen.dart';
@@ -399,6 +401,18 @@ class _PatientRow extends StatelessWidget {
                     onPressed: () => showDialog(
                       context: context,
                       barrierDismissible: false,
+                      builder: (context) => _PacienteHistorialDialog(paciente: paciente),
+                    ),
+                    icon: const Icon(Icons.history_edu_rounded, size: 16),
+                    label: const Text('Historial', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => showDialog(
+                      context: context,
+                      barrierDismissible: false,
                       builder: (context) =>
                           _EditarPacienteDialog(paciente: paciente),
                     ),
@@ -493,6 +507,20 @@ class _PatientRow extends StatelessWidget {
               ],
             ),
           ),
+          OutlinedButton.icon(
+            onPressed: () => showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => _PacienteHistorialDialog(paciente: paciente),
+            ),
+            icon: const Icon(Icons.history_edu_rounded, size: 16),
+            label: const Text('Historial', style: TextStyle(fontSize: 12)),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              side: const BorderSide(color: AppColors.gray300),
+            ),
+          ),
+          const SizedBox(width: 8),
           ElevatedButton.icon(
             onPressed: () => _abrirVenta(context),
             icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 16),
@@ -597,7 +625,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
   final _telefonoController = TextEditingController();
   final _edadController = TextEditingController();
   final _fechaNacController = TextEditingController();
-  bool _esVip = false; // ← NUEVO
+  bool _esVip = false;
 
   @override
   void dispose() {
@@ -696,9 +724,8 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                         controller: _fechaNacController,
                         hint: 'Ej: 1990-12-25',
                       ),
-                      const SizedBox(height: 16), // ← NUEVO
+                      const SizedBox(height: 16),
                       _buildVipToggle(
-                        // ← NUEVO
                         value: _esVip,
                         onChanged: (val) => setState(() => _esVip = val),
                       ),
@@ -751,7 +778,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                                 ? null
                                 : _fechaNacController.text.trim(),
                             tienda: auth.tienda ?? 'C1',
-                            esDestacado: _esVip, // ← NUEVO
+                            esDestacado: _esVip,
                           );
                           final exito = await Provider.of<PacientesProvider>(
                             context,
@@ -845,7 +872,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
   late TextEditingController _telefonoController;
   late TextEditingController _edadController;
   late TextEditingController _fechaNacController;
-  late bool _esVip; // ← NUEVO
+  late bool _esVip;
 
   @override
   void initState() {
@@ -863,7 +890,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
     _fechaNacController = TextEditingController(
       text: widget.paciente.fechaNacimiento ?? '',
     );
-    _esVip = widget.paciente.esDestacado; // ← NUEVO: precarga el estado real
+    _esVip = widget.paciente.esDestacado;
   }
 
   @override
@@ -957,15 +984,13 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                       ]),
                       if (!isMobile) const SizedBox(height: 16),
                       _buildTextField(
-                        // ← AÑADIDO al editar
                         'Fecha de Nacimiento',
                         Icons.calendar_today_rounded,
                         controller: _fechaNacController,
                         hint: 'Ej: 1990-12-25',
                       ),
-                      const SizedBox(height: 16), // ← NUEVO
+                      const SizedBox(height: 16),
                       _buildVipToggle(
-                        // ← NUEVO
                         value: _esVip,
                         onChanged: (val) => setState(() => _esVip = val),
                       ),
@@ -1015,7 +1040,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                                 ? null
                                 : _fechaNacController.text.trim(),
                             tienda: widget.paciente.tienda,
-                            esDestacado: _esVip, // ← NUEVO
+                            esDestacado: _esVip,
                           );
                           final exito = await Provider.of<PacientesProvider>(
                             context,
@@ -1086,6 +1111,232 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// =========================================================
+// DIÁLOGO DE HISTORIAL (FICHA MÉDICA Y COMPRAS)
+// =========================================================
+class _PacienteHistorialDialog extends StatefulWidget {
+  final Paciente paciente;
+  const _PacienteHistorialDialog({required this.paciente});
+
+  @override
+  State<_PacienteHistorialDialog> createState() => _PacienteHistorialDialogState();
+}
+
+class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
+  List<OrdenTrabajo> _historial = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarHistorial();
+  }
+
+  void _cargarHistorial() async {
+    print("🔍 Cargando historial para paciente ID: ${widget.paciente.id}");
+    final ordenesProv = Provider.of<OrdenesProvider>(context, listen: false);
+    final lista = await ordenesProv.fetchOrdenesPorPaciente(widget.paciente.id ?? 0);
+    print("📦 Órdenes encontradas para historial: ${lista.length}");
+    
+    if (mounted) {
+      setState(() {
+        _historial = lista;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        width: isMobile ? double.infinity : 800,
+        height: 700,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Historial del Paciente',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                    Text('${widget.paciente.nombre} ${widget.paciente.apellidos}', 
+                      style: const TextStyle(color: AppColors.gray500, fontSize: 14)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+            const Divider(height: 32),
+            
+            if (_loading)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else if (_historial.isEmpty)
+              const Expanded(child: Center(child: Text('No hay registros previos para este paciente.')))
+            else
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _historial.length,
+                  itemBuilder: (context, index) {
+                    final o = _historial[index];
+                    return _buildCardHistorial(o);
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardHistorial(OrdenTrabajo o) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gray200),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Encabezado de la Orden
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.gray50,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('ORDEN #${o.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: AppColors.primary)),
+                    Text('Fecha: ${o.fecha.substring(0,10)}', style: const TextStyle(fontSize: 11, color: AppColors.gray500)),
+                  ],
+                ),
+                _statusBadge(o.estado),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // SECCIÓN CLÍNICA (RECETA)
+                const Row(
+                  children: [
+                    Icon(Icons.visibility_rounded, size: 16, color: AppColors.gray400),
+                    SizedBox(width: 8),
+                    Text('HISTORIAL CLÍNICO / RECETA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.gray700, letterSpacing: 0.5)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _clinicalInfo('OJO DERECHO (OD)', o.graduacionOd ?? 'Plano')),
+                    Container(width: 1, height: 30, color: AppColors.gray100, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                    Expanded(child: _clinicalInfo('OJO IZQUIERDO (OI)', o.graduacionOi ?? 'Plano')),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Divider(height: 1, color: AppColors.gray100),
+                ),
+                // SECCIÓN COMERCIAL (PRODUCTOS)
+                const Row(
+                  children: [
+                    Icon(Icons.shopping_bag_rounded, size: 16, color: AppColors.gray400),
+                    SizedBox(width: 8),
+                    Text('DETALLES DE LA COMPRA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.gray700, letterSpacing: 0.5)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _productRow('MONTURA', o.montura ?? 'No registrada', o.esMonturaCliente == true),
+                const SizedBox(height: 8),
+                _productRow('LUNAS / CRISTALES', o.tipoLuna ?? 'No registrados', o.esLunaCliente == true),
+                const SizedBox(height: 16),
+                // TOTAL
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text('TOTAL INVERTIDO: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+                    Text('S/ ${o.montoTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.gray900)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _clinicalInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.gray400)),
+        const SizedBox(height: 2),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.gray800)),
+      ],
+    );
+  }
+
+  Widget _productRow(String label, String value, bool isClient) {
+    return Row(
+      children: [
+        Text('$label: ', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray600)),
+        Text(value, style: const TextStyle(fontSize: 11, color: AppColors.gray800)),
+        if (isClient)
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(4)),
+            child: const Text('PROPIO', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.primary)),
+          ),
+      ],
+    );
+  }
+
+  Widget _statusBadge(String status) {
+    Color c = AppColors.primary;
+    if (status == 'ENTREGADO') c = AppColors.success;
+    if (status == 'PENDIENTE') c = Colors.orange;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: c.withOpacity(0.2))),
+      child: Text(status, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: c)),
+    );
+  }
+
+  Widget _info(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(value, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
     );
   }
 }
