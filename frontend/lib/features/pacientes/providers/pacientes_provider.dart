@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import '../models/paciente_model.dart';
+import '../models/historial_paciente_dto.dart';
 import '../../../core/network/api_service.dart';
 
 class PacientesProvider with ChangeNotifier {
   List<Paciente> _pacientes = [];
   List<Paciente> _pacientesVip = [];
+  HistorialPacienteDTO? _historialResumen;
 
   bool _isLoading = false;
   String _errorMessage = '';
 
   List<Paciente> get pacientes => _pacientes;
   List<Paciente> get pacientesVip => _pacientesVip;
+  HistorialPacienteDTO? get historialResumen => _historialResumen;
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
@@ -29,6 +32,17 @@ class PacientesProvider with ChangeNotifier {
       _errorMessage = e.toString();
     } finally {
       _isLoading = false; notifyListeners();
+    }
+  }
+
+  Future<HistorialPacienteDTO?> fetchHistorialResumen(int pacienteId) async {
+    try {
+      final response = await ApiService.get('/pacientes/$pacienteId/historial');
+      _historialResumen = HistorialPacienteDTO.fromJson(response);
+      return _historialResumen;
+    } catch (e) {
+      print("❌ Error al traer resumen: $e");
+      return null;
     }
   }
 
