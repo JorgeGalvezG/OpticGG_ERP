@@ -47,6 +47,17 @@ public class UsuarioController {
         // Retornará código 200 OK con el usuario creado (sin la contraseña gracias al @JsonIgnore)
         return ResponseEntity.ok(usuarioService.crearUsuario(nuevoUsuario));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario datos) {
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(id, datos));
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<Usuario> cambiarEstado(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.cambiarEstado(id));
+    }
+
     // GET: /api/usuarios/buscar?termino=maria
     @GetMapping("/buscar")
     public ResponseEntity<Page<Usuario>> buscarUsuarios(
