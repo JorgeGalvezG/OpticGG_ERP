@@ -19,6 +19,8 @@ public class NuevaVentaCompletaDTO {
     // 3. Receta Visual (Historial Clínico)
     private String graduacionOd; // Ej: "Esf: -1.00, Cil: -0.50..."
     private String graduacionOi;
+    private String adicion;
+    private String dip;
 
     // 4. Productos
     private Boolean esLunaCliente;
