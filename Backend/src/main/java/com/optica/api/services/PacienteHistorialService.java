@@ -67,6 +67,8 @@ public class PacienteHistorialService {
         historial.ifPresent(h -> builder
                 .graduacionOd(h.getGraduacionOd())
                 .graduacionOi(h.getGraduacionOi())
+                .adicion(h.getAdicion())
+                .dip(h.getDip())
                 .tipoLuna(h.getTipoLuna())
                 .esLunaCliente(h.getEsLunaCliente())
                 .montura(h.getMontura())
