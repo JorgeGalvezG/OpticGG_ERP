@@ -39,6 +39,6 @@ public class MovimientoCaja {
     private Tienda tienda;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    @Column(updatable = false, insertable = false)
+    @Column(updatable = false)
     private LocalDateTime fecha;
 }
