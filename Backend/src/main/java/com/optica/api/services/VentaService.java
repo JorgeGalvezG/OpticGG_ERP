@@ -37,6 +37,7 @@ public class VentaService {
 
     @Transactional
     public Venta procesarNuevaVenta(NuevaVentaCompletaDTO dto) {
+        LocalDateTime ahora = LocalDateTime.now();
 
         // 1. Validar que existan paciente y vendedor
         Paciente paciente = pacienteRepository.findById(dto.getPacienteId())
@@ -50,6 +51,8 @@ public class VentaService {
         consulta.setPaciente(paciente);
         consulta.setVendedor(vendedor);
         consulta.setMotivo("Venta de Lentes");
+        consulta.setReceta(dto.getObservaciones()); // Usamos observaciones como receta inicial
+        consulta.setFecha(ahora);
         Consulta consultaGuardada = consultaRepository.save(consulta);
 
         // 3. Crear historial clínico (receta)
@@ -57,6 +60,8 @@ public class VentaService {
         historial.setConsulta(consultaGuardada);
         historial.setGraduacionOd(dto.getGraduacionOd());
         historial.setGraduacionOi(dto.getGraduacionOi());
+        historial.setAdicion(dto.getAdicion());
+        historial.setDip(dto.getDip());
         historial.setTipoLuna(dto.getTipoLuna());
         historial.setEsLunaCliente(dto.getEsLunaCliente());
         historial.setMontura(dto.getMontura());
@@ -75,10 +80,13 @@ public class VentaService {
         venta.setMontoACuenta(dto.getMontoACuenta());
         venta.setMontoSaldo(saldo);
         venta.setMetodoPago(dto.getMetodoPago());
+        venta.setFecha(ahora);
         
         // Copiar campos de historial a la venta
         venta.setGraduacionOd(dto.getGraduacionOd());
         venta.setGraduacionOi(dto.getGraduacionOi());
+        venta.setAdicion(dto.getAdicion());
+        venta.setDip(dto.getDip());
         venta.setTipoLuna(dto.getTipoLuna());
         venta.setEsLunaCliente(dto.getEsLunaCliente());
         venta.setMontura(dto.getMontura());
@@ -97,7 +105,7 @@ public class VentaService {
         Venta ventaGuardada = ventaRepository.save(venta);
 
         // 5. Crear orden de trabajo (Kanban)
-        String codigoOrden = "OT-" + LocalDateTime.now()
+        String codigoOrden = "OT-" + ahora
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
 
         OrdenTrabajo orden = new OrdenTrabajo();
@@ -109,10 +117,13 @@ public class VentaService {
         orden.setMontoACuenta(dto.getMontoACuenta());
         orden.setMontoSaldo(saldo);
         orden.setEstado(EstadoTrabajo.PENDIENTE);
+        orden.setFecha(ahora);
         
         // Copiar campos de historial a la orden
         orden.setGraduacionOd(dto.getGraduacionOd());
         orden.setGraduacionOi(dto.getGraduacionOi());
+        orden.setAdicion(dto.getAdicion());
+        orden.setDip(dto.getDip());
         orden.setTipoLuna(dto.getTipoLuna());
         orden.setEsLunaCliente(dto.getEsLunaCliente());
         orden.setMontura(dto.getMontura());
@@ -130,6 +141,7 @@ public class VentaService {
             ingreso.setDescripcion("Venta (" + dto.getMetodoPago() + ") - Orden: " + codigoOrden);
             ingreso.setUsuario(vendedor);
             ingreso.setTienda(dto.getTienda());
+            ingreso.setFecha(ahora);
             movimientoCajaRepository.save(ingreso);
         }
 
