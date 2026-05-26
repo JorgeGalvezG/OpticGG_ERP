@@ -50,7 +50,7 @@ public class OrdenTrabajo {
     private Tienda tienda;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    @Column(updatable = false, insertable = false)
+    @Column(updatable = false)
     private LocalDateTime fecha;
 
     // --- NUEVOS CAMPOS PARA HISTORIAL Y TICKET ---
@@ -59,6 +59,12 @@ public class OrdenTrabajo {
 
     @Column(name = "graduacion_oi")
     private String graduacionOi;
+
+    @Column(name = "adicion")
+    private String adicion;
+
+    @Column(name = "dip")
+    private String dip;
 
     @Column(name = "tipo_luna")
     private String tipoLuna;
