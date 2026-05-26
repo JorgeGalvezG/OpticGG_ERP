@@ -98,6 +98,12 @@ class TicketPdfService {
               if (orden.graduacionOi != null && orden.graduacionOi!.isNotEmpty)
                 _buildFilaTexto('O.I.:', orden.graduacionOi!),
 
+              if (orden.adicion != null && orden.adicion!.isNotEmpty)
+                _buildFilaTexto('ADD:', orden.adicion!),
+
+              if (orden.dip != null && orden.dip!.isNotEmpty)
+                _buildFilaTexto('D.I.P.:', orden.dip!),
+
               pw.SizedBox(height: 10),
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 8),
