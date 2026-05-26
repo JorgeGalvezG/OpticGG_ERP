@@ -275,7 +275,7 @@ class _VentasScreenState extends State<VentasScreen> {
                   children: [
                     Text(o.pacienteNombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 4),
-                    Text('Orden #${o.numeroOrden} · ${o.fecha.substring(0,10)}', style: const TextStyle(color: AppColors.gray500, fontSize: 12)),
+                    Text('Orden #${o.numeroOrden} · ${o.fecha.length >= 10 ? o.fecha.substring(0,10) : o.fecha}', style: const TextStyle(color: AppColors.gray500, fontSize: 12)),
                     if (o.montura != null || o.tipoLuna != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
@@ -569,6 +569,48 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     return "E:${esf.isEmpty ? '0' : esf} C:${cil.isEmpty ? '0' : cil} A:${eje.isEmpty ? '0' : eje}";
   }
 
+  void _parsearMedida(String? medida, TextEditingController e, TextEditingController c, TextEditingController j) {
+    if (medida == null || medida == "Plano" || medida.isEmpty) {
+      e.text = ""; c.text = ""; j.text = "";
+      return;
+    }
+    // Formato: E:+1.75 C:0 A:0
+    try {
+      final parts = medida.split(' ');
+      for (var p in parts) {
+        if (p.startsWith('E:')) e.text = p.substring(2);
+        if (p.startsWith('C:')) c.text = p.substring(2);
+        if (p.startsWith('A:')) j.text = p.substring(2);
+      }
+    } catch (err) {
+      print("Error parseando medida: $err");
+    }
+  }
+
+  void _cargarUltimaReceta() async {
+    if (_pacienteId == null) return;
+    
+    final prov = Provider.of<PacientesProvider>(context, listen: false);
+    final historial = await prov.fetchHistorialResumen(_pacienteId!);
+    
+    if (historial != null && mounted) {
+      setState(() {
+        _parsearMedida(historial.graduacionOd, _odEsf, _odCil, _odEje);
+        _parsearMedida(historial.graduacionOi, _oiEsf, _oiCil, _oiEje);
+        _addCtrl.text = historial.adicion ?? "";
+        _dipCtrl.text = historial.dip ?? "";
+        
+        // También podemos cargar el material si lo desea
+        if (historial.tipoLuna != null && historial.tipoLuna != "PROPIA") {
+          _lunaCtrl.text = historial.tipoLuna!;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Receta cargada desde el historial"), backgroundColor: AppColors.success));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No se encontró historial previo para este paciente")));
+    }
+  }
+
   void _guardarVenta() async {
     if (_pacienteId == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un paciente"), backgroundColor: AppColors.warning));
@@ -588,6 +630,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       montoACuenta: double.tryParse(_abonoCtrl.text) ?? 0,
       graduacionOd: _armarMedida(_odEsf.text, _odCil.text, _odEje.text),
       graduacionOi: _armarMedida(_oiEsf.text, _oiCil.text, _oiEje.text),
+      adicion: _addCtrl.text,
+      dip: _dipCtrl.text,
       esLunaCliente: _lunasPropias,
       tipoLuna: _lunasPropias ? "PROPIA" : _lunaCtrl.text,
       esMonturaCliente: _monturaPropia,
@@ -641,8 +685,19 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                         _buildPacienteSearcher(),
                         _vendedorDropdown(),
                       ]),
-                      const SizedBox(height: 24),
-                      _section('2. Receta Oftálmica'),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _section('2. Receta Oftálmica'),
+                          if (_pacienteId != null)
+                            TextButton.icon(
+                              onPressed: _cargarUltimaReceta,
+                              icon: const Icon(Icons.history_rounded, size: 16),
+                              label: const Text('Cargar Última', style: TextStyle(fontSize: 12)),
+                              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                            ),
+                        ],
+                      ),
                       _buildDataTable(),
                       const SizedBox(height: 16),
                       _row(isMobile, [
