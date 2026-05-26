@@ -31,6 +31,20 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
             "AND DATE(m.fecha) = CURRENT_DATE")
     BigDecimal sumarPorTipoHoyGlobal(@Param("tipo") TipoMovimiento tipo);
 
+    // ── AYER (por tienda) ─────────────────────────────────────────────────────
+    @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +
+            "WHERE m.tienda = :tienda AND m.tipo = :tipo " +
+            "AND DATE(m.fecha) = DATE(CURRENT_DATE - INTERVAL 1 DAY)")
+    BigDecimal sumarPorTiendaYTipoAyer(
+            @Param("tienda") Tienda tienda,
+            @Param("tipo") TipoMovimiento tipo);
+
+    // ── AYER (global ALL) ─────────────────────────────────────────────────────
+    @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +
+            "WHERE m.tipo = :tipo " +
+            "AND DATE(m.fecha) = DATE(CURRENT_DATE - INTERVAL 1 DAY)")
+    BigDecimal sumarPorTipoAyerGlobal(@Param("tipo") TipoMovimiento tipo);
+
     // ── ÚLTIMOS 15 DÍAS (por tienda) ─────────────────────────────────────────
     @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +
             "WHERE m.tienda = :tienda AND m.tipo = :tipo " +
