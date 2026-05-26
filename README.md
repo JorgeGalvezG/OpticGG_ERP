@@ -40,12 +40,24 @@ Esquema definido en `BD_optica.sql`
 
 ---
 
+## 🚀 Flujo de Trabajo Actualizado
+
+### 1. Ventas y Automatización
+- **Registro Único**: Al realizar una nueva venta desde Flutter, el sistema dispara una transacción atómica en Java que registra la consulta, el historial clínico, la venta financiera, la orden de trabajo para laboratorio y el ingreso inicial a caja.
+- **Historial Inteligente**: El vendedor puede usar el botón "Cargar Última" para recuperar instantáneamente la receta anterior del paciente, agilizando la atención.
+
+### 2. Dashboard y Analítica en Tiempo Real
+- **Control Financiero**: Comparativas visuales de ingresos y egresos diarios, quincenales y mensuales.
+- **KPIs**: Indicadores de rendimiento con porcentajes de varianza respecto al día anterior.
+- **Fidelización**: Notificaciones de cumpleaños integradas con WhatsApp para enviar saludos personalizados directamente desde la app.
+
+### 3. Seguimiento Logístico (Kanban)
+- Las órdenes de trabajo fluyen por estados configurables. El cambio de estado se refleja en tiempo real para todos los dispositivos de la tienda.
+
+---
+
 ## 🛠️ Guía de Implementación para IA
-Si eres un agente trabajando en este código, sigue estas reglas:
-1.  **Contexto de Tienda:** Nunca olvides filtrar por el campo `tienda` (C1, C2, C3). El Admin puede ver "ALL", pero el Vendedor solo su sede.
-2.  **Integridad Financiera:** Los cálculos de `monto_total - monto_a_cuenta = monto_saldo` deben ser consistentes en el Backend y reflejarse correctamente en el Ticket PDF del Frontend.
-3.  **Tickets:** La clase `TicketPdfService` en el frontend es la fuente de verdad para la impresión. Utiliza la constante `_sucursales` para mapear los datos legales de `config_tienda`.
-4.  **Modelos:** El modelo `OrdenTrabajo` en Flutter debe mantener sincronía con los campos de historial clínico para que los tickets salgan completos.
+Este repositorio incluye un archivo especializado llamado `IA_client.md`. Si eres una IA, lee ese archivo primero para obtener el contexto completo del stack, esquema de base de datos y reglas de negocio.
 
 ---
 *Este proyecto está optimizado para la eficiencia operativa y la transparencia financiera en el sector óptico.*
