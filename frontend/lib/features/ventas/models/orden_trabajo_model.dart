@@ -14,6 +14,8 @@ class OrdenTrabajo {
   final bool? esMonturaCliente;
   final String? graduacionOd;
   final String? graduacionOi;
+  final String? adicion;
+  final String? dip;
   final String? observaciones;
 
   OrdenTrabajo({
@@ -30,6 +32,8 @@ class OrdenTrabajo {
     this.esMonturaCliente,
     this.graduacionOd,
     this.graduacionOi,
+    this.adicion,
+    this.dip,
     this.observaciones,
   });
 
@@ -52,6 +56,8 @@ class OrdenTrabajo {
       esMonturaCliente: json['esMonturaCliente'],
       graduacionOd: json['graduacionOd'],
       graduacionOi: json['graduacionOi'],
+      adicion: json['adicion'],
+      dip: json['dip'],
       observaciones: json['observaciones'],
     );
   }
