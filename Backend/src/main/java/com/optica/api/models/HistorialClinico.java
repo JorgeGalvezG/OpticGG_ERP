@@ -25,6 +25,12 @@ public class HistorialClinico {
     @Column(name = "graduacion_oi", length = 255)
     private String graduacionOi;
 
+    @Column(name = "adicion", length = 50)
+    private String adicion;
+
+    @Column(name = "dip", length = 50)
+    private String dip;
+
     @Column(name = "tipo_luna", length = 100)
     private String tipoLuna;
 
