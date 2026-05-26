@@ -155,6 +155,7 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
                   itemBuilder: (context, index) {
                     final u = usuarios[index];
                     return _UserRow(
+                      id: u.id!,
                       username: u.username,
                       rol: u.rol,
                       tienda: u.tienda,
@@ -172,12 +173,14 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
 }
 
 class _UserRow extends StatelessWidget {
+  final int id;
   final String username;
   final String rol;
   final String tienda;
   final bool activo;
 
   const _UserRow({
+    required this.id,
     required this.username,
     required this.rol,
     required this.tienda,
@@ -290,7 +293,21 @@ class _UserRow extends StatelessWidget {
           Switch(
             value: activo,
             activeColor: AppColors.success,
-            onChanged: (value) {},
+            onChanged: (value) async {
+              final exito = await Provider.of<UsuariosProvider>(
+                context,
+                listen: false,
+              ).cambiarEstadoActivo(id);
+              
+              if (exito && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Estado de $username actualizado'),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
+            },
           ),
           // Aquí conectaremos el suspender cuenta en el futuro
         ],
