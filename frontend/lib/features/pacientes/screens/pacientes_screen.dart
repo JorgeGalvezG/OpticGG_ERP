@@ -1256,6 +1256,14 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
                     Expanded(child: _clinicalInfo('OJO IZQUIERDO (OI)', o.graduacionOi ?? 'Plano')),
                   ],
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: _clinicalInfo('ADICIÓN (ADD)', o.adicion ?? '---')),
+                    Container(width: 1, height: 30, color: AppColors.gray100, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                    Expanded(child: _clinicalInfo('D.I.P.', o.dip ?? '---')),
+                  ],
+                ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: Divider(height: 1, color: AppColors.gray100),
@@ -1272,6 +1280,11 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
                 _productRow('MONTURA', o.montura ?? 'No registrada', o.esMonturaCliente == true),
                 const SizedBox(height: 8),
                 _productRow('LUNAS / CRISTALES', o.tipoLuna ?? 'No registrados', o.esLunaCliente == true),
+                if (o.observaciones != null && o.observaciones!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: _productRow('OBSERVACIONES', o.observaciones!, false),
+                  ),
                 const SizedBox(height: 16),
                 // TOTAL
                 Row(
