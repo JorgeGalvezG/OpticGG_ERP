@@ -191,10 +191,10 @@ class _MainStatsGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 20,
       mainAxisSpacing: 20,
-      childAspectRatio: isMobile ? 1.4 : 1.8,
+      childAspectRatio: isMobile ? 1.1 : 1.5,
       children: [
-        _StatCard('Ingresos Hoy', resumen.ingresosHoy, Icons.add_circle_outline_rounded, Colors.green),
-        _StatCard('Egresos Hoy', resumen.egresosHoy, Icons.remove_circle_outline_rounded, Colors.redAccent),
+        _StatCard('Ingresos Hoy', resumen.ingresosHoy, Icons.add_circle_outline_rounded, Colors.green, pct: resumen.pctIngresosHoy),
+        _StatCard('Egresos Hoy', resumen.egresosHoy, Icons.remove_circle_outline_rounded, Colors.redAccent, pct: resumen.pctEgresosHoy, reversePct: true),
         _StatCard('Balance Neto', balance, Icons.account_balance_wallet_outlined, Colors.blue),
         _StatCard('Pendientes Lab.', resumen.ordenesPendientes.toDouble(), Icons.biotech_rounded, Colors.orange, isMoney: false),
       ],
@@ -208,12 +208,19 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final bool isMoney;
-  const _StatCard(this.title, this.value, this.icon, this.color, {this.isMoney = true});
+  final double? pct;
+  final bool reversePct;
+
+  const _StatCard(this.title, this.value, this.icon, this.color, {this.isMoney = true, this.pct, this.reversePct = false});
 
   @override
   Widget build(BuildContext context) {
+    bool isPositive = (pct ?? 0) >= 0;
+    if (reversePct) isPositive = !isPositive;
+    final pctColor = isPositive ? Colors.green : Colors.red;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -228,14 +235,26 @@ class _StatCard extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+              Expanded(child: Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500), overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: 12),
           FittedBox(
             child: Text(isMoney ? 'S/ ${value.toStringAsFixed(2)}' : value.toInt().toString(), 
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.gray900)),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.gray900)),
           ),
+          if (pct != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(pct! >= 0 ? Icons.trending_up : Icons.trending_down, size: 12, color: pctColor),
+                const SizedBox(width: 4),
+                Text('${pct! >= 0 ? '+' : ''}${pct!.toStringAsFixed(1)}%', 
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: pctColor)),
+                const Text(' vs ayer', style: TextStyle(fontSize: 10, color: AppColors.gray400)),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -254,41 +273,54 @@ class _HistoricalChartHorizontal extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionTitle('RENDIMIENTO HISTÓRICO (INGRESOS)'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const _SectionTitle('FLUJO DE CAJA (COMPARATIVO)'),
+              Row(
+                children: [
+                  _indicator('Ingresos', Colors.green.shade400),
+                  const SizedBox(width: 16),
+                  _indicator('Egresos', Colors.red.shade400),
+                ],
+              ),
+            ],
+          ),
           const SizedBox(height: 32),
           SizedBox(
-            height: 180,
+            height: 250,
             child: BarChart(
               BarChartData(
                 barTouchData: BarTouchData(enabled: true),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, m) => Text('S/ ${v.toInt()}', style: const TextStyle(fontSize: 9, color: AppColors.gray400)))),
-                  leftTitles: AxisTitles(
+                  bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 80,
                       getTitlesWidget: (v, m) {
-                        if (v == 0) return const Text('Este Mes', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
+                        if (v == 0) return const Text('Hoy', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
                         if (v == 1) return const Text('15 Días', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
-                        if (v == 2) return const Text('Hoy', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
+                        if (v == 2) return const Text('30 Días', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold));
                         return const SizedBox();
                       },
                     ),
                   ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 60,
+                      getTitlesWidget: (v, m) => Text('S/ ${v.toInt()}', style: const TextStyle(fontSize: 9, color: AppColors.gray400)),
+                    ),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
-                gridData: const FlGridData(show: true, drawVerticalLine: true, drawHorizontalLine: false),
+                gridData: const FlGridData(show: true, drawVerticalLine: false),
                 alignment: BarChartAlignment.spaceAround,
-                // SWAP AXES by using BarChartGroupData logic if needed, but fl_chart doesn't support horizontal bars natively in a simple way.
-                // We'll simulate it with thin vertical bars for now if native horizontal is complex, or use the BarChart as is but with better layout.
-                // Wait, fl_chart DOES support horizontal bars in newer versions or via some tricks. 
-                // Let's stick to a very clean vertical one if horizontal is too buggy without extra deps.
                 barGroups: [
-                  _group(0, resumen.ingresosMes, AppColors.primary),
-                  _group(1, resumen.ingresosQuincena, Colors.blue.shade400),
-                  _group(2, resumen.ingresosHoy, Colors.green.shade400),
+                  _group(0, resumen.ingresosHoy, resumen.egresosHoy),
+                  _group(1, resumen.ingresosQuincena, resumen.egresosQuincena),
+                  _group(2, resumen.ingresosMes, resumen.egresosMes),
                 ],
               ),
             ),
@@ -298,8 +330,17 @@ class _HistoricalChartHorizontal extends StatelessWidget {
     );
   }
 
-  BarChartGroupData _group(int x, double y, Color color) {
-    return BarChartGroupData(x: x, barRods: [BarChartRodData(toY: y, color: color, width: 20, borderRadius: BorderRadius.circular(4))]);
+  Widget _indicator(String l, Color c) => Row(children: [Container(width: 8, height: 8, color: c), const SizedBox(width: 4), Text(l, style: const TextStyle(fontSize: 10, color: AppColors.gray500))]);
+
+  BarChartGroupData _group(int x, double ing, double egr) {
+    return BarChartGroupData(
+      x: x, 
+      barRods: [
+        BarChartRodData(toY: ing, color: Colors.green.shade400, width: 15, borderRadius: BorderRadius.circular(4)),
+        BarChartRodData(toY: egr, color: Colors.red.shade400, width: 15, borderRadius: BorderRadius.circular(4)),
+      ],
+      betweenBarsSpace: 4,
+    );
   }
 }
 
@@ -397,80 +438,128 @@ class _QuickActionsBlock extends StatelessWidget {
 }
 
 class _GraficoMetodosPago extends StatelessWidget {
-  final Map<String, double> datos;
-  const _GraficoMetodosPago({required this.datos});
+  final DashboardResumen resumen;
+  const _GraficoMetodosPago({required this.resumen});
 
   @override
   Widget build(BuildContext context) {
+    final datos = resumen.metodosPagoMes;
     final total = datos.values.fold(0.0, (a, b) => a + b);
+    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.gray200)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionTitle('COBROS POR MÉTODO'),
+          const _SectionTitle('MÉTODOS DE PAGO (MENSUAL)'),
           const SizedBox(height: 24),
-          SizedBox(
-            height: 140,
-            child: PieChart(
-              PieChartData(
-                sections: datos.entries.map((e) => PieChartSectionData(
-                  value: e.value, 
-                  color: _getColor(e.key), 
-                  radius: 40, 
-                  title: '${(e.value/total*100).toInt()}%',
-                  titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
-                )).toList(),
+          if (total == 0)
+            const SizedBox(height: 140, child: Center(child: Text('Sin datos este mes', style: TextStyle(fontSize: 12, color: AppColors.gray400))))
+          else
+            SizedBox(
+              height: 140,
+              child: PieChart(
+                PieChartData(
+                  sections: datos.entries.map((e) => PieChartSectionData(
+                    value: e.value, 
+                    color: _getColor(e.key), 
+                    radius: 40, 
+                    title: '${(e.value/total*100).toInt()}%',
+                    titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                  )).toList(),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
   Color _getColor(String k) {
-    if (k == 'EFECTIVO') return Colors.green.shade400;
-    if (k == 'TARJETA') return Colors.blue.shade400;
-    return Colors.purple.shade400;
+    final key = k.toUpperCase();
+    if (key.contains('EFECTIVO')) return Colors.green.shade400;
+    if (key.contains('TARJETA')) return Colors.blue.shade400;
+    if (key.contains('YAPE') || key.contains('PLIN')) return Colors.purple.shade400;
+    return AppColors.gray400;
   }
 }
 
-class _RankingVendedores extends StatelessWidget {
-  final Map<String, double> vendedores;
-  const _RankingVendedores({required this.vendedores});
+class _RankingVendedores extends StatefulWidget {
+  final DashboardResumen resumen;
+  const _RankingVendedores({required this.resumen});
+
+  @override
+  State<_RankingVendedores> createState() => _RankingVendedoresState();
+}
+
+class _RankingVendedoresState extends State<_RankingVendedores> {
+  int _timeframe = 0; // 0: Hoy, 1: 15 Dias, 2: 30 Dias
 
   @override
   Widget build(BuildContext context) {
-    final sorted = vendedores.entries.toList()..sort((a,b) => b.value.compareTo(a.value));
+    Map<String, double> datos;
+    String label;
+    if (_timeframe == 0) {
+      datos = widget.resumen.ventasPorVendedor;
+      label = 'VENTAS HOY';
+    } else if (_timeframe == 1) {
+      datos = widget.resumen.ventasVendedores15Dias;
+      label = 'VENTAS 15 DÍAS';
+    } else {
+      datos = widget.resumen.ventasVendedores30Dias;
+      label = 'VENTAS 30 DÍAS';
+    }
+
+    final sorted = datos.entries.toList()..sort((a,b) => b.value.compareTo(a.value));
+    final maxVal = sorted.isEmpty ? 1.0 : sorted.first.value;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.gray200)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionTitle('TOP VENDEDORES (HOY)'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _SectionTitle(label),
+              DropdownButton<int>(
+                value: _timeframe,
+                underline: const SizedBox(),
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                items: const [
+                  DropdownMenuItem(value: 0, child: Text('Hoy')),
+                  DropdownMenuItem(value: 1, child: Text('15 Días')),
+                  DropdownMenuItem(value: 2, child: Text('30 Días')),
+                ],
+                onChanged: (v) => setState(() => _timeframe = v!),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
-          ...sorted.take(3).map((e) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray800)),
-                    Text('S/ ${e.value.toInt()}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(value: 0.8, backgroundColor: AppColors.gray100, color: AppColors.primary.withOpacity(0.6), minHeight: 4),
-                ),
-              ],
-            ),
-          )).toList(),
+          if (sorted.isEmpty)
+             const SizedBox(height: 100, child: Center(child: Text('Sin ventas en este periodo', style: TextStyle(fontSize: 12, color: AppColors.gray400))))
+          else
+            ...sorted.take(5).map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray800)),
+                      Text('S/ ${e.value.toStringAsFixed(0)}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(value: e.value / maxVal, backgroundColor: AppColors.gray100, color: AppColors.primary.withOpacity(0.6), minHeight: 4),
+                  ),
+                ],
+              ),
+            )).toList(),
         ],
       ),
     );
