@@ -23,12 +23,21 @@ public class DashboardResumenDTO {
     // ── CONTROL FINANCIERO: HOY ──────────────────────────────────────────────
     private BigDecimal ingresosHoy;
     private BigDecimal egresosHoy;
+    private Double pctIngresosHoy; // Porcentaje comparado con ayer
+    private Double pctEgresosHoy;
 
     // ── CONTROL FINANCIERO: ÚLTIMOS 15 DÍAS ─────────────────────────────────
     private BigDecimal ingresosQuincena;
     private BigDecimal egresosQuincena;
 
-    // ── CONTROL FINANCIERO: MES ACTUAL ──────────────────────────────────────
+    // ── CONTROL FINANCIERO: ÚLTIMOS 30 DÍAS ─────────────────────────────────
     private BigDecimal ingresosMes;
     private BigDecimal egresosMes;
+
+    // ── RANKING DE VENDEDORES (Filtros de tiempo) ───────────────────────────
+    private Map<String, BigDecimal> ventasVendedores15Dias;
+    private Map<String, BigDecimal> ventasVendedores30Dias;
+
+    // ── MÉTODOS DE PAGO (Mensual) ────────────────────────────────────────────
+    private Map<String, BigDecimal> metodosPagoMes;
 }
