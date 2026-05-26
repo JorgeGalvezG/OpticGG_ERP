@@ -10,6 +10,8 @@ class NuevaVentaDTO {
   // Receta
   final String graduacionOd;
   final String graduacionOi;
+  final String adicion;
+  final String dip;
 
   // Productos
   final bool esLunaCliente;
@@ -28,6 +30,8 @@ class NuevaVentaDTO {
     required this.montoACuenta,
     required this.graduacionOd,
     required this.graduacionOi,
+    required this.adicion,
+    required this.dip,
     required this.esLunaCliente,
     required this.tipoLuna,
     required this.esMonturaCliente,
@@ -46,6 +50,8 @@ class NuevaVentaDTO {
       'montoACuenta': montoACuenta,
       'graduacionOd': graduacionOd,
       'graduacionOi': graduacionOi,
+      'adicion': adicion,
+      'dip': dip,
       'esLunaCliente': esLunaCliente,
       'tipoLuna': tipoLuna,
       'esMonturaCliente': esMonturaCliente,
