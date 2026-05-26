@@ -36,6 +36,6 @@ public class Consulta {
     private String recomendaciones;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    @Column(updatable = false, insertable = false)
+    @Column(updatable = false)
     private LocalDateTime fecha;
 }
