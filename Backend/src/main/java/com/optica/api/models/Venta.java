@@ -49,7 +49,7 @@ public class Venta {
     private Tienda tienda;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    @Column(updatable = false, insertable = false)
+    @Column(updatable = false)
     private LocalDateTime fecha;
 
     // --- CAMPOS DE HISTORIAL PARA LA VENTA ---
@@ -58,6 +58,12 @@ public class Venta {
 
     @Column(name = "graduacion_oi")
     private String graduacionOi;
+
+    @Column(name = "adicion")
+    private String adicion;
+
+    @Column(name = "dip")
+    private String dip;
 
     @Column(name = "tipo_luna")
     private String tipoLuna;
