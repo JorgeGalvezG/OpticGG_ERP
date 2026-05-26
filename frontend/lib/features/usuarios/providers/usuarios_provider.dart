@@ -67,6 +67,19 @@ class UsuariosProvider with ChangeNotifier {
       return false; // Falló
     }
   }
+
+  Future<bool> cambiarEstadoActivo(int userId) async {
+    try {
+      await ApiService.patch('/usuarios/$userId/estado', {});
+      await fetchTodosLosUsuarios();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> buscarUsuarios(String termino) async {
     if (termino.isEmpty) {
       return fetchTodosLosUsuarios(); // Si borra el texto, trae a todos de vuelta
