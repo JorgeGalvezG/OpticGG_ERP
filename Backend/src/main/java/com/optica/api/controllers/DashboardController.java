@@ -35,17 +35,24 @@ public class DashboardController {
     public DashboardResumenDTO obtenerResumen(@PathVariable String tiendaStr) {
 
         Map<String, BigDecimal> totalesPorMetodo = new HashMap<>();
+        Map<String, BigDecimal> metodosPagoMes = new HashMap<>();
         Map<String, BigDecimal> ventasPorVendedor = new HashMap<>();
+        Map<String, BigDecimal> ventasVendedores15Dias = new HashMap<>();
+        Map<String, BigDecimal> ventasVendedores30Dias = new HashMap<>();
+
         long cumpleaneros;
         long pendientes;
         BigDecimal ingresosHoy;
         BigDecimal egresosHoy;
+        BigDecimal ingresosAyer;
+        BigDecimal egresosAyer;
         BigDecimal ingresosQuincena;
         BigDecimal egresosQuincena;
         BigDecimal ingresosMes;
         BigDecimal egresosMes;
 
         LocalDateTime hace14Dias = LocalDateTime.now().minusDays(14);
+        LocalDateTime hace30Dias = LocalDateTime.now().minusDays(30);
 
         if (tiendaStr.equalsIgnoreCase("ALL")) {
 
@@ -54,11 +61,24 @@ public class DashboardController {
                 String metodo = fila[0] != null ? (String) fila[0] : "OTROS";
                 totalesPorMetodo.put(metodo, (BigDecimal) fila[1]);
             }
+            // Métodos de pago mes — global
+            for (Object[] fila : ventaRepository.sumarIngresosPorMetodoMesGlobal()) {
+                String metodo = fila[0] != null ? (String) fila[0] : "OTROS";
+                metodosPagoMes.put(metodo, (BigDecimal) fila[1]);
+            }
 
             // Vendedores hoy — global
             for (Object[] fila : ventaRepository.sumarVentasPorVendedorHoyGlobal()) {
                 String nombre = fila[0] != null ? (String) fila[0] : "Desconocido";
                 ventasPorVendedor.put(nombre, (BigDecimal) fila[1]);
+            }
+            // Vendedores 15 dias — global
+            for (Object[] fila : ventaRepository.sumarVentasPorVendedorRangoGlobal(hace14Dias)) {
+                ventasVendedores15Dias.put((String) fila[0], (BigDecimal) fila[1]);
+            }
+            // Vendedores 30 dias — global
+            for (Object[] fila : ventaRepository.sumarVentasPorVendedorRangoGlobal(hace30Dias)) {
+                ventasVendedores30Dias.put((String) fila[0], (BigDecimal) fila[1]);
             }
 
             cumpleaneros = pacienteRepository.contarCumpleanerosHoyGlobal();
@@ -66,10 +86,12 @@ public class DashboardController {
 
             ingresosHoy      = cajaRepository.sumarPorTipoHoyGlobal(TipoMovimiento.ENTRADA);
             egresosHoy       = cajaRepository.sumarPorTipoHoyGlobal(TipoMovimiento.SALIDA);
+            ingresosAyer     = cajaRepository.sumarPorTipoAyerGlobal(TipoMovimiento.ENTRADA);
+            egresosAyer      = cajaRepository.sumarPorTipoAyerGlobal(TipoMovimiento.SALIDA);
             ingresosQuincena = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.ENTRADA, hace14Dias);
             egresosQuincena  = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.SALIDA, hace14Dias);
-            ingresosMes      = cajaRepository.sumarPorTipoMesActualGlobal(TipoMovimiento.ENTRADA);
-            egresosMes       = cajaRepository.sumarPorTipoMesActualGlobal(TipoMovimiento.SALIDA);
+            ingresosMes      = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.ENTRADA, hace30Dias);
+            egresosMes       = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.SALIDA, hace30Dias);
 
         } else {
 
@@ -80,11 +102,24 @@ public class DashboardController {
                 String metodo = fila[0] != null ? (String) fila[0] : "OTROS";
                 totalesPorMetodo.put(metodo, (BigDecimal) fila[1]);
             }
+            // Métodos de pago mes — por tienda
+            for (Object[] fila : ventaRepository.sumarIngresosPorMetodoMes(tiendaEnum)) {
+                String metodo = fila[0] != null ? (String) fila[0] : "OTROS";
+                metodosPagoMes.put(metodo, (BigDecimal) fila[1]);
+            }
 
             // Vendedores hoy — por tienda
             for (Object[] fila : ventaRepository.sumarVentasPorVendedorHoy(tiendaEnum)) {
                 String nombre = fila[0] != null ? (String) fila[0] : "Desconocido";
                 ventasPorVendedor.put(nombre, (BigDecimal) fila[1]);
+            }
+            // Vendedores 15 dias — por tienda
+            for (Object[] fila : ventaRepository.sumarVentasPorVendedorRango(tiendaEnum, hace14Dias)) {
+                ventasVendedores15Dias.put((String) fila[0], (BigDecimal) fila[1]);
+            }
+            // Vendedores 30 dias — por tienda
+            for (Object[] fila : ventaRepository.sumarVentasPorVendedorRango(tiendaEnum, hace30Dias)) {
+                ventasVendedores30Dias.put((String) fila[0], (BigDecimal) fila[1]);
             }
 
             cumpleaneros = pacienteRepository.contarCumpleanerosHoy(tiendaEnum);
@@ -92,24 +127,41 @@ public class DashboardController {
 
             ingresosHoy      = cajaRepository.sumarPorTiendaYTipoHoy(tiendaEnum, TipoMovimiento.ENTRADA);
             egresosHoy       = cajaRepository.sumarPorTiendaYTipoHoy(tiendaEnum, TipoMovimiento.SALIDA);
+            ingresosAyer     = cajaRepository.sumarPorTiendaYTipoAyer(tiendaEnum, TipoMovimiento.ENTRADA);
+            egresosAyer      = cajaRepository.sumarPorTiendaYTipoAyer(tiendaEnum, TipoMovimiento.SALIDA);
             ingresosQuincena = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.ENTRADA, hace14Dias);
             egresosQuincena  = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.SALIDA, hace14Dias);
-            ingresosMes      = cajaRepository.sumarPorTiendaYTipoMesActual(tiendaEnum, TipoMovimiento.ENTRADA);
-            egresosMes       = cajaRepository.sumarPorTiendaYTipoMesActual(tiendaEnum, TipoMovimiento.SALIDA);
+            ingresosMes      = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.ENTRADA, hace30Dias);
+            egresosMes       = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.SALIDA, hace30Dias);
         }
 
         return DashboardResumenDTO.builder()
                 .totalesPorMetodo(totalesPorMetodo)
+                .metodosPagoMes(metodosPagoMes)
                 .ventasPorVendedor(ventasPorVendedor)
+                .ventasVendedores15Dias(ventasVendedores15Dias)
+                .ventasVendedores30Dias(ventasVendedores30Dias)
                 .cumpleanerosHoy(cumpleaneros)
                 .ordenesPendientes(pendientes)
                 .ingresosHoy(ingresosHoy)
                 .egresosHoy(egresosHoy)
+                .pctIngresosHoy(calcularPorcentaje(ingresosHoy, ingresosAyer))
+                .pctEgresosHoy(calcularPorcentaje(egresosHoy, egresosAyer))
                 .ingresosQuincena(ingresosQuincena)
                 .egresosQuincena(egresosQuincena)
                 .ingresosMes(ingresosMes)
                 .egresosMes(egresosMes)
                 .build();
+    }
+
+    private Double calcularPorcentaje(BigDecimal hoy, BigDecimal ayer) {
+        if (ayer == null || ayer.compareTo(BigDecimal.ZERO) == 0) {
+            return hoy.compareTo(BigDecimal.ZERO) > 0 ? 100.0 : 0.0;
+        }
+        return hoy.subtract(ayer)
+                .divide(ayer, 4, BigDecimal.ROUND_HALF_UP)
+                .multiply(new BigDecimal(100))
+                .doubleValue();
     }
     // =========================================================================
     // GET /api/dashboard/historico/{tiendaStr}?mes=4&anio=2026
