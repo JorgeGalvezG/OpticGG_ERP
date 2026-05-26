@@ -48,6 +48,30 @@ public class UsuarioService {
 
         return usuarioRepository.save(nuevoUsuario);
     }
+
+    public Usuario actualizarUsuario(Long id, Usuario datos) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        usuario.setUsername(datos.getUsername());
+        usuario.setRol(datos.getRol());
+        usuario.setTienda(datos.getTienda());
+        usuario.setActivo(datos.getActivo());
+        
+        if (datos.getPassword() != null && !datos.getPassword().isEmpty()) {
+            usuario.setPassword(passwordEncoder.encode(datos.getPassword()));
+        }
+        
+        return usuarioRepository.save(usuario);
+    }
+
+    public Usuario cambiarEstado(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        usuario.setActivo(!usuario.getActivo());
+        return usuarioRepository.save(usuario);
+    }
+
     // Buscar usuarios por término
     public Page<Usuario> buscarUsuarios(String termino, int page, int size) {
         return usuarioRepository.buscarPorTermino(termino, PageRequest.of(page, size));
