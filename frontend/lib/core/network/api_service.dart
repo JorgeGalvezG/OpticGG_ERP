@@ -80,4 +80,34 @@ class ApiService {
       throw Exception('Error de conexión');
     }
   }
+
+  // 4. Petición PATCH con Token
+  static Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.patch(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: json.encode(body), // Si no envías body, enviar un mapa vacío {} está perfecto
+      );
+
+      // Aceptamos 200 (OK) o 204 (No Content) dependiendo de cómo lo devuelva tu Spring Boot
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // A veces PATCH devuelve el objeto modificado o a veces no devuelve nada.
+        // Si tu backend no devuelve un JSON (ej. cuerpo vacío), esto podría dar error al decodificar.
+        if (response.body.isNotEmpty) {
+          return json.decode(utf8.decode(response.bodyBytes));
+        }
+        return true;
+      } else if (response.statusCode == 403) {
+        throw Exception('Error 403: No tienes permisos.');
+      } else {
+        throw Exception('Error al modificar: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ ERROR HTTP PATCH ($endpoint): $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
 }

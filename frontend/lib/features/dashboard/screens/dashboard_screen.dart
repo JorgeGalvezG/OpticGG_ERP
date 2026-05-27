@@ -90,9 +90,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(height: 32),
                     _QuickActionsBlock(),
                     const SizedBox(height: 32),
-                    _GraficoMetodosPago(datos: resumen.totalesPorMetodo),
+                    _GraficoMetodosPago(resumen: resumen),
                     const SizedBox(height: 32),
-                    _RankingVendedores(vendedores: resumen.ventasPorVendedor),
+                    _RankingVendedores(resumen: resumen),
                   ],
                 )
               else 
@@ -109,9 +109,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: _GraficoMetodosPago(datos: resumen.totalesPorMetodo)),
+                              Expanded(child: _GraficoMetodosPago(resumen: resumen),),
                               const SizedBox(width: 24),
-                              Expanded(child: _RankingVendedores(vendedores: resumen.ventasPorVendedor)),
+                              Expanded(child: _RankingVendedores(resumen: resumen),),
                             ],
                           ),
                         ],
@@ -339,7 +339,7 @@ class _HistoricalChartHorizontal extends StatelessWidget {
         BarChartRodData(toY: ing, color: Colors.green.shade400, width: 15, borderRadius: BorderRadius.circular(4)),
         BarChartRodData(toY: egr, color: Colors.red.shade400, width: 15, borderRadius: BorderRadius.circular(4)),
       ],
-      betweenBarsSpace: 4,
+      barsSpace: 4,
     );
   }
 }

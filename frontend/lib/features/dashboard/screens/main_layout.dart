@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/shared/responsive.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/providers/config_provider.dart';
 import '../screens/dashboard_screen.dart';
 import '../../caja/screens/caja_screen.dart';
 import '../../ventas/screens/ventas_screen.dart';
@@ -21,6 +22,18 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Cargamos la configuración de la tienda al iniciar el layout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.tienda != null) {
+        Provider.of<ConfigProvider>(context, listen: false).cargarConfig(auth.tienda!);
+      }
+    });
+  }
 
   // Definición de pantallas por índice
   List<Widget> get _screens => [

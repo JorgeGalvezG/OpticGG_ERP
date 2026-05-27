@@ -8,6 +8,7 @@ import '../models/orden_trabajo_model.dart';
 import '../providers/ventas_provider.dart';
 import '../providers/ordenes_provider.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/providers/config_provider.dart';
 import '../../usuarios/providers/usuarios_provider.dart';
 import '../services/ticket_pdf_service.dart';
 
@@ -242,15 +243,23 @@ class _VentasScreenState extends State<VentasScreen> {
                       IconButton(
                         icon: const Icon(Icons.print_rounded, size: 20, color: AppColors.gray400),
                         onPressed: () {
-                          final auth = Provider.of<AuthProvider>(context, listen: false);
-                          TicketPdfService.imprimirTicket(o, auth.tienda ?? "C1");
+                          final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                          if (config == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                            return;
+                          }
+                          TicketPdfService.imprimirTicket(o, config);
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primary),
                         onPressed: () {
-                          final auth = Provider.of<AuthProvider>(context, listen: false);
-                          TicketPdfService.compartirOrdenWhatsApp(o, auth.tienda ?? "C1");
+                          final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                          if (config == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                            return;
+                          }
+                          TicketPdfService.compartirOrdenWhatsApp(o, config);
                         },
                         tooltip: 'Enviar por WhatsApp',
                       ),
@@ -314,16 +323,24 @@ class _VentasScreenState extends State<VentasScreen> {
               const SizedBox(width: 8),              IconButton(
                 icon: const Icon(Icons.print_rounded, color: AppColors.gray400),
                 onPressed: () {
-                  final auth = Provider.of<AuthProvider>(context, listen: false);
-                  TicketPdfService.imprimirTicket(o, auth.tienda ?? "C1");
+                  final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                  if (config == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                    return;
+                  }
+                  TicketPdfService.imprimirTicket(o, config);
                 },
                 tooltip: 'Imprimir Ticket',
               ),
               IconButton(
                 icon: const Icon(Icons.share_rounded, color: AppColors.primary),
                 onPressed: () {
-                  final auth = Provider.of<AuthProvider>(context, listen: false);
-                  TicketPdfService.compartirOrdenWhatsApp(o, auth.tienda ?? "C1");
+                  final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                  if (config == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                    return;
+                  }
+                  TicketPdfService.compartirOrdenWhatsApp(o, config);
                 },
                 tooltip: 'Enviar por WhatsApp',
               ),            ],

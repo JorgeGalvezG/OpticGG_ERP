@@ -5,42 +5,11 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/orden_trabajo_model.dart';
-
-/// Configuración de sucursales basada en la base de datos (config_tiendas)
-class StoreConfig {
-  final String name;
-  final String address;
-  final String phone;
-  final String ruc;
-
-  StoreConfig({required this.name, required this.address, required this.phone, required this.ruc});
-}
+import '../../../core/models/config_tienda_model.dart';
 
 class TicketPdfService {
-  static final Map<String, StoreConfig> _tiendas = {
-    'C1': StoreConfig(
-      name: 'ÓPTICA CUBAS - SEDE CENTRAL',
-      address: 'Av. Principal 123, Ciudad',
-      phone: '987 654 321',
-      ruc: '20123456789',
-    ),
-    'C2': StoreConfig(
-      name: 'ÓPTICA CUBAS - SUCURSAL NORTE',
-      address: 'Jr. Los Olivos 456',
-      phone: '912 345 678',
-      ruc: '20123456789',
-    ),
-    'C3': StoreConfig(
-      name: 'ÓPTICA CUBAS - EXPRESS',
-      address: 'Centro Comercial El Sol, Tda 12',
-      phone: '999 888 777',
-      ruc: '20123456789',
-    ),
-  };
-
   // 1. TICKET DE IMPRESIÓN (80mm)
-  static Future<void> imprimirTicket(OrdenTrabajo orden, String tiendaCod) async {
-    final config = _tiendas[tiendaCod] ?? _tiendas['C1']!;
+  static Future<void> imprimirTicket(OrdenTrabajo orden, ConfigTienda config) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -50,11 +19,11 @@ class TicketPdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Text(config.name, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              pw.Text(config.nombreOptica.toUpperCase(), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 2),
               pw.Text('RUC: ${config.ruc}', style: const pw.TextStyle(fontSize: 8)),
-              pw.Text(config.address, style: const pw.TextStyle(fontSize: 7), textAlign: pw.TextAlign.center),
-              pw.Text('Telf: ${config.phone}', style: const pw.TextStyle(fontSize: 7)),
+              pw.Text(config.direccion, style: const pw.TextStyle(fontSize: 7), textAlign: pw.TextAlign.center),
+              pw.Text('Telf: ${config.telefono}', style: const pw.TextStyle(fontSize: 7)),
               pw.SizedBox(height: 10),
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               pw.SizedBox(height: 5),
@@ -114,7 +83,7 @@ class TicketPdfService {
 
               pw.SizedBox(height: 15),
               pw.Text('¡Gracias por su confianza!', style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic)),
-              pw.Text('Vuelva pronto a Óptica Cubas', style: const pw.TextStyle(fontSize: 8)),
+              pw.Text('Vuelva pronto a ${config.nombreOptica}', style: const pw.TextStyle(fontSize: 8)),
               pw.SizedBox(height: 10),
             ],
           );
@@ -125,9 +94,8 @@ class TicketPdfService {
     await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
   }
 
-  // 2. ORDEN DE COMPRA PDF (FORMATO A4/SHARE PARA WHATSAPP)
-  static Future<void> compartirOrdenWhatsApp(OrdenTrabajo orden, String tiendaCod) async {
-    final config = _tiendas[tiendaCod] ?? _tiendas['C1']!;
+  // 2. BOLETA DE VENTA PDF (FORMATO A4/SHARE PARA WHATSAPP)
+  static Future<void> compartirOrdenWhatsApp(OrdenTrabajo orden, ConfigTienda config) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -139,74 +107,63 @@ class TicketPdfService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Encabezado Pro
+                // Encabezado
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text(config.name, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                        pw.Text('Sistema de Gestión Óptica', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text(config.nombreOptica.toUpperCase(), style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                        pw.Text('RUC: ${config.ruc}', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                        pw.Text(config.direccion, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text('Telf: ${config.telefono}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                       ],
                     ),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.end,
-                      children: [
-                        pw.Text('ORDEN DE COMPRA', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                        pw.Text('# ${orden.numeroOrden}', style: pw.TextStyle(fontSize: 12, color: PdfColors.red900, fontWeight: pw.FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 20),
-                pw.Divider(thickness: 2, color: PdfColors.blue900),
-                pw.SizedBox(height: 20),
-
-                // Datos del Cliente y Sede
-                pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text('DATOS DEL PACIENTE', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue700)),
-                          pw.SizedBox(height: 4),
-                          pw.Text(orden.pacienteNombre, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                          pw.Text('Fecha de Emisión: ${orden.fecha.length >= 10 ? orden.fecha.substring(0,10) : orden.fecha}'),
-                        ],
+                    pw.Container(
+                      padding: const pw.EdgeInsets.all(10),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.blue900, width: 2),
+                        borderRadius: pw.BorderRadius.circular(8),
                       ),
-                    ),
-                    pw.Expanded(
                       child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text('DATOS DE LA SEDE', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue700)),
+                          pw.Text('BOLETA DE VENTA', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                           pw.SizedBox(height: 4),
-                          pw.Text(config.address, textAlign: pw.TextAlign.right),
-                          pw.Text('Telf: ${config.phone}'),
-                          pw.Text('RUC: ${config.ruc}'),
+                          pw.Text('N° ${orden.numeroOrden}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)),
                         ],
                       ),
                     ),
                   ],
                 ),
-                pw.SizedBox(height: 30),
+                pw.SizedBox(height: 20),
+                pw.Divider(thickness: 1, color: PdfColors.grey300),
+                pw.SizedBox(height: 15),
 
-                // Receta Médica
+                // Datos del Paciente
                 pw.Container(
+                  width: double.infinity,
                   padding: const pw.EdgeInsets.all(12),
-                  decoration: pw.BoxDecoration(color: PdfColors.blue50, borderRadius: pw.BorderRadius.circular(8)),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.blue50,
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('ESPECIFICACIONES TÉCNICAS (RECETA)', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                      pw.SizedBox(height: 10),
+                      pw.Text('DATOS DEL PACIENTE', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                      pw.SizedBox(height: 6),
                       pw.Row(
                         children: [
-                          pw.Expanded(child: _buildA4Info('OJO DERECHO (OD)', orden.graduacionOd ?? 'Plano')),
-                          pw.Expanded(child: _buildA4Info('OJO IZQUIERDO (OI)', orden.graduacionOi ?? 'Plano')),
+                          pw.Expanded(child: _buildInfoLabel('NOMBRE:', orden.pacienteNombre)),
+                          pw.Expanded(child: _buildInfoLabel('FECHA:', orden.fecha.length >= 10 ? orden.fecha.substring(0,10) : orden.fecha)),
+                        ],
+                      ),
+                      pw.SizedBox(height: 6),
+                      pw.Row(
+                        children: [
+                          pw.Expanded(child: _buildInfoLabel('TELÉFONO:', orden.pacienteTelefono ?? '-')),
+                          pw.Expanded(child: _buildInfoLabel('NUMERO DE TRABAJO:', orden.numeroOrden)),
                         ],
                       ),
                     ],
@@ -214,41 +171,101 @@ class TicketPdfService {
                 ),
                 pw.SizedBox(height: 20),
 
-                // Detalles del Producto
-                pw.Text('DETALLE DEL PEDIDO', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue700)),
+                // Detalle de la Venta (Tabla)
+                pw.Text('DETALLE DE PRODUCTOS Y SERVICIOS', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                 pw.SizedBox(height: 8),
-                _buildA4Row('MONTURA / MARCA', orden.montura ?? 'No registrada', isClient: orden.esMonturaCliente),
-                _buildA4Row('TIPO DE LUNAS', orden.tipoLuna ?? 'No registradas', isClient: orden.esLunaCliente),
-                if (orden.observaciones != null && orden.observaciones!.isNotEmpty)
-                  _buildA4Row('OBSERVACIONES', orden.observaciones!),
-                
-                pw.Spacer(),
-
-                // Resumen Financiero
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey300),
                   children: [
-                    pw.Container(
-                      width: 200,
-                      padding: const pw.EdgeInsets.all(16),
-                      decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300), borderRadius: pw.BorderRadius.circular(8)),
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                      children: [
+                        pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('DESCRIPCIÓN', style: pw.TextStyle(fontWeight: pw.FontWeight.bold))),
+                        pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('TOTAL', style: pw.TextStyle(fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right)),
+                      ],
+                    ),
+                    if (orden.montura != null && orden.montura!.isNotEmpty)
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('MONTURA: ${orden.montura}${orden.esMonturaCliente == true ? " (CLIENTE)" : ""}')),
+                          pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('-', textAlign: pw.TextAlign.right)),
+                        ],
+                      ),
+                    if (orden.tipoLuna != null && orden.tipoLuna!.isNotEmpty)
+                      pw.TableRow(
+                        children: [
+                          pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('LUNAS: ${orden.tipoLuna}${orden.esLunaCliente == true ? " (CLIENTE)" : ""}')),
+                          pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('-', textAlign: pw.TextAlign.right)),
+                        ],
+                      ),
+                    pw.TableRow(
+                      children: [
+                        pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('SERVICIO INTEGRAL ÓPTICO')),
+                        pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('S/ ${orden.montoTotal.toStringAsFixed(2)}', textAlign: pw.TextAlign.right)),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+
+                // Receta y Observaciones
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      flex: 2,
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('RECETA MÉDICA', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                          pw.SizedBox(height: 4),
+                          pw.Container(
+                            padding: const pw.EdgeInsets.all(8),
+                            decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300), borderRadius: pw.BorderRadius.circular(4)),
+                            child: pw.Column(
+                              children: [
+                                _buildRecetaRow('O.D.', orden.graduacionOd ?? '-'),
+                                _buildRecetaRow('O.I.', orden.graduacionOi ?? '-'),
+                                _buildRecetaRow('ADD', orden.adicion ?? '-'),
+                                _buildRecetaRow('DIP', orden.dip ?? '-'),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 15),
+                          pw.Text('OBSERVACIONES:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                          pw.Text(orden.observaciones ?? 'Sin observaciones adicionales.', style: const pw.TextStyle(fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 40),
+                    pw.Expanded(
+                      flex: 1,
                       child: pw.Column(
                         children: [
-                          _buildA4Dinero('TOTAL:', orden.montoTotal, isBold: true),
+                          _buildTotalRow('TOTAL:', orden.montoTotal, isBold: true),
+                          pw.SizedBox(height: 5),
+                          _buildTotalRow('ABONO:', orden.montoTotal - orden.montoSaldo),
                           pw.Divider(),
-                          _buildA4Dinero('A CUENTA:', orden.montoTotal - orden.montoSaldo),
-                          _buildA4Dinero('SALDO:', orden.montoSaldo, isRed: orden.montoSaldo > 0),
+                          _buildTotalRow('SALDO:', orden.montoSaldo, isRed: orden.montoSaldo > 0),
                         ],
                       ),
                     ),
                   ],
                 ),
-                pw.SizedBox(height: 40),
+
+                pw.Spacer(),
+
+                // Pie de página
                 pw.Center(
-                  child: pw.Text('Este documento es una orden de compra válida. Para cualquier consulta, presente su número de orden.', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                ),
-                pw.Center(
-                  child: pw.Text('¡Gracias por elegir Óptica Cubas!', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                  child: pw.Column(
+                    children: [
+                      pw.Divider(),
+                      pw.SizedBox(height: 10),
+                      pw.Text('¡Gracias por elegir ${config.nombreOptica}!', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                      pw.Text('Este documento es un comprobante de su orden. Consérvelo para el recojo de su trabajo.', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                      pw.SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -259,13 +276,57 @@ class TicketPdfService {
 
     // Guardar y compartir
     final output = await getTemporaryDirectory();
-    final file = File("${output.path}/Orden_Cubas_${orden.numeroOrden}.pdf");
+    final fileName = "Boleta_${orden.numeroOrden}_${orden.pacienteNombre.replaceAll(' ', '_')}.pdf";
+    final file = File("${output.path}/$fileName");
     await file.writeAsBytes(await pdf.save());
 
-    await Share.shareXFiles([XFile(file.path)], text: 'Hola ${orden.pacienteNombre}, aquí tienes tu orden de Óptica Cubas.');
+    await Share.shareXFiles(
+      [XFile(file.path)], 
+      text: 'Hola ${orden.pacienteNombre}, aquí tienes tu boleta de venta de ${config.nombreOptica}.'
+    );
   }
 
-  // HELPERS
+  // HELPERS INTERNOS
+  static pw.Widget _buildInfoLabel(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Row(
+        children: [
+          pw.Text('$label ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+          pw.Text(value, style: const pw.TextStyle(fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildRecetaRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 2),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+          pw.Text(value, style: const pw.TextStyle(fontSize: 9)),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildTotalRow(String label, double amt, {bool isBold = false, bool isRed = false}) {
+    final style = pw.TextStyle(
+      fontSize: 12, 
+      fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+      color: isRed ? PdfColors.red700 : PdfColors.black
+    );
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label, style: style),
+        pw.Text('S/ ${amt.toStringAsFixed(2)}', style: style),
+      ],
+    );
+  }
+
   static pw.Widget _buildFilaTexto(String etiqueta, String valor) {
     return pw.Padding(
       padding: const pw.EdgeInsets.only(bottom: 3),
@@ -303,46 +364,6 @@ class TicketPdfService {
           pw.Text('S/ ${valor.toStringAsFixed(2)}', style: style),
         ],
       ),
-    );
-  }
-
-  static pw.Widget _buildA4Info(String label, String value) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
-        pw.Text(value, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-      ],
-    );
-  }
-
-  static pw.Widget _buildA4Row(String label, String value, {bool? isClient}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 8),
-      child: pw.Row(
-        children: [
-          pw.Text('$label: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-          pw.Text(value, style: const pw.TextStyle(fontSize: 11)),
-          if (isClient == true)
-            pw.Container(
-              margin: const pw.EdgeInsets.only(left: 8),
-              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: pw.BoxDecoration(color: PdfColors.blue100, borderRadius: pw.BorderRadius.circular(4)),
-              child: pw.Text('PROPIO', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-            ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _buildA4Dinero(String label, double amt, {bool isBold = false, bool isRed = false}) {
-    final style = pw.TextStyle(fontSize: 12, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal, color: isRed ? PdfColors.red700 : PdfColors.black);
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        pw.Text(label, style: style),
-        pw.Text('S/ ${amt.toStringAsFixed(2)}', style: style),
-      ],
     );
   }
 }

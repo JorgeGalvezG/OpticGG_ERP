@@ -163,7 +163,7 @@ class _NuevoMovimientoDialog extends StatefulWidget {
 
 class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
   final _formKey = GlobalKey<FormState>();
-  String _tipoSeleccionado = 'SALIDA'; // Por defecto registramos un gasto
+  String _tipoSeleccionado = 'ENTRADA'; // Por defecto registramos una entrada
   final _montoController = TextEditingController();
   final _descripcionController = TextEditingController();
 
@@ -240,7 +240,13 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
                       controller: _montoController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      decoration: InputDecoration(prefixIcon: const Icon(Icons.monetization_on_rounded), filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+                      decoration: InputDecoration(
+                        prefixText: 'S/ ',
+                        prefixStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black54),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
                       validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
                     ),
                     const SizedBox(height: 16),

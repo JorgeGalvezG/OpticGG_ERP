@@ -3,6 +3,7 @@ import 'package:frontend/features/caja/providers/caja_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_colors.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/auth/providers/config_provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/dashboard/providers/dashboard_provider.dart';
 import 'features/dashboard/screens/main_layout.dart';
@@ -22,6 +23,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ConfigProvider()),
         ChangeNotifierProvider(create: (_) => UsuariosProvider()),
         ChangeNotifierProvider(create: (_) => PacientesProvider()),
         ChangeNotifierProvider(create: (_) => VentasProvider()),
