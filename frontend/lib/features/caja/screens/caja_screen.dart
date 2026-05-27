@@ -108,12 +108,15 @@ class _CajaScreenState extends State<CajaScreen> {
                           final isIngreso = mov.tipo == 'ENTRADA';
                           final color = isIngreso ? AppColors.success : AppColors.danger;
 
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                            leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(isIngreso ? Icons.add_rounded : Icons.remove_rounded, color: color)),
-                            title: Text(mov.descripcion, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                            subtitle: Text('${mov.fecha.substring(0, 10)}  •  Usuario: ${mov.usuarioNombre}', style: const TextStyle(fontSize: 12, color: AppColors.gray500)),
-                            trailing: Text('${isIngreso ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                          return Material(
+                            color: Colors.transparent,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(isIngreso ? Icons.add_rounded : Icons.remove_rounded, color: color)),
+                              title: Text(mov.descripcion, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              subtitle: Text('${mov.fecha.length >= 10 ? mov.fecha.substring(0, 10) : mov.fecha}  •  Usuario: ${mov.usuarioNombre}', style: const TextStyle(fontSize: 12, color: AppColors.gray500)),
+                              trailing: Text('${isIngreso ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                            ),
                           );
                         },
                       ),

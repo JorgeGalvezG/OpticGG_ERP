@@ -628,7 +628,34 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
   bool _esVip = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Listener para calcular edad automáticamente
+    _fechaNacController.addListener(_calcularEdad);
+  }
+
+  void _calcularEdad() {
+    final texto = _fechaNacController.text.trim();
+    if (texto.length == 10) { // Formato YYYY-MM-DD
+      try {
+        final birthDate = DateTime.parse(texto);
+        final today = DateTime.now();
+        int age = today.year - birthDate.year;
+        if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+          age--;
+        }
+        if (age >= 0 && age < 120) {
+          _edadController.text = age.toString();
+        }
+      } catch (_) {
+        // Formato inválido, no hacemos nada
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    _fechaNacController.removeListener(_calcularEdad);
     _nombreController.dispose();
     _apellidosController.dispose();
     _telefonoController.dispose();
@@ -891,10 +918,33 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
       text: widget.paciente.fechaNacimiento ?? '',
     );
     _esVip = widget.paciente.esDestacado;
+
+    // Listener para calcular edad automáticamente
+    _fechaNacController.addListener(_calcularEdad);
+  }
+
+  void _calcularEdad() {
+    final texto = _fechaNacController.text.trim();
+    if (texto.length == 10) { // Formato YYYY-MM-DD
+      try {
+        final birthDate = DateTime.parse(texto);
+        final today = DateTime.now();
+        int age = today.year - birthDate.year;
+        if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+          age--;
+        }
+        if (age >= 0 && age < 120) {
+          _edadController.text = age.toString();
+        }
+      } catch (_) {
+        // Formato inválido, no hacemos nada
+      }
+    }
   }
 
   @override
   void dispose() {
+    _fechaNacController.removeListener(_calcularEdad);
     _nombreController.dispose();
     _apellidosController.dispose();
     _telefonoController.dispose();
