@@ -22,8 +22,9 @@ class ApiService {
   static Future<dynamic> get(String endpoint) async {
     try {
       final headers = await _getHeaders();
+      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
       final response = await http.get(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse(url),
         headers: headers,
       );
 
@@ -41,8 +42,9 @@ class ApiService {
   static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
+      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
       final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse(url),
         headers: headers,
         body: json.encode(body),
       );
@@ -64,8 +66,9 @@ class ApiService {
   static Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
+      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
       final response = await http.put(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse(url),
         headers: headers,
         body: json.encode(body),
       );
@@ -85,8 +88,9 @@ class ApiService {
   static Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
+      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
       final response = await http.patch(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse(url),
         headers: headers,
         body: json.encode(body), // Si no envías body, enviar un mapa vacío {} está perfecto
       );

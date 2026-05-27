@@ -17,12 +17,12 @@ class ConfigTienda {
 
   factory ConfigTienda.fromJson(Map<String, dynamic> json) {
     return ConfigTienda(
-      tienda: json['tienda'] ?? '',
-      nombreOptica: json['nombreOptica'] ?? '',
+      tienda: json['tienda']?.toString() ?? '',
+      nombreOptica: json['nombreOptica'] ?? json['nombre_optica'] ?? '',
       ruc: json['ruc'] ?? '',
       direccion: json['direccion'] ?? '',
       telefono: json['telefono'] ?? '',
-      logoUrl: json['logoUrl'],
+      logoUrl: json['logoUrl'] ?? json['logo_url'],
     );
   }
 }

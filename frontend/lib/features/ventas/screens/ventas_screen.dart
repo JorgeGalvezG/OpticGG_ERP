@@ -242,24 +242,62 @@ class _VentasScreenState extends State<VentasScreen> {
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.print_rounded, size: 20, color: AppColors.gray400),
-                        onPressed: () {
-                          final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                        onPressed: () async {
+                          final configProv = Provider.of<ConfigProvider>(context, listen: false);
+                          final auth = Provider.of<AuthProvider>(context, listen: false);
+                          
+                          if (configProv.config == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                              backgroundColor: Colors.orange,
+                              duration: const Duration(seconds: 2),
+                            ));
+                            await configProv.cargarConfig(auth.tienda ?? 'C1');
+                          }
+
+                          final config = configProv.config;
                           if (config == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('❌ Error: No se pudo conectar con el servidor para obtener datos de la óptica.'),
+                              backgroundColor: AppColors.danger,
+                            ));
                             return;
                           }
-                          TicketPdfService.imprimirTicket(o, config);
+                          
+                          try {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando ticket de impresión...'), duration: Duration(seconds: 3)));
+                            await TicketPdfService.imprimirTicket(o, config);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Error al imprimir ticket: $e'),
+                              backgroundColor: AppColors.danger,
+                              duration: const Duration(seconds: 10),
+                            ));
+                          }
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primary),
-                        onPressed: () {
+                        onPressed: () async {
                           final config = Provider.of<ConfigProvider>(context, listen: false).config;
                           if (config == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Configuración de tienda no encontrada. Cargando...'), backgroundColor: Colors.orange));
                             return;
                           }
-                          TicketPdfService.compartirOrdenWhatsApp(o, config);
+                          try {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preparando archivo para compartir...'), duration: Duration(seconds: 3)));
+                            await TicketPdfService.compartirOrdenWhatsApp(o, config);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Error al compartir PDF: $e'),
+                              backgroundColor: AppColors.danger,
+                              duration: const Duration(seconds: 10),
+                            ));
+                          }
                         },
                         tooltip: 'Enviar por WhatsApp',
                       ),
@@ -322,25 +360,78 @@ class _VentasScreenState extends State<VentasScreen> {
               _buildStatusActions(o),
               const SizedBox(width: 8),              IconButton(
                 icon: const Icon(Icons.print_rounded, color: AppColors.gray400),
-                onPressed: () {
-                  final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                onPressed: () async {
+                  final configProv = Provider.of<ConfigProvider>(context, listen: false);
+                  final auth = Provider.of<AuthProvider>(context, listen: false);
+                  
+                  if (configProv.config == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 2),
+                    ));
+                    await configProv.cargarConfig(auth.tienda ?? 'C1');
+                  }
+
+                  final config = configProv.config;
                   if (config == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('❌ Error: No se pudo conectar con el servidor para obtener datos de la óptica.'),
+                      backgroundColor: AppColors.danger,
+                    ));
                     return;
                   }
-                  TicketPdfService.imprimirTicket(o, config);
+                  
+                  try {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando ticket de impresión...'), duration: Duration(seconds: 3)));
+                    await TicketPdfService.imprimirTicket(o, config);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Error al imprimir ticket: $e'),
+                      backgroundColor: AppColors.danger,
+                      duration: const Duration(seconds: 10),
+                    ));
+                  }
                 },
                 tooltip: 'Imprimir Ticket',
               ),
               IconButton(
                 icon: const Icon(Icons.share_rounded, color: AppColors.primary),
-                onPressed: () {
-                  final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                onPressed: () async {
+                  final configProv = Provider.of<ConfigProvider>(context, listen: false);
+                  final auth = Provider.of<AuthProvider>(context, listen: false);
+                  
+                  if (configProv.config == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 2),
+                    ));
+                    await configProv.cargarConfig(auth.tienda ?? 'C1');
+                  }
+
+                  final config = configProv.config;
                   if (config == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cargando configuración...')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('❌ Error: No se pudo conectar con el servidor para obtener datos de la óptica.'),
+                      backgroundColor: AppColors.danger,
+                    ));
                     return;
                   }
-                  TicketPdfService.compartirOrdenWhatsApp(o, config);
+                  try {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preparando archivo para compartir...'), duration: Duration(seconds: 3)));
+                    await TicketPdfService.compartirOrdenWhatsApp(o, config);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Error al compartir PDF: $e'),
+                      backgroundColor: AppColors.danger,
+                      duration: const Duration(seconds: 10),
+                    ));
+                  }
                 },
                 tooltip: 'Enviar por WhatsApp',
               ),            ],

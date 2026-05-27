@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/compras/**").permitAll()
                         .requestMatchers("/api/dashboard/**").permitAll()
                         .requestMatchers("/api/ventas/**").permitAll()
+                        .requestMatchers("/api/config-tienda/**").permitAll()
                         .anyRequest().authenticated() // TODO lo demás es PRIVADO
 
                 );
