@@ -9,14 +9,15 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/config-tienda")
+@CrossOrigin(origins = "*") // Permiso explícito para evitar bloqueos de navegador
 public class ConfigTiendaController {
 
     @Autowired
     private ConfigTiendaService configService;
 
     @GetMapping("/{tienda}")
-    public ResponseEntity<ConfigTienda> obtenerPorTienda(@PathVariable Tienda tienda) {
-        return configService.obtenerPorTienda(tienda)
+    public ResponseEntity<ConfigTienda> obtenerPorTienda(@PathVariable String tienda) {
+        return configService.obtenerPorTiendaString(tienda)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

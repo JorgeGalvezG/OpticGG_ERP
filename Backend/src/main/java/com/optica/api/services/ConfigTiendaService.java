@@ -18,6 +18,16 @@ public class ConfigTiendaService {
         return configRepository.findById(tienda);
     }
 
+    // Nuevo método para manejar la petición desde un String de forma segura
+    public Optional<ConfigTienda> obtenerPorTiendaString(String tiendaStr) {
+        try {
+            Tienda tiendaEnum = Tienda.valueOf(tiendaStr.toUpperCase());
+            return configRepository.findById(tiendaEnum);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public ConfigTienda guardarConfig(ConfigTienda config) {
         return configRepository.save(config);
     }

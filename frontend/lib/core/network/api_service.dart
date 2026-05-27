@@ -22,7 +22,18 @@ class ApiService {
   static Future<dynamic> get(String endpoint) async {
     try {
       final headers = await _getHeaders();
-      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
+      
+      // Limpiamos el endpoint si ya trae /api para evitar duplicados
+      String cleanEndpoint = endpoint;
+      if (endpoint.startsWith('/api/')) {
+        cleanEndpoint = endpoint.substring(4); // Quita el '/api' inicial
+      } else if (endpoint.startsWith('api/')) {
+        cleanEndpoint = endpoint.substring(3); // Quita el 'api' inicial
+      }
+      
+      final url = cleanEndpoint.startsWith('/') ? '$baseUrl$cleanEndpoint' : '$baseUrl/$cleanEndpoint';
+      print('📡 ApiService GET: $url');
+      
       final response = await http.get(
         Uri.parse(url),
         headers: headers,
@@ -42,7 +53,16 @@ class ApiService {
   static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
-      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
+      
+      String cleanEndpoint = endpoint;
+      if (endpoint.startsWith('/api/')) {
+        cleanEndpoint = endpoint.substring(4);
+      } else if (endpoint.startsWith('api/')) {
+        cleanEndpoint = endpoint.substring(3);
+      }
+
+      final url = cleanEndpoint.startsWith('/') ? '$baseUrl$cleanEndpoint' : '$baseUrl/$cleanEndpoint';
+      
       final response = await http.post(
         Uri.parse(url),
         headers: headers,
@@ -66,7 +86,16 @@ class ApiService {
   static Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
-      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
+      
+      String cleanEndpoint = endpoint;
+      if (endpoint.startsWith('/api/')) {
+        cleanEndpoint = endpoint.substring(4);
+      } else if (endpoint.startsWith('api/')) {
+        cleanEndpoint = endpoint.substring(3);
+      }
+
+      final url = cleanEndpoint.startsWith('/') ? '$baseUrl$cleanEndpoint' : '$baseUrl/$cleanEndpoint';
+      
       final response = await http.put(
         Uri.parse(url),
         headers: headers,
@@ -88,7 +117,16 @@ class ApiService {
   static Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
-      final url = endpoint.startsWith('/') ? '$baseUrl$endpoint' : '$baseUrl/$endpoint';
+      
+      String cleanEndpoint = endpoint;
+      if (endpoint.startsWith('/api/')) {
+        cleanEndpoint = endpoint.substring(4);
+      } else if (endpoint.startsWith('api/')) {
+        cleanEndpoint = endpoint.substring(3);
+      }
+
+      final url = cleanEndpoint.startsWith('/') ? '$baseUrl$cleanEndpoint' : '$baseUrl/$cleanEndpoint';
+      
       final response = await http.patch(
         Uri.parse(url),
         headers: headers,
