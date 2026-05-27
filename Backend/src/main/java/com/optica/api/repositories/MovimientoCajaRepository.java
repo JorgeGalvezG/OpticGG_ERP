@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -34,16 +35,21 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
     // ── AYER (por tienda) ─────────────────────────────────────────────────────
     @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +
             "WHERE m.tienda = :tienda AND m.tipo = :tipo " +
-            "AND DATE(m.fecha) = DATE(CURRENT_DATE - INTERVAL 1 DAY)")
+            "AND DATE(m.fecha) = :ayer ")
     BigDecimal sumarPorTiendaYTipoAyer(
             @Param("tienda") Tienda tienda,
-            @Param("tipo") TipoMovimiento tipo);
+            @Param("tipo") TipoMovimiento tipo,
+            @Param("ayer") LocalDate ayer
+            );
 
     // ── AYER (global ALL) ─────────────────────────────────────────────────────
     @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +
             "WHERE m.tipo = :tipo " +
-            "AND DATE(m.fecha) = DATE(CURRENT_DATE - INTERVAL 1 DAY)")
-    BigDecimal sumarPorTipoAyerGlobal(@Param("tipo") TipoMovimiento tipo);
+            "AND DATE(m.fecha) = :ayer ")
+    BigDecimal sumarPorTipoAyerGlobal(
+            @Param("tipo") TipoMovimiento tipo,
+            @Param("ayer") LocalDate ayer
+    );
 
     // ── ÚLTIMOS 15 DÍAS (por tienda) ─────────────────────────────────────────
     @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +

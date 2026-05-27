@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +54,7 @@ public class DashboardController {
 
         LocalDateTime hace14Dias = LocalDateTime.now().minusDays(14);
         LocalDateTime hace30Dias = LocalDateTime.now().minusDays(30);
+        LocalDate fechaAyer = LocalDate.now().minusDays(1);
 
         if (tiendaStr.equalsIgnoreCase("ALL")) {
 
@@ -72,11 +74,11 @@ public class DashboardController {
                 String nombre = fila[0] != null ? (String) fila[0] : "Desconocido";
                 ventasPorVendedor.put(nombre, (BigDecimal) fila[1]);
             }
-            // Vendedores 15 dias — global
+            // Vendedores 15 días — global
             for (Object[] fila : ventaRepository.sumarVentasPorVendedorRangoGlobal(hace14Dias)) {
                 ventasVendedores15Dias.put((String) fila[0], (BigDecimal) fila[1]);
             }
-            // Vendedores 30 dias — global
+            // Vendedores 30 días — global
             for (Object[] fila : ventaRepository.sumarVentasPorVendedorRangoGlobal(hace30Dias)) {
                 ventasVendedores30Dias.put((String) fila[0], (BigDecimal) fila[1]);
             }
@@ -86,8 +88,8 @@ public class DashboardController {
 
             ingresosHoy      = cajaRepository.sumarPorTipoHoyGlobal(TipoMovimiento.ENTRADA);
             egresosHoy       = cajaRepository.sumarPorTipoHoyGlobal(TipoMovimiento.SALIDA);
-            ingresosAyer     = cajaRepository.sumarPorTipoAyerGlobal(TipoMovimiento.ENTRADA);
-            egresosAyer      = cajaRepository.sumarPorTipoAyerGlobal(TipoMovimiento.SALIDA);
+            ingresosAyer     = cajaRepository.sumarPorTipoAyerGlobal(TipoMovimiento.ENTRADA, fechaAyer);
+            egresosAyer      = cajaRepository.sumarPorTipoAyerGlobal(TipoMovimiento.SALIDA, fechaAyer);
             ingresosQuincena = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.ENTRADA, hace14Dias);
             egresosQuincena  = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.SALIDA, hace14Dias);
             ingresosMes      = cajaRepository.sumarPorTipoQuincenaGlobal(TipoMovimiento.ENTRADA, hace30Dias);
@@ -127,8 +129,8 @@ public class DashboardController {
 
             ingresosHoy      = cajaRepository.sumarPorTiendaYTipoHoy(tiendaEnum, TipoMovimiento.ENTRADA);
             egresosHoy       = cajaRepository.sumarPorTiendaYTipoHoy(tiendaEnum, TipoMovimiento.SALIDA);
-            ingresosAyer     = cajaRepository.sumarPorTiendaYTipoAyer(tiendaEnum, TipoMovimiento.ENTRADA);
-            egresosAyer      = cajaRepository.sumarPorTiendaYTipoAyer(tiendaEnum, TipoMovimiento.SALIDA);
+            ingresosAyer     = cajaRepository.sumarPorTiendaYTipoAyer(tiendaEnum, TipoMovimiento.ENTRADA, fechaAyer);
+            egresosAyer      = cajaRepository.sumarPorTiendaYTipoAyer(tiendaEnum, TipoMovimiento.SALIDA, fechaAyer);
             ingresosQuincena = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.ENTRADA, hace14Dias);
             egresosQuincena  = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.SALIDA, hace14Dias);
             ingresosMes      = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.ENTRADA, hace30Dias);
