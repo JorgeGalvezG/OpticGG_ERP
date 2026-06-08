@@ -1278,7 +1278,7 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('ORDEN #${o.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: AppColors.primary)),
-                    Text('Fecha: ${o.fecha.substring(0,10)}', style: const TextStyle(fontSize: 11, color: AppColors.gray500)),
+                    Text('Fecha: ${o.fecha.length >= 10 ? o.fecha.substring(0, 10) : o.fecha}', style: const TextStyle(fontSize: 11, color: AppColors.gray500)),
                   ],
                 ),
                 _statusBadge(o.estado),

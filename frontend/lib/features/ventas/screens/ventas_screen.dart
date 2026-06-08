@@ -187,6 +187,21 @@ class _VentasScreenState extends State<VentasScreen> {
   Widget _buildOrderRow(OrdenTrabajo o) {
     final bool tieneSaldo = o.montoSaldo > 0;
     final isMobile = MediaQuery.of(context).size.width < 800;
+
+    // Helper local para formatear fecha de forma segura
+    String formatearFechaUI(String fechaRaw) {
+      if (fechaRaw.isEmpty) return '---';
+      try {
+        if (fechaRaw.contains('-') && fechaRaw.length >= 10 && fechaRaw.indexOf('-') == 2) {
+          final partes = fechaRaw.split(' ')[0].split('-');
+          return '${partes[0]}/${partes[1]}/${partes[2]}';
+        }
+        final date = DateTime.parse(fechaRaw).toLocal();
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      } catch (e) {
+        return fechaRaw.length >= 10 ? fechaRaw.substring(0, 10).replaceAll('-', '/') : fechaRaw;
+      }
+    }
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -211,7 +226,13 @@ class _VentasScreenState extends State<VentasScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(o.pacienteNombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(o.pacienteNombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(formatearFechaUI(o.fecha), style: const TextStyle(fontSize: 10, color: AppColors.gray400)),
+                          ],
+                        ),
                         Text('Orden #${o.numeroOrden}', style: const TextStyle(color: AppColors.gray500, fontSize: 11)),
                       ],
                     ),

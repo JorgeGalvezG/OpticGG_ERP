@@ -195,7 +195,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
               ),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 16),
           const Divider(height: 1, color: AppColors.gray100),
           const SizedBox(height: 12),
           // BOTONES DE ACCIÓN

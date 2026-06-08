@@ -8,11 +8,29 @@ import '../models/orden_trabajo_model.dart';
 import '../../../core/models/config_tienda_model.dart';
 
 class TicketPdfService {
+  // Helper para formatear fechas de forma segura y evitar desfases
+  static String _formatearFecha(String fechaRaw) {
+    if (fechaRaw.isEmpty) return '---';
+    try {
+
+      if (fechaRaw.contains('-') && fechaRaw.length >= 10 && fechaRaw.indexOf('-') == 2) {
+        final partes = fechaRaw.split(' ')[0].split('-');
+        return '${partes[0]}/${partes[1]}/${partes[2]}';
+      }
+      // Si viene en formato ISO (YYYY-MM-DD)
+      final date = DateTime.parse(fechaRaw).toLocal();
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      // Si todo falla, devolvemos los primeros 10 caracteres
+      return fechaRaw.length >= 10 ? fechaRaw.substring(0, 10).replaceAll('-', '/') : fechaRaw;
+    }
+  }
+
   // 1. TICKET DE IMPRESIÓN (80mm)
   static Future<void> imprimirTicket(OrdenTrabajo orden, ConfigTienda config) async {
     print('--- INICIANDO GENERACIÓN DE TICKET ---');
     print('📄 Orden ID: ${orden.id}, Nro: ${orden.numeroOrden}');
-    print('🏪 Tienda: ${config.nombreOptica}');
+    print('📅 Fecha Raw: ${orden.fecha}');
     
     try {
       final pdf = pw.Document();
@@ -22,6 +40,7 @@ class TicketPdfService {
       final ruc = config.ruc.isEmpty ? "---" : config.ruc;
       final direccion = config.direccion.isEmpty ? "---" : config.direccion;
       final telefono = config.telefono.isEmpty ? "---" : config.telefono;
+      final fechaFormateada = _formatearFecha(orden.fecha);
 
       pdf.addPage(
         pw.Page(
@@ -47,7 +66,7 @@ class TicketPdfService {
                 pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                 pw.Text('Nro: ${orden.numeroOrden}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                 pw.SizedBox(height: 8),
-                _buildFilaTexto('Fecha:', orden.fecha.length >= 10 ? orden.fecha.substring(0, 10) : (orden.fecha.isEmpty ? '---' : orden.fecha)),
+                _buildFilaTexto('Fecha:', fechaFormateada),
                 _buildFilaTexto('Paciente:', orden.pacienteNombre),
                 pw.SizedBox(height: 10),
                 pw.Divider(borderStyle: pw.BorderStyle.dashed),
@@ -107,14 +126,14 @@ class TicketPdfService {
         ),
       );
 
-      print('🚀 Enviando PDF a Printing.layoutPdf...');
+      print(' Enviando PDF a Printing.layoutPdf...');
       await Printing.layoutPdf(onLayout: (PdfPageFormat format) async {
         print('💾 Guardando bytes del PDF...');
         return pdf.save();
       });
-      print('✅ Proceso de impresión completado exitosamente.');
+      print('[EXITOO] Proceso de impresión completado exitosamente.');
     } catch (e, stack) {
-      print('❌ ERROR CRÍTICO EN TicketPdfService.imprimirTicket: $e');
+      print('[X] ERROR CRÍTICO EN TicketPdfService.imprimirTicket: $e');
       print(stack);
       rethrow;
     }
@@ -124,6 +143,7 @@ class TicketPdfService {
   static Future<void> compartirOrdenWhatsApp(OrdenTrabajo orden, ConfigTienda config) async {
     try {
       final pdf = pw.Document();
+      final fechaFormateada = _formatearFecha(orden.fecha);
 
       pdf.addPage(
         pw.Page(
@@ -183,7 +203,7 @@ class TicketPdfService {
                         pw.Row(
                           children: [
                             pw.Expanded(child: _buildInfoLabel('NOMBRE:', orden.pacienteNombre)),
-                            pw.Expanded(child: _buildInfoLabel('FECHA:', orden.fecha.length >= 10 ? orden.fecha.substring(0,10) : orden.fecha)),
+                            pw.Expanded(child: _buildInfoLabel('FECHA:', fechaFormateada)),
                           ],
                         ),
                         pw.SizedBox(height: 6),
@@ -301,18 +321,16 @@ class TicketPdfService {
         ),
       );
 
-      // Guardar y compartir
-      final output = await getTemporaryDirectory();
-      final fileName = "Boleta_${orden.numeroOrden}_${orden.pacienteNombre.replaceAll(' ', '_')}.pdf";
-      final file = File("${output.path}/$fileName");
-      await file.writeAsBytes(await pdf.save());
-
-      await Share.shareXFiles(
-        [XFile(file.path)], 
-        text: 'Hola ${orden.pacienteNombre}, aquí tienes tu boleta de venta de ${config.nombreOptica}.'
+      // Compartir de forma multiplataforma (Web, Android, iOS, Windows)
+      print('📤 Compartiendo PDF de forma multiplataforma...');
+      await Printing.sharePdf(
+        bytes: await pdf.save(), 
+        filename: "Boleta_${orden.numeroOrden}_${orden.pacienteNombre.replaceAll(' ', '_')}.pdf",
       );
+      
+      print('✅ Proceso de compartir completado.');
     } catch (e) {
-      print('❌ ERROR EN COMPARTIR WHATSAPP: $e');
+      print('❌ ERROR EN COMPARTIR: $e');
       rethrow;
     }
   }
