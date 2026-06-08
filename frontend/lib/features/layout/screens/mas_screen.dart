@@ -24,7 +24,10 @@ class MasScreen extends StatelessWidget {
               icono: Icons.inventory_2_rounded,
               color: Colors.orange,
               onTap: () {
-                // Implementar navegación a AlmacenScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const com.optica.api.features.almacen.screens.almacen_screen.AlmacenScreen()),
+                );
               }
           ),
           const SizedBox(height: 12),

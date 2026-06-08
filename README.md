@@ -56,6 +56,26 @@ Esquema definido en `BD_optica.sql`
 
 ---
 
+## 🔄 Bitácora de Cambios Recientes
+
+### 1. Backend (Java/Spring Boot)
+- **Refactorización de Persistencia**: Se corrigieron errores de carga del `ApplicationContext` mediante la eliminación de aritmética de fechas en JPQL (`MovimientoCajaRepository`), migrando la lógica a Java con `LocalDateTime`.
+- **Gestión de Configuración de Tiendas**: Implementación de `ConfigTiendaController` y servicios asociados para centralizar datos legales (RUC, Dirección, Teléfono) por cada sede.
+- **Seguridad y Permisos**: Reforzamiento de los controles de acceso para la actualización de pacientes y corrección de rutas duplicadas.
+- **Tickets Dinámicos**: Adaptación de la lógica de impresión para consumir datos directamente de la tabla `config_tienda`.
+
+### 2. Frontend (Flutter)
+- **Carga de Historial Inteligente**: Implementación del botón **"Cargar Última Receta"** en el módulo de ventas, permitiendo recuperar automáticamente medidas previas (Esfera, Cilindro, Eje, Adición, DIP).
+- **Mejoras en Tickets PDF**: Se incluyeron los campos de **Adición** y **DIP** en el formato de impresión de tickets para mayor precisión técnica.
+- **Gestión de Usuarios**: Adición de un switch para activar/desactivar cuentas de usuario directamente desde la interfaz administrativa.
+- **Optimización de Interfaz**: Resolución de errores de navegación y ajuste de permisos de visibilidad según el rol del usuario.
+
+### 3. Base de Datos (MySQL)
+- **Nueva Tabla `config_tienda`**: Creación de la estructura para almacenar metadatos de las sucursales (C1, C2, C3), facilitando la personalización de comprobantes.
+- **Limpieza de Esquema**: Optimización de tipos de datos y sincronización de Enums para estados de trabajo y tiendas.
+
+---
+
 ## 🛠️ Guía de Implementación para IA
 Este repositorio incluye un archivo especializado llamado `IA_client.md`. Si eres una IA, lee ese archivo primero para obtener el contexto completo del stack, esquema de base de datos y reglas de negocio.
 

@@ -2,62 +2,92 @@ class NuevaVentaDTO {
   final int pacienteId;
   final int vendedorId;
   final String tienda;
+  final String tipoVenta; // ORDEN_TRABAJO o ORDEN_VENTA
 
   // Finanzas
   final double montoTotal;
   final double montoACuenta;
-
-  // Receta
-  final String graduacionOd;
-  final String graduacionOi;
-  final String adicion;
-  final String dip;
-
-  // Productos
-  final bool esLunaCliente;
-  final String tipoLuna;
-  final bool esMonturaCliente;
-  final String montura;
-  final String observaciones;
-
   final String metodoPago;
+
+  // Datos para ORDEN_TRABAJO
+  final String? graduacionOd;
+  final String? graduacionOi;
+  final String? adicion;
+  final String? dip;
+  final bool? esLunaCliente;
+  final String? tipoLuna;
+  final bool? esMonturaCliente;
+  final String? montura;
+  final String? observaciones;
+
+  // Datos para ORDEN_VENTA (Productos)
+  final List<DetalleVentaAlmacenDTO>? productos;
 
   NuevaVentaDTO({
     required this.pacienteId,
     required this.vendedorId,
     required this.tienda,
+    required this.tipoVenta,
     required this.montoTotal,
     required this.montoACuenta,
-    required this.graduacionOd,
-    required this.graduacionOi,
-    required this.adicion,
-    required this.dip,
-    required this.esLunaCliente,
-    required this.tipoLuna,
-    required this.esMonturaCliente,
-    required this.montura,
-    required this.observaciones,
     required this.metodoPago,
+    this.graduacionOd,
+    this.graduacionOi,
+    this.adicion,
+    this.dip,
+    this.esLunaCliente,
+    this.tipoLuna,
+    this.esMonturaCliente,
+    this.montura,
+    this.observaciones,
+    this.productos,
   });
 
-  // Solo necesitamos el toJson porque esto va de Flutter hacia Java
   Map<String, dynamic> toJson() {
-    return {
+    final map = {
       'pacienteId': pacienteId,
       'vendedorId': vendedorId,
       'tienda': tienda,
+      'tipoVenta': tipoVenta,
       'montoTotal': montoTotal,
       'montoACuenta': montoACuenta,
-      'graduacionOd': graduacionOd,
-      'graduacionOi': graduacionOi,
-      'adicion': adicion,
-      'dip': dip,
-      'esLunaCliente': esLunaCliente,
-      'tipoLuna': tipoLuna,
-      'esMonturaCliente': esMonturaCliente,
-      'montura': montura,
-      'observaciones': observaciones,
       'metodoPago': metodoPago,
     };
+
+    if (tipoVenta == 'ORDEN_TRABAJO') {
+      map.addAll({
+        'graduacionOd': graduacionOd ?? '',
+        'graduacionOi': graduacionOi ?? '',
+        'adicion': adicion ?? '',
+        'dip': dip ?? '',
+        'esLunaCliente': esLunaCliente ?? false,
+        'tipoLuna': tipoLuna ?? '',
+        'esMonturaCliente': esMonturaCliente ?? false,
+        'montura': montura ?? '',
+        'observaciones': observaciones ?? '',
+      });
+    } else {
+      map['productos'] = productos?.map((p) => p.toJson()).toList();
+    }
+
+    return map;
   }
+}
+
+class DetalleVentaAlmacenDTO {
+  final int almacenId;
+  final int cantidad;
+  final double precioUnitario;
+
+  DetalleVentaAlmacenDTO({
+    required this.almacenId,
+    required this.cantidad,
+    required this.precioUnitario,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'almacenId': almacenId,
+    'cantidad': cantidad,
+    'precioUnitario': precioUnitario,
+  };
 }

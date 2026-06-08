@@ -627,11 +627,15 @@ class NuevaVentaDialog extends StatefulWidget {
 class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   final _formKey = GlobalKey<FormState>();
 
+  String _tipoVenta = 'ORDEN_TRABAJO'; // 'ORDEN_TRABAJO' o 'ORDEN_VENTA'
   bool _monturaPropia = false;
   bool _lunasPropias = false;
   int? _vendedorId;
   int? _pacienteId;
   String _metodoPagoSeleccionado = 'EFECTIVO';
+
+  // Productos seleccionados (para ORDEN_VENTA)
+  final List<DetalleVentaAlmacenDTO> _productosSeleccionados = [];
 
   // Controladores
   final _pacienteSearchCtrl = TextEditingController();
@@ -665,6 +669,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       Provider.of<UsuariosProvider>(context, listen: false).fetchActivosPorTienda(auth.tienda ?? 'C1');
       Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(auth.tienda ?? 'C1');
+      // Precargar productos para el buscador
+      Provider.of<com.optica.api.features.almacen.providers.AlmacenProvider>(context, listen: false).fetchProductos(auth.tienda ?? 'C1');
     });
   }
 
@@ -691,6 +697,16 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     double t = double.tryParse(_totalCtrl.text) ?? 0;
     double a = double.tryParse(_abonoCtrl.text) ?? 0;
     setState(() => _saldo = (t - a).toStringAsFixed(2));
+  }
+
+  void _recalcularTotalDesdeProductos() {
+    if (_tipoVenta == 'ORDEN_VENTA') {
+      double total = 0;
+      for (var p in _productosSeleccionados) {
+        total += p.precioUnitario * p.cantidad;
+      }
+      _totalCtrl.text = total.toStringAsFixed(2);
+    }
   }
 
   String _armarMedida(String esf, String cil, String eje) {
@@ -755,18 +771,22 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       pacienteId: _pacienteId!,
       vendedorId: _vendedorId ?? 1,
       tienda: auth.tienda ?? 'C1',
+      tipoVenta: _tipoVenta,
       montoTotal: double.tryParse(_totalCtrl.text) ?? 0,
       montoACuenta: double.tryParse(_abonoCtrl.text) ?? 0,
-      graduacionOd: _armarMedida(_odEsf.text, _odCil.text, _odEje.text),
-      graduacionOi: _armarMedida(_oiEsf.text, _oiCil.text, _oiEje.text),
-      adicion: _addCtrl.text,
-      dip: _dipCtrl.text,
-      esLunaCliente: _lunasPropias,
-      tipoLuna: _lunasPropias ? "PROPIA" : _lunaCtrl.text,
-      esMonturaCliente: _monturaPropia,
-      montura: _monturaPropia ? "PROPIA" : _monturaCtrl.text,
-      observaciones: _obsCtrl.text,
       metodoPago: _metodoPagoSeleccionado,
+      // Datos de fabricación
+      graduacionOd: _tipoVenta == 'ORDEN_TRABAJO' ? _armarMedida(_odEsf.text, _odCil.text, _odEje.text) : null,
+      graduacionOi: _tipoVenta == 'ORDEN_TRABAJO' ? _armarMedida(_oiEsf.text, _oiCil.text, _oiEje.text) : null,
+      adicion: _tipoVenta == 'ORDEN_TRABAJO' ? _addCtrl.text : null,
+      dip: _tipoVenta == 'ORDEN_TRABAJO' ? _dipCtrl.text : null,
+      esLunaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _lunasPropias : null,
+      tipoLuna: _tipoVenta == 'ORDEN_TRABAJO' ? (_lunasPropias ? "PROPIA" : _lunaCtrl.text) : null,
+      esMonturaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _monturaPropia : null,
+      montura: _tipoVenta == 'ORDEN_TRABAJO' ? (_monturaPropia ? "PROPIA" : _monturaCtrl.text) : null,
+      observaciones: _obsCtrl.text,
+      // Productos de almacén
+      productos: _tipoVenta == 'ORDEN_VENTA' ? _productosSeleccionados : null,
     );
 
     final exito = await ventasProv.crearNuevaVenta(dto);
@@ -790,7 +810,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
         width: isMobile ? double.infinity : 900,
-        height: 800,
+        height: 850,
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
@@ -799,59 +819,88 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Nueva Orden de Venta', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_tipoVenta == 'ORDEN_TRABAJO' ? 'Nueva Orden de Trabajo' : 'Nueva Orden de Venta', 
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                      const Text('Complete los datos para generar el comprobante', style: TextStyle(fontSize: 12, color: AppColors.gray500)),
+                    ],
+                  ),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                 ],
               ),
-              const Divider(),
+              const SizedBox(height: 16),
+              // SELECTOR DE TIPO DE VENTA
+              Row(
+                children: [
+                  Expanded(
+                    child: _tipoVentaButton('ORDEN_TRABAJO', 'FABRICACIÓN (Receta)', Icons.biotech_rounded),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _tipoVentaButton('ORDEN_VENTA', 'PRODUCTOS (Almacén)', Icons.inventory_2_rounded),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _section('1. Información General'),
+                      _section('1. Información del Cliente'),
                       _row(isMobile, [
                         _buildPacienteSearcher(),
                         _vendedorDropdown(),
                       ]),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _section('2. Receta Oftálmica'),
-                          if (_pacienteId != null)
-                            TextButton.icon(
-                              onPressed: _cargarUltimaReceta,
-                              icon: const Icon(Icons.history_rounded, size: 16),
-                              label: const Text('Cargar Última', style: TextStyle(fontSize: 12)),
-                              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                            ),
-                        ],
-                      ),
-                      _buildDataTable(),
                       const SizedBox(height: 16),
-                      _row(isMobile, [
-                        _field('Adición (ADD)', null, _addCtrl, hint: '+2.25'),
-                        _field('D.I.P.', null, _dipCtrl, hint: '64/62'),
-                      ]),
-                      const SizedBox(height: 24),
-                      _section('3. Detalles del Producto'),
-                      _checkRow('Montura propia del cliente', _monturaPropia, (v) => setState(() => _monturaPropia = v!)),
-                      _field('Marca/Modelo Montura', Icons.wallpaper_rounded, _monturaCtrl, readOnly: _monturaPropia),
-                      const SizedBox(height: 12),
-                      _checkRow('Lunas propias (Solo montaje)', _lunasPropias, (v) => setState(() => _lunasPropias = v!)),
-                      _field('Tipo de Cristales', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
+                      
+                      if (_tipoVenta == 'ORDEN_TRABAJO') ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _section('2. Receta Oftálmica'),
+                            if (_pacienteId != null)
+                              TextButton.icon(
+                                onPressed: _cargarUltimaReceta,
+                                icon: const Icon(Icons.history_rounded, size: 16),
+                                label: const Text('Cargar Última', style: TextStyle(fontSize: 12)),
+                                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                              ),
+                          ],
+                        ),
+                        _buildDataTable(),
+                        const SizedBox(height: 16),
+                        _row(isMobile, [
+                          _field('Adición (ADD)', null, _addCtrl, hint: '+2.25'),
+                          _field('D.I.P.', null, _dipCtrl, hint: '64/62'),
+                        ]),
+                        const SizedBox(height: 24),
+                        _section('3. Detalles del Producto'),
+                        _checkRow('Montura propia del cliente', _monturaPropia, (v) => setState(() => _monturaPropia = v!)),
+                        _field('Marca/Modelo Montura', Icons.wallpaper_rounded, _monturaCtrl, readOnly: _monturaPropia),
+                        const SizedBox(height: 12),
+                        _checkRow('Lunas propias (Solo montaje)', _lunasPropias, (v) => setState(() => _lunasPropias = v!)),
+                        _field('Tipo de Cristales', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
+                      ] else ...[
+                        _section('2. Productos de Almacén'),
+                        _buildBuscadorProductosAlmacen(),
+                        const SizedBox(height: 12),
+                        _buildTablaProductosSeleccionados(),
+                      ],
+                      
                       const SizedBox(height: 16),
                       _field('Observaciones Finales', Icons.comment, _obsCtrl, maxLines: 2),
                       const SizedBox(height: 24),
-                      _section('4. Liquidación'),
+                      _section('4. Liquidación y Pago'),
                       _row(isMobile, [
-                        _field('Total S/ *', Icons.payments, _totalCtrl, num: true, req: true),
+                        _field('Total S/ *', Icons.payments, _totalCtrl, num: true, req: true, readOnly: _tipoVenta == 'ORDEN_VENTA'),
                         _field('Abono S/', Icons.savings, _abonoCtrl, num: true),
                         _saldoWidget(),
                       ]),
                       const SizedBox(height: 16),
                       _buildMetodosPagoRapido(isMobile),
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -863,12 +912,145 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   onPressed: _guardarVenta,
-                  child: const Text('Confirmar Venta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('Confirmar Venta y Generar Ticket', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _tipoVentaButton(String tipo, String label, IconData icon) {
+    bool activo = _tipoVenta == tipo;
+    return InkWell(
+      onTap: () => setState(() => _tipoVenta = tipo),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: activo ? AppColors.primary.withOpacity(0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: activo ? AppColors.primary : AppColors.gray200, width: 2),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: activo ? AppColors.primary : AppColors.gray400, size: 18),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: activo ? AppColors.primary : AppColors.gray500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBuscadorProductosAlmacen() {
+    return Consumer<com.optica.api.features.almacen.providers.AlmacenProvider>(
+      builder: (context, prov, _) {
+        return Autocomplete<com.optica.api.features.almacen.models.almacen_model.Almacen>(
+          displayStringForOption: (p) => p.nombre,
+          optionsBuilder: (textValue) {
+            if (textValue.text.isEmpty) return const Iterable.empty();
+            return prov.productos.where((p) => 
+              p.nombre.toLowerCase().contains(textValue.text.toLowerCase()) || 
+              p.codigoBarras.contains(textValue.text));
+          },
+          onSelected: (p) {
+            setState(() {
+              // Buscar si ya existe
+              int index = _productosSeleccionados.indexWhere((item) => item.almacenId == p.id);
+              if (index != -1) {
+                // Incrementar cantidad si hay stock
+                _productosSeleccionados[index] = DetalleVentaAlmacenDTO(
+                  almacenId: p.id,
+                  cantidad: _productosSeleccionados[index].cantidad + 1,
+                  precioUnitario: p.precioVenta,
+                );
+              } else {
+                _productosSeleccionados.add(DetalleVentaAlmacenDTO(
+                  almacenId: p.id,
+                  cantidad: 1,
+                  precioUnitario: p.precioVenta,
+                ));
+              }
+              _recalcularTotalDesdeProductos();
+            });
+          },
+          fieldViewBuilder: (context, ctrl, focus, onFieldSubmitted) {
+            return TextField(
+              controller: ctrl,
+              focusNode: focus,
+              decoration: InputDecoration(
+                hintText: 'Escanear código o buscar producto...',
+                prefixIcon: const Icon(Icons.qr_code_scanner_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: AppColors.gray50,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTablaProductosSeleccionados() {
+    if (_productosSeleccionados.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(color: AppColors.gray50, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.gray200, style: BorderStyle.solid)),
+        child: const Column(
+          children: [
+            Icon(Icons.shopping_basket_outlined, color: AppColors.gray400),
+            SizedBox(height: 8),
+            Text('No hay productos seleccionados', style: TextStyle(color: AppColors.gray500, fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: AppColors.gray200), borderRadius: BorderRadius.circular(12)),
+      child: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: _productosSeleccionados.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final item = _productosSeleccionados[index];
+          // Buscar el nombre del producto en el provider
+          final prov = Provider.of<com.optica.api.features.almacen.providers.AlmacenProvider>(context, listen: false);
+          final pInfo = prov.productos.firstWhere((p) => p.id == item.almacenId);
+
+          return ListTile(
+            title: Text(pInfo.nombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            subtitle: Text('Precio: S/ ${item.precioUnitario.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(icon: const Icon(Icons.remove_circle_outline, size: 20), onPressed: () {
+                  setState(() {
+                    if (item.cantidad > 1) {
+                      _productosSeleccionados[index] = DetalleVentaAlmacenDTO(almacenId: item.almacenId, cantidad: item.cantidad - 1, precioUnitario: item.precioUnitario);
+                    } else {
+                      _productosSeleccionados.removeAt(index);
+                    }
+                    _recalcularTotalDesdeProductos();
+                  });
+                }),
+                Text('${item.cantidad}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.add_circle_outline, size: 20), onPressed: () {
+                  setState(() {
+                    _productosSeleccionados[index] = DetalleVentaAlmacenDTO(almacenId: item.almacenId, cantidad: item.cantidad + 1, precioUnitario: item.precioUnitario);
+                    _recalcularTotalDesdeProductos();
+                  });
+                }),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
