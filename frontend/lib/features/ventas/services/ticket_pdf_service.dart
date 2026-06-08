@@ -255,7 +255,7 @@ class TicketPdfService {
                   ),
                   pw.SizedBox(height: 20),
 
-                  // Receta y Observaciones
+                  // Observaciones
                   pw.Row(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
@@ -264,21 +264,6 @@ class TicketPdfService {
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Text('RECETA MÉDICA', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                            pw.SizedBox(height: 4),
-                            pw.Container(
-                              padding: const pw.EdgeInsets.all(8),
-                              decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey300), borderRadius: pw.BorderRadius.circular(4)),
-                              child: pw.Column(
-                                children: [
-                                  _buildRecetaRow('O.D.', orden.graduacionOd ?? '-'),
-                                  _buildRecetaRow('O.I.', orden.graduacionOi ?? '-'),
-                                  _buildRecetaRow('ADD', orden.adicion ?? '-'),
-                                  _buildRecetaRow('DIP', orden.dip ?? '-'),
-                                ],
-                              ),
-                            ),
-                            pw.SizedBox(height: 15),
                             pw.Text('OBSERVACIONES:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                             pw.Text(orden.observaciones ?? 'Sin observaciones adicionales.', style: const pw.TextStyle(fontSize: 10)),
                           ],
@@ -413,6 +398,10 @@ class TicketPdfService {
           pw.Text('S/ ${valor.toStringAsFixed(2)}', style: style),
         ],
       ),
+    );
+  }
+}
+    ),
     );
   }
 }

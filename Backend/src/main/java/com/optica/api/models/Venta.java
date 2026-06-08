@@ -19,6 +19,9 @@ public class Venta {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "codigo_barras", unique = true, length = 50)
+    private String codigoBarras;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -28,6 +31,10 @@ public class Venta {
     @JoinColumn(name = "vendedor_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Usuario vendedor;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_venta", nullable = false)
+    private com.optica.api.models.enums.TipoVenta tipoVenta = com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO;
 
     @Column(name = "monto_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoTotal;

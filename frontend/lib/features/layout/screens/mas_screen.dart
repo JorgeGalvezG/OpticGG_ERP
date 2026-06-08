@@ -19,6 +19,17 @@ class MasScreen extends StatelessWidget {
         children: [
           _buildMenuOpcion(
               context,
+              titulo: 'Almacén e Inventario',
+              subtitulo: 'Gestión de productos y stock',
+              icono: Icons.inventory_2_rounded,
+              color: Colors.orange,
+              onTap: () {
+                // Implementar navegación a AlmacenScreen
+              }
+          ),
+          const SizedBox(height: 12),
+          _buildMenuOpcion(
+              context,
               titulo: 'Proveedores',
               subtitulo: 'Gestión de laboratorios y marcas',
               icono: Icons.local_shipping_rounded,

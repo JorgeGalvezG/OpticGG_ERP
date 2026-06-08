@@ -1,33 +1,41 @@
 package com.optica.api.dto;
 
 import com.optica.api.models.enums.Tienda;
-import lombok.Data;
+import com.optica.api.models.enums.TipoVenta;
+import lombok.Getter;
+import lombok.Setter;
 import java.math.BigDecimal;
+import java.util.List;
 
-@Data
+@Getter @Setter
 public class NuevaVentaCompletaDTO {
-    // 1. Identificadores
+    // Datos comunes
     private Long pacienteId;
     private Long vendedorId;
     private Tienda tienda;
-
-    // 2. Dinero
     private BigDecimal montoTotal;
     private BigDecimal montoACuenta;
     private String metodoPago;
+    private TipoVenta tipoVenta;
 
-    // 3. Receta Visual (Historial Clínico)
-    private String graduacionOd; // Ej: "Esf: -1.00, Cil: -0.50..."
+    // Datos para ORDEN_TRABAJO (Fabricación)
+    private String graduacionOd;
     private String graduacionOi;
     private String adicion;
     private String dip;
-
-    // 4. Productos
-    private Boolean esLunaCliente;
     private String tipoLuna;
-    private Boolean esMonturaCliente;
+    private Boolean esLunaCliente;
     private String montura;
-
-    // 5. Detalles
+    private Boolean esMonturaCliente;
     private String observaciones;
+
+    // Datos para ORDEN_VENTA (Productos de Almacén)
+    private List<DetalleVentaAlmacenDTO> productos;
+
+    @Getter @Setter
+    public static class DetalleVentaAlmacenDTO {
+        private Long almacenId;
+        private Integer cantidad;
+        private BigDecimal precioUnitario;
+    }
 }

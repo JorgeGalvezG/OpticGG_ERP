@@ -157,11 +157,12 @@ public class DashboardController {
     }
 
     private Double calcularPorcentaje(BigDecimal hoy, BigDecimal ayer) {
+        if (hoy == null) hoy = BigDecimal.ZERO;
         if (ayer == null || ayer.compareTo(BigDecimal.ZERO) == 0) {
             return hoy.compareTo(BigDecimal.ZERO) > 0 ? 100.0 : 0.0;
         }
         return hoy.subtract(ayer)
-                .divide(ayer, 4, BigDecimal.ROUND_HALF_UP)
+                .divide(ayer, 4, java.math.RoundingMode.HALF_UP)
                 .multiply(new BigDecimal(100))
                 .doubleValue();
     }

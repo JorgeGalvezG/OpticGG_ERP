@@ -28,9 +28,16 @@ public class CompraProveedor {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
+    @Column(name = "monto_pagado", precision = 10, scale = 2)
+    private BigDecimal montoPagado = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_pago")
     private EstadoPago estadoPago = EstadoPago.PENDIENTE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_entrega")
+    private com.optica.api.models.enums.EstadoEntrega estadoEntrega = com.optica.api.models.enums.EstadoEntrega.SOLICITADO;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
@@ -42,4 +49,8 @@ public class CompraProveedor {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     @Column(name = "fecha_pedido", updatable = false, insertable = false)
     private LocalDateTime fechaPedido;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
+    @Column(name = "fecha_entrega")
+    private LocalDateTime fechaEntrega;
 }

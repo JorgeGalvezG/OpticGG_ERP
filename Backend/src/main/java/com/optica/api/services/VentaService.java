@@ -34,6 +34,8 @@ public class VentaService {
     @Autowired private ConsultaRepository consultaRepository;
     @Autowired private HistorialClinicoRepository historialClinicoRepository;
     @Autowired private MovimientoCajaRepository movimientoCajaRepository;
+    @Autowired private AlmacenRepository almacenRepository;
+    @Autowired private VentasDetalleAlmacenRepository ventasDetalleAlmacenRepository;
 
     @Transactional
     public Venta procesarNuevaVenta(NuevaVentaCompletaDTO dto) {
@@ -46,52 +48,23 @@ public class VentaService {
         Usuario vendedor = usuarioRepository.findById(dto.getVendedorId())
                 .orElseThrow(() -> new RuntimeException("Vendedor no encontrado: " + dto.getVendedorId()));
 
-        // 2. Crear consulta básica
-        Consulta consulta = new Consulta();
-        consulta.setPaciente(paciente);
-        consulta.setVendedor(vendedor);
-        consulta.setMotivo("Venta de Lentes");
-        consulta.setReceta(dto.getObservaciones()); // Usamos observaciones como receta inicial
-        consulta.setFecha(ahora);
-        Consulta consultaGuardada = consultaRepository.save(consulta);
+        // 2. Generar Código de Barras Único para la Venta
+        String codigoBarras = "V-" + ahora.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + "-" + (int)(Math.random() * 100);
 
-        // 3. Crear historial clínico (receta)
-        HistorialClinico historial = new HistorialClinico();
-        historial.setConsulta(consultaGuardada);
-        historial.setGraduacionOd(dto.getGraduacionOd());
-        historial.setGraduacionOi(dto.getGraduacionOi());
-        historial.setAdicion(dto.getAdicion());
-        historial.setDip(dto.getDip());
-        historial.setTipoLuna(dto.getTipoLuna());
-        historial.setEsLunaCliente(dto.getEsLunaCliente());
-        historial.setMontura(dto.getMontura());
-        historial.setEsMonturaCliente(dto.getEsMonturaCliente());
-        historial.setObservaciones(dto.getObservaciones());
-        historialClinicoRepository.save(historial);
-
-        // 4. Crear la venta (control de dinero)
+        // 3. Crear la venta (control de dinero)
         BigDecimal saldo = dto.getMontoTotal().subtract(dto.getMontoACuenta());
 
         Venta venta = new Venta();
+        venta.setCodigoBarras(codigoBarras);
         venta.setCliente(paciente);
         venta.setVendedor(vendedor);
+        venta.setTipoVenta(dto.getTipoVenta() != null ? dto.getTipoVenta() : com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO);
         venta.setTienda(dto.getTienda());
         venta.setMontoTotal(dto.getMontoTotal());
         venta.setMontoACuenta(dto.getMontoACuenta());
         venta.setMontoSaldo(saldo);
         venta.setMetodoPago(dto.getMetodoPago());
         venta.setFecha(ahora);
-        
-        // Copiar campos de historial a la venta
-        venta.setGraduacionOd(dto.getGraduacionOd());
-        venta.setGraduacionOi(dto.getGraduacionOi());
-        venta.setAdicion(dto.getAdicion());
-        venta.setDip(dto.getDip());
-        venta.setTipoLuna(dto.getTipoLuna());
-        venta.setEsLunaCliente(dto.getEsLunaCliente());
-        venta.setMontura(dto.getMontura());
-        venta.setEsMonturaCliente(dto.getEsMonturaCliente());
-        venta.setObservaciones(dto.getObservaciones());
 
         // Estado de pago automático
         if (saldo.compareTo(BigDecimal.ZERO) <= 0) {
@@ -102,43 +75,99 @@ public class VentaService {
             venta.setEstado(EstadoPago.PENDIENTE);
         }
 
+        // Lógica según tipo de venta
+        if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO) {
+            // Lógica de Fabricación (Consulta + Historial + OT)
+            Consulta consulta = new Consulta();
+            consulta.setPaciente(paciente);
+            consulta.setVendedor(vendedor);
+            consulta.setMotivo("Venta de Lentes");
+            consulta.setReceta(dto.getObservaciones());
+            consulta.setFecha(ahora);
+            Consulta consultaGuardada = consultaRepository.save(consulta);
+
+            HistorialClinico historial = new HistorialClinico();
+            historial.setConsulta(consultaGuardada);
+            historial.setGraduacionOd(dto.getGraduacionOd());
+            historial.setGraduacionOi(dto.getGraduacionOi());
+            historial.setAdicion(dto.getAdicion());
+            historial.setDip(dto.getDip());
+            historial.setTipoLuna(dto.getTipoLuna());
+            historial.setEsLunaCliente(dto.getEsLunaCliente());
+            historial.setMontura(dto.getMontura());
+            historial.setEsMonturaCliente(dto.getEsMonturaCliente());
+            historial.setObservaciones(dto.getObservaciones());
+            historialClinicoRepository.save(historial);
+
+            venta.setGraduacionOd(dto.getGraduacionOd());
+            venta.setGraduacionOi(dto.getGraduacionOi());
+            venta.setAdicion(dto.getAdicion());
+            venta.setDip(dto.getDip());
+            venta.setTipoLuna(dto.getTipoLuna());
+            venta.setEsLunaCliente(dto.getEsLunaCliente());
+            venta.setMontura(dto.getMontura());
+            venta.setEsMonturaCliente(dto.getEsMonturaCliente());
+            venta.setObservaciones(dto.getObservaciones());
+        }
+
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // 5. Crear orden de trabajo (Kanban)
-        String codigoOrden = "OT-" + ahora
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+        // Si es ORDEN_VENTA (Productos), registramos detalles y descargamos stock
+        if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_VENTA && dto.getProductos() != null) {
+            for (NuevaVentaCompletaDTO.DetalleVentaAlmacenDTO itemDto : dto.getProductos()) {
+                Almacen producto = almacenRepository.findById(itemDto.getAlmacenId())
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado en almacén: " + itemDto.getAlmacenId()));
+                
+                if (producto.getStock() < itemDto.getCantidad()) {
+                    throw new RuntimeException("Stock insuficiente para: " + producto.getNombre());
+                }
 
-        OrdenTrabajo orden = new OrdenTrabajo();
-        orden.setNumeroOrden(codigoOrden);
-        orden.setCliente(paciente);
-        orden.setVenta(ventaGuardada);
-        orden.setTienda(dto.getTienda());
-        orden.setMontoTotal(dto.getMontoTotal());
-        orden.setMontoACuenta(dto.getMontoACuenta());
-        orden.setMontoSaldo(saldo);
-        orden.setEstado(EstadoTrabajo.PENDIENTE);
-        orden.setFecha(ahora);
-        
-        // Copiar campos de historial a la orden
-        orden.setGraduacionOd(dto.getGraduacionOd());
-        orden.setGraduacionOi(dto.getGraduacionOi());
-        orden.setAdicion(dto.getAdicion());
-        orden.setDip(dto.getDip());
-        orden.setTipoLuna(dto.getTipoLuna());
-        orden.setEsLunaCliente(dto.getEsLunaCliente());
-        orden.setMontura(dto.getMontura());
-        orden.setEsMonturaCliente(dto.getEsMonturaCliente());
-        orden.setObservaciones(dto.getObservaciones());
-        orden.setMetodoPago(dto.getMetodoPago());
+                VentasDetalleAlmacen detalle = new VentasDetalleAlmacen();
+                detalle.setVenta(ventaGuardada);
+                detalle.setAlmacen(producto);
+                detalle.setCantidad(itemDto.getCantidad());
+                detalle.setPrecioUnitario(itemDto.getPrecioUnitario());
+                detalle.setSubtotal(itemDto.getPrecioUnitario().multiply(new BigDecimal(itemDto.getCantidad())));
+                ventasDetalleAlmacenRepository.save(detalle);
 
-        ordenTrabajoRepository.save(orden);
+                // Descargar stock
+                producto.setStock(producto.getStock() - itemDto.getCantidad());
+                almacenRepository.save(producto);
+            }
+        }
 
-        // 6. Registrar ingreso en caja automáticamente si hay pago a cuenta
+        // Crear orden de trabajo solo si es fabricación
+        if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO) {
+            String codigoOrden = "OT-" + ahora.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            OrdenTrabajo orden = new OrdenTrabajo();
+            orden.setNumeroOrden(codigoOrden);
+            orden.setCliente(paciente);
+            orden.setVenta(ventaGuardada);
+            orden.setTienda(dto.getTienda());
+            orden.setMontoTotal(dto.getMontoTotal());
+            orden.setMontoACuenta(dto.getMontoACuenta());
+            orden.setMontoSaldo(saldo);
+            orden.setEstado(EstadoTrabajo.PENDIENTE);
+            orden.setFecha(ahora);
+            orden.setGraduacionOd(dto.getGraduacionOd());
+            orden.setGraduacionOi(dto.getGraduacionOi());
+            orden.setAdicion(dto.getAdicion());
+            orden.setDip(dto.getDip());
+            orden.setTipoLuna(dto.getTipoLuna());
+            orden.setEsLunaCliente(dto.getEsLunaCliente());
+            orden.setMontura(dto.getMontura());
+            orden.setEsMonturaCliente(dto.getEsMonturaCliente());
+            orden.setObservaciones(dto.getObservaciones());
+            orden.setMetodoPago(dto.getMetodoPago());
+            ordenTrabajoRepository.save(orden);
+        }
+
+        // 6. Registrar ingreso en caja
         if (dto.getMontoACuenta().compareTo(BigDecimal.ZERO) > 0) {
             MovimientoCaja ingreso = new MovimientoCaja();
             ingreso.setTipo(TipoMovimiento.ENTRADA);
             ingreso.setMonto(dto.getMontoACuenta());
-            ingreso.setDescripcion("Venta (" + dto.getMetodoPago() + ") - Orden: " + codigoOrden);
+            ingreso.setDescripcion("Venta (" + dto.getMetodoPago() + ") - Cód: " + codigoBarras);
             ingreso.setUsuario(vendedor);
             ingreso.setTienda(dto.getTienda());
             ingreso.setFecha(ahora);

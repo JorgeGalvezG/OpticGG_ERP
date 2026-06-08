@@ -36,13 +36,19 @@ public class CompraProveedorController {
 
     // POST /api/compras
     @PostMapping
-    public ResponseEntity<CompraProveedor> registrarCompra(@RequestBody CompraProveedor compra) {
-        return ResponseEntity.ok(compraService.registrarCompra(compra));
+    public ResponseEntity<CompraProveedor> registrarCompra(@RequestBody com.optica.api.dto.NuevaCompraProveedorDTO dto) {
+        return ResponseEntity.ok(compraService.registrarNuevaCompra(dto));
     }
 
-    // PUT /api/compras/5/pagar
-    @PutMapping("/{id}/pagar")
-    public ResponseEntity<CompraProveedor> marcarComoPagado(@PathVariable Long id) {
-        return ResponseEntity.ok(compraService.marcarComoPagado(id));
+    // PUT /api/compras/5/entregar
+    @PutMapping("/{id}/entregar")
+    public ResponseEntity<CompraProveedor> registrarEntrega(@PathVariable Long id) {
+        return ResponseEntity.ok(compraService.registrarEntrega(id));
+    }
+
+    // PUT /api/compras/5/abono
+    @PutMapping("/{id}/abono")
+    public ResponseEntity<CompraProveedor> registrarAbono(@PathVariable Long id, @RequestParam java.math.BigDecimal monto) {
+        return ResponseEntity.ok(compraService.registrarAbono(id, monto));
     }
 }
