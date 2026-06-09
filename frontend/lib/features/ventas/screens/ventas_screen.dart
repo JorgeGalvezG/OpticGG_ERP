@@ -885,23 +885,6 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                           _buildBuscadorMonturaAlmacen(),
                         if (_monturaPropia)
                           _field('Marca/Modelo Montura (Cliente)', Icons.wallpaper_rounded, _monturaCtrl),
-...
-  Widget _buildBuscadorMonturaAlmacen() {
-    return Consumer<AlmacenProvider>(
-      builder: (context, prov, _) => Autocomplete<Almacen>(
-        displayStringForOption: (p) => p.nombre,
-        optionsBuilder: (text) => text.text.isEmpty ? const Iterable.empty() : prov.productos.where((p) => (p.categoriaNombre?.toLowerCase().contains('montura') ?? false) && (p.nombre.toLowerCase().contains(text.text.toLowerCase()) || p.codigoBarras.contains(text.text))),
-        onSelected: (p) {
-          setState(() {
-            _monturaCtrl.text = p.nombre;
-            // Opcional: Podríamos añadirlo a una lista oculta para descontar stock luego
-            _productosSeleccionados.add(DetalleVentaAlmacenDTO(almacenId: p.id, cantidad: 1, precioUnitario: 0)); // Precio 0 porque el total se pone manual en OT
-          });
-        },
-        fieldViewBuilder: (ctx, ctrl, focus, onFieldSubmitted) => TextFormField(controller: ctrl, focusNode: focus, decoration: const InputDecoration(labelText: 'Buscar Montura en Stock', prefixIcon: Icon(Icons.search), border: OutlineInputBorder())),
-      ),
-    );
-  }
                         const SizedBox(height: 12),
                         _checkRow('Lunas propias (Solo montaje)', _lunasPropias, (v) => setState(() => _lunasPropias = v!)),
                         _field('Tipo de Cristales', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
@@ -1211,4 +1194,20 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       ],
     ),
   );
+
+  Widget _buildBuscadorMonturaAlmacen() {
+    return Consumer<AlmacenProvider>(
+      builder: (context, prov, _) => Autocomplete<Almacen>(
+        displayStringForOption: (p) => p.nombre,
+        optionsBuilder: (text) => text.text.isEmpty ? const Iterable.empty() : prov.productos.where((p) => (p.categoriaNombre?.toLowerCase().contains('montura') ?? false) && (p.nombre.toLowerCase().contains(text.text.toLowerCase()) || p.codigoBarras.contains(text.text))),
+        onSelected: (p) {
+          setState(() {
+            _monturaCtrl.text = p.nombre;
+            _productosSeleccionados.add(DetalleVentaAlmacenDTO(almacenId: p.id, cantidad: 1, precioUnitario: 0));
+          });
+        },
+        fieldViewBuilder: (ctx, ctrl, focus, onFieldSubmitted) => TextFormField(controller: ctrl, focusNode: focus, decoration: const InputDecoration(labelText: 'Buscar Montura en Stock', prefixIcon: Icon(Icons.search), border: OutlineInputBorder())),
+      ),
+    );
+  }
 }

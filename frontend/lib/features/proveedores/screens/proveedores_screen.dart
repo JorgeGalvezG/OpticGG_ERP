@@ -121,15 +121,23 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
   Widget _infoRow(IconData icon, String text) => Row(children: [Icon(icon, size: 14, color: AppColors.gray400), const SizedBox(width: 6), Text(text, style: const TextStyle(fontSize: 13, color: AppColors.gray600))]);
 }
 
+class _CompraDetalladaDialog extends StatefulWidget {
+  final Proveedor proveedor;
+  const _CompraDetalladaDialog({required this.proveedor});
+
+  @override
+  State<_CompraDetalladaDialog> createState() => _CompraDetalladaDialogState();
+}
+
 class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _montoPagadoController = TextEditingController(text: '0');
   
-  // Lista para stock (Pestaña 1)
+  // Lista para stock (Pestana 1)
   final List<Map<String, dynamic>> _itemsAlmacen = [];
   
-  // Lista para gasto directo (Pestaña 2)
+  // Lista para gasto directo (Pestana 2)
   final List<Map<String, dynamic>> _itemsDirectos = [];
   final _nombreGastoCtrl = TextEditingController();
   final _precioGastoCtrl = TextEditingController();
@@ -196,8 +204,8 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildPestañaStock(),
-                    _buildPestañaGastoDirecto(),
+                    _buildPestanaStock(),
+                    _buildPestanaGastoDirecto(),
                   ],
                 ),
               ),
@@ -218,7 +226,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
     );
   }
 
-  Widget _buildPestañaStock() {
+  Widget _buildPestanaStock() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -232,7 +240,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
     );
   }
 
-  Widget _buildPestañaGastoDirecto() {
+  Widget _buildPestanaGastoDirecto() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
