@@ -401,7 +401,3 @@ class TicketPdfService {
     );
   }
 }
-    ),
-    );
-  }
-}
