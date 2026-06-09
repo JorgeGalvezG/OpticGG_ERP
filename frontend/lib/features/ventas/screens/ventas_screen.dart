@@ -1191,8 +1191,4 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       ],
     ),
   );
-}tStyle(fontSize: 18, fontWeight: FontWeight.bold, color: double.parse(_saldo) > 0 ? AppColors.danger : AppColors.success)),
-      ],
-    ),
-  );
 }

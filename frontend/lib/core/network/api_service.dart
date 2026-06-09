@@ -2,43 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
-
-import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-...
-  // 5. SUBIDA DE IMÁGENES (MultiPart)
-  static Future<String> uploadImage(String filePath) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('jwt_token');
-
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/imagenes/upload'));
-      
-      if (token != null) {
-        request.headers['Authorization'] = 'Bearer $token';
-      }
-
-      request.files.add(await http.MultipartFile.fromPath(
-        'file', 
-        filePath,
-        contentType: MediaType('image', 'jpeg'),
-      ));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        return response.body; // Retorna el path relativo: /uploads/products/xxx.jpg
-      } else {
-        throw Exception('Error al subir imagen: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión al subir: $e');
-    }
-  }
-}
   static String get baseUrl => ApiConstants.baseUrl;
 
   // --- HELPER PARA IMÁGENES ---
@@ -53,10 +19,9 @@ class ApiService {
   }
 
   // --- FUNCIÓN PRIVADA PARA OBTENER EL TOKEN ---
-  // Esto evita repetir código en cada método
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('jwt_token'); // O 'jwt_token', como lo guardaras en el AuthProvider
+    final token = prefs.getString('jwt_token');
 
     return {
       'Content-Type': 'application/json',
@@ -69,12 +34,11 @@ class ApiService {
     try {
       final headers = await _getHeaders();
       
-      // Limpiamos el endpoint si ya trae /api para evitar duplicados
       String cleanEndpoint = endpoint;
       if (endpoint.startsWith('/api/')) {
-        cleanEndpoint = endpoint.substring(4); // Quita el '/api' inicial
+        cleanEndpoint = endpoint.substring(4);
       } else if (endpoint.startsWith('api/')) {
-        cleanEndpoint = endpoint.substring(3); // Quita el 'api' inicial
+        cleanEndpoint = endpoint.substring(3);
       }
       
       final url = cleanEndpoint.startsWith('/') ? '$baseUrl$cleanEndpoint' : '$baseUrl/$cleanEndpoint';
@@ -95,7 +59,7 @@ class ApiService {
     }
   }
 
-  // 2. Petición POST con Token (Aquí fallaba la venta)
+  // 2. Petición POST con Token
   static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();
@@ -115,7 +79,6 @@ class ApiService {
         body: json.encode(body),
       );
 
-      // Aceptamos 200 (OK) y 201 (Created)
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(utf8.decode(response.bodyBytes));
       } else if (response.statusCode == 403) {
@@ -176,13 +139,10 @@ class ApiService {
       final response = await http.patch(
         Uri.parse(url),
         headers: headers,
-        body: json.encode(body), // Si no envías body, enviar un mapa vacío {} está perfecto
+        body: json.encode(body),
       );
 
-      // Aceptamos 200 (OK) o 204 (No Content) dependiendo de cómo lo devuelva tu Spring Boot
       if (response.statusCode == 200 || response.statusCode == 204) {
-        // A veces PATCH devuelve el objeto modificado o a veces no devuelve nada.
-        // Si tu backend no devuelve un JSON (ej. cuerpo vacío), esto podría dar error al decodificar.
         if (response.body.isNotEmpty) {
           return json.decode(utf8.decode(response.bodyBytes));
         }
@@ -198,4 +158,34 @@ class ApiService {
     }
   }
 
+  // 5. SUBIDA DE IMÁGENES (MultiPart)
+  static Future<String> uploadImage(String filePath) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/imagenes/upload'));
+      
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'file', 
+        filePath,
+        contentType: MediaType('image', 'jpeg'),
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return response.body; 
+      } else {
+        throw Exception('Error al subir imagen: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión al subir: $e');
+    }
+  }
 }
