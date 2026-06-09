@@ -11,6 +11,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/config_provider.dart';
 import '../../usuarios/providers/usuarios_provider.dart';
 import '../services/ticket_pdf_service.dart';
+import '../../almacen/providers/almacen_provider.dart';
+import '../../almacen/models/almacen_model.dart';
 
 class VentasScreen extends StatefulWidget {
   const VentasScreen({super.key});
@@ -670,7 +672,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       Provider.of<UsuariosProvider>(context, listen: false).fetchActivosPorTienda(auth.tienda ?? 'C1');
       Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(auth.tienda ?? 'C1');
       // Precargar productos para el buscador
-      Provider.of<com.optica.api.features.almacen.providers.AlmacenProvider>(context, listen: false).fetchProductos(auth.tienda ?? 'C1');
+      Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(auth.tienda ?? 'C1');
     });
   }
 
@@ -946,9 +948,9 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   }
 
   Widget _buildBuscadorProductosAlmacen() {
-    return Consumer<com.optica.api.features.almacen.providers.AlmacenProvider>(
+    return Consumer<AlmacenProvider>(
       builder: (context, prov, _) {
-        return Autocomplete<com.optica.api.features.almacen.models.almacen_model.Almacen>(
+        return Autocomplete<Almacen>(
           displayStringForOption: (p) => p.nombre,
           optionsBuilder: (textValue) {
             if (textValue.text.isEmpty) return const Iterable.empty();
@@ -1021,7 +1023,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         itemBuilder: (context, index) {
           final item = _productosSeleccionados[index];
           // Buscar el nombre del producto en el provider
-          final prov = Provider.of<com.optica.api.features.almacen.providers.AlmacenProvider>(context, listen: false);
+          final prov = Provider.of<AlmacenProvider>(context, listen: false);
           final pInfo = prov.productos.firstWhere((p) => p.id == item.almacenId);
 
           return ListTile(
@@ -1153,7 +1155,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         return DropdownButtonFormField<int>(
           decoration: InputDecoration(labelText: 'Vendedor *', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), prefixIcon: const Icon(Icons.person_outline_rounded)),
           value: _vendedorId,
-          items: prov.usuariosActivos.map((u) => DropdownMenuItem(value: u.id, child: Text(u.username ?? ""))).toList(),
+          items: prov.usuariosActivos.map((u) => DropdownMenuItem(value: u.id, child: Text(u.username))).toList(),
           onChanged: (v) => setState(() => _vendedorId = v),
           validator: (v) => v == null ? 'Seleccione' : null,
         );

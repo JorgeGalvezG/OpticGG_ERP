@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../almacen/screens/almacen_screen.dart';
+
 
 class MasScreen extends StatelessWidget {
   const MasScreen({super.key});
@@ -26,7 +28,7 @@ class MasScreen extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const com.optica.api.features.almacen.screens.almacen_screen.AlmacenScreen()),
+                  MaterialPageRoute(builder: (context) => const AlmacenScreen()),
                 );
               }
           ),

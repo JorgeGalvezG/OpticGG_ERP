@@ -44,7 +44,7 @@ class NuevaVentaDTO {
   });
 
   Map<String, dynamic> toJson() {
-    final map = {
+    final Map<String, dynamic> map = {
       'pacienteId': pacienteId,
       'vendedorId': vendedorId,
       'tienda': tienda,
