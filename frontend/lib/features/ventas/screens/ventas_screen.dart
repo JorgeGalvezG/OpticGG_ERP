@@ -839,7 +839,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _tipoVentaButton('ORDEN_VENTA', 'PRODUCTOS (Almacén)', Icons.inventory_2_rounded),
+                    child: _tipoVentaButton('ORDEN_VENTA', 'ORDEN VENTA GENERAL', Icons.inventory_2_rounded),
                   ),
                 ],
               ),
@@ -1021,7 +1021,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         itemBuilder: (context, index) {
           final item = _productosSeleccionados[index];
           // Buscar el nombre del producto en el provider
-          final prov = Provider.of<com.optica.api.features.almacen.providers.AlmacenProvider>(context, listen: false);
+          final prov = Provider.of<AlmacenProvider>(context, listen: false);
           final pInfo = prov.productos.firstWhere((p) => p.id == item.almacenId);
 
           return ListTile(
@@ -1186,6 +1186,10 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       children: [
         const Text('SALDO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
         Text('S/ $_saldo', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: double.parse(_saldo) > 0 ? AppColors.danger : AppColors.success)),
+      ],
+    ),
+  );
+}tStyle(fontSize: 18, fontWeight: FontWeight.bold, color: double.parse(_saldo) > 0 ? AppColors.danger : AppColors.success)),
       ],
     ),
   );

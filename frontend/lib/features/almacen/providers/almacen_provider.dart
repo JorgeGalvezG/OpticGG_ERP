@@ -2,14 +2,28 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_service.dart';
 import '../models/almacen_model.dart';
 
+import '../models/categoria_model.dart';
+
 class AlmacenProvider with ChangeNotifier {
   List<Almacen> _productos = [];
+  List<CategoriaProducto> _categorias = [];
   bool _isLoading = false;
   String _errorMessage = '';
 
   List<Almacen> get productos => _productos;
+  List<CategoriaProducto> get categorias => _categorias;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
+
+  Future<void> fetchCategorias() async {
+    try {
+      final response = await ApiService.get('/categorias'); // Asumiendo este endpoint
+      _categorias = (response as List).map((item) => CategoriaProducto.fromJson(item)).toList();
+      notifyListeners();
+    } catch (e) {
+      print("Error cargando categorías: $e");
+    }
+  }
 
   Future<void> fetchProductos(String tienda) async {
     _isLoading = true;

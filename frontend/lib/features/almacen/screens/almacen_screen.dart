@@ -21,8 +21,117 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final tienda = Provider.of<AuthProvider>(context, listen: false).tienda ?? 'C1';
-      Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(tienda);
+      final prov = Provider.of<AlmacenProvider>(context, listen: false);
+      prov.fetchProductos(tienda);
+      prov.fetchCategorias();
     });
+  }
+
+  void _showNuevoProductoDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final nombreCtrl = TextEditingController();
+    final codigoCtrl = TextEditingController();
+    final stockCtrl = TextEditingController(text: '0');
+    final precioVentaCtrl = TextEditingController(text: '0');
+    int? selectedCategoriaId;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Nuevo Producto / Montura', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: 500,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nombreCtrl,
+                      decoration: const InputDecoration(labelText: 'Nombre del Producto *', prefixIcon: Icon(Icons.shopping_bag_outlined)),
+                      validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: codigoCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Código de Barras *',
+                        prefixIcon: Icon(Icons.qr_code_rounded),
+                        suffixIcon: Icon(Icons.camera_alt_outlined),
+                      ),
+                      validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    Consumer<AlmacenProvider>(
+                      builder: (context, prov, _) => DropdownButtonFormField<int>(
+                        decoration: const InputDecoration(labelText: 'Categoría *', prefixIcon: Icon(Icons.category_rounded)),
+                        value: selectedCategoriaId,
+                        items: prov.categorias.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nombre))).toList(),
+                        onChanged: (v) => setDialogState(() => selectedCategoriaId = v),
+                        validator: (v) => v == null ? 'Seleccione categoría' : null,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: stockCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Stock Inicial', prefixIcon: Icon(Icons.inventory_rounded)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: precioVentaCtrl,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(labelText: 'Precio Venta S/', prefixIcon: Icon(Icons.sell_rounded)),
+                            validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                
+                final auth = Provider.of<AuthProvider>(context, listen: false);
+                final prov = Provider.of<AlmacenProvider>(context, listen: false);
+                
+                final data = {
+                  'nombre': nombreCtrl.text,
+                  'codigoBarras': codigoCtrl.text,
+                  'categoria': {'id': selectedCategoriaId},
+                  'stock': int.tryParse(stockCtrl.text) ?? 0,
+                  'precioVenta': double.tryParse(precioVentaCtrl.text) ?? 0,
+                  'tienda': auth.tienda ?? 'C1',
+                };
+                
+                final exito = await prov.guardarProducto(data);
+                if (exito) {
+                  Navigator.pop(context);
+                  prov.fetchProductos(auth.tienda ?? 'C1');
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Producto guardado'), backgroundColor: AppColors.success));
+                }
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -49,9 +158,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 ],
               ),
               ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Abrir dialogo de nuevo producto
-                },
+                onPressed: () => _showNuevoProductoDialog(context),
                 icon: const Icon(Icons.add_shopping_cart_rounded),
                 label: const Text('Nuevo Producto'),
                 style: ElevatedButton.styleFrom(

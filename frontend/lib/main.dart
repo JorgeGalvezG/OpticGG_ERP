@@ -12,6 +12,7 @@ import 'features/usuarios/providers/usuarios_provider.dart';
 import 'features/pacientes/providers/pacientes_provider.dart';
 import 'features/ventas/providers/ordenes_provider.dart';
 import 'features/ventas/providers/ventas_provider.dart';
+import 'features/almacen/providers/almacen_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -31,6 +32,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CajaProvider()),
         ChangeNotifierProvider(create: (_) => ProveedoresProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => AlmacenProvider()),
       ],
       child: const OpticaCubasApp(),
     ),

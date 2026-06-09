@@ -9,6 +9,7 @@ import '../../caja/screens/caja_screen.dart';
 import '../../ventas/screens/ventas_screen.dart';
 import '../../pacientes/screens/pacientes_screen.dart';
 import '../../proveedores/screens/proveedores_screen.dart';
+import '../../almacen/screens/almacen_screen.dart';
 import '../../vip/screens/vip_screen.dart';
 import '../../usuarios/screens/usuarios_screen.dart';
 
@@ -39,16 +40,18 @@ class _MainLayoutState extends State<MainLayout> {
   List<Widget> get _screens => [
     const DashboardScreen(), // 0
     const CajaScreen(), // 1
-    const PacientesScreen(), // 2
-    const VentasScreen(), // 3
-    const ProveedoresScreen(), // 4
-    const VipScreen(), // 5
-    const UsuariosScreen(), // 6
+    const AlmacenScreen(), // 2
+    const PacientesScreen(), // 3
+    const VentasScreen(), // 4
+    const ProveedoresScreen(), // 5
+    const VipScreen(), // 6
+    const UsuariosScreen(), // 7
   ];
 
   final List<String> _titles = [
     'Inicio',
     'Caja y Movimientos',
+    'Almacén e Inventario',
     'Pacientes',
     'Ventas',
     'Proveedores',
@@ -92,7 +95,7 @@ class _MainLayoutState extends State<MainLayout> {
       drawer: _buildDrawer(auth),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
+        currentIndex: _selectedIndex > 4 ? 0 : _selectedIndex,
         // Reset si está en una oculta
         onTap: (index) {
           if (index == 4) {
@@ -114,12 +117,12 @@ class _MainLayoutState extends State<MainLayout> {
             label: 'Caja',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people_alt_rounded),
-            label: 'Pacientes',
+            icon: Icon(Icons.inventory_2_rounded),
+            label: 'Almacén',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_bag_rounded),
-            label: 'Ventas',
+            icon: Icon(Icons.people_alt_rounded),
+            label: 'Pacientes',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.more_horiz_rounded),
@@ -152,11 +155,20 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.local_shipping_rounded),
-            title: const Text('Proveedores'),
+            leading: const Icon(Icons.shopping_bag_rounded),
+            title: const Text('Ventas / Órdenes'),
             selected: _selectedIndex == 4,
             onTap: () {
               setState(() => _selectedIndex = 4);
+              Navigator.pop(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.local_shipping_rounded),
+            title: const Text('Proveedores'),
+            selected: _selectedIndex == 5,
+            onTap: () {
+              setState(() => _selectedIndex = 5);
               Navigator.pop(context);
             },
           ),
@@ -165,18 +177,18 @@ class _MainLayoutState extends State<MainLayout> {
             ListTile(
               leading: const Icon(Icons.badge_rounded),
               title: const Text('Gestión de Personal'),
-              selected: _selectedIndex == 6,
+              selected: _selectedIndex == 7,
               onTap: () {
-                setState(() => _selectedIndex = 6);
+                setState(() => _selectedIndex = 7);
                 Navigator.pop(context);
               },
             ),
           ListTile(
             leading: const Icon(Icons.star_rounded, color: Colors.orange),
             title: const Text('Clientes VIP'),
-            selected: _selectedIndex == 5,
+            selected: _selectedIndex == 6,
             onTap: () {
-              setState(() => _selectedIndex = 5);
+              setState(() => _selectedIndex = 6);
               Navigator.pop(context);
             },
           ),
@@ -295,9 +307,10 @@ class _MainLayoutState extends State<MainLayout> {
 
           _buildSidebarItem(0, Icons.dashboard_rounded, 'Dashboard'),
           _buildSidebarItem(1, Icons.account_balance_wallet_rounded, 'Caja'),
-          _buildSidebarItem(2, Icons.people_alt_rounded, 'Pacientes'),
-          _buildSidebarItem(3, Icons.shopping_bag_rounded, 'Ventas'),
-          _buildSidebarItem(4, Icons.local_shipping_rounded, 'Proveedores'),
+          _buildSidebarItem(2, Icons.inventory_2_rounded, 'Almacén'),
+          _buildSidebarItem(3, Icons.people_alt_rounded, 'Pacientes'),
+          _buildSidebarItem(4, Icons.shopping_bag_rounded, 'Ventas'),
+          _buildSidebarItem(5, Icons.local_shipping_rounded, 'Proveedores'),
 
           if (auth.rol == 'ADMIN') ...[
             const Padding(
@@ -314,8 +327,8 @@ class _MainLayoutState extends State<MainLayout> {
                 ),
               ),
             ),
-            _buildSidebarItem(5, Icons.star_rounded, 'Clientes VIP'),
-            _buildSidebarItem(6, Icons.badge_rounded, 'Personal'),
+            _buildSidebarItem(6, Icons.star_rounded, 'Clientes VIP'),
+            _buildSidebarItem(7, Icons.badge_rounded, 'Personal'),
           ],
           const Spacer(),
           ListTile(
