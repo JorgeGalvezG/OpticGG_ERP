@@ -32,7 +32,14 @@ Actualización de la interfaz de usuario y servicios:
 *   **TicketPdfService:** Eliminación de la "Receta Médica" en comprobantes (Ticket 80mm y Boleta A4) para enfocarse en el detalle comercial y financiero.
 *   **Almacen/Kardex:**
     *   Nueva pantalla `AlmacenScreen` con búsqueda por código de barras y visualización de stock crítico.
+    *   **Sistema de Fotos:** Los productos ahora permiten guardar una imagen (vía URL o subida al servidor) para identificación visual rápida.
+    *   **Vinculación con Proveedores:** Cada producto del almacén puede estar enlazado a un proveedor preferencial.
     *   Modelos y Providers para la gestión de inventario.
+
+*   **Proveedores (Compras Detalladas):**
+    *   Nuevo flujo de compra que permite seleccionar productos existentes del Almacén.
+    *   Al registrar una compra, se genera una deuda con el proveedor y se vinculan los ítems.
+    *   Soporte para "Llegada de Pedido" que actualiza el stock automáticamente.
 *   **Caja:** Mejora en el listado de movimientos incluyendo fechas legibles y orden descendente.
 *   **Menú:** Integración del acceso al Almacén desde la pestaña "Más".
 

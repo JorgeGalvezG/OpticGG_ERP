@@ -3,8 +3,54 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+
 class ApiService {
+...
+  // 5. SUBIDA DE IMÁGENES (MultiPart)
+  static Future<String> uploadImage(String filePath) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('jwt_token');
+
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/imagenes/upload'));
+      
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'file', 
+        filePath,
+        contentType: MediaType('image', 'jpeg'),
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return response.body; // Retorna el path relativo: /uploads/products/xxx.jpg
+      } else {
+        throw Exception('Error al subir imagen: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error de conexión al subir: $e');
+    }
+  }
+}
   static String get baseUrl => ApiConstants.baseUrl;
+
+  // --- HELPER PARA IMÁGENES ---
+  static String getFullUrl(String? path) {
+    if (path == null || path.isEmpty) return 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
+    if (path.startsWith('http')) return path;
+    
+    // Si es una ruta relativa del backend (ej: /uploads/products/xxx.jpg)
+    // El baseUrl suele terminar en /api, así que hay que tener cuidado
+    String base = baseUrl.replaceAll('/api', '');
+    return '$base$path';
+  }
 
   // --- FUNCIÓN PRIVADA PARA OBTENER EL TOKEN ---
   // Esto evita repetir código en cada método

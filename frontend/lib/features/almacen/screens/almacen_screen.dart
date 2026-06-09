@@ -5,6 +5,11 @@ import '../../auth/providers/auth_provider.dart';
 import '../providers/almacen_provider.dart';
 import '../models/almacen_model.dart';
 
+import '../../proveedores/providers/proveedores_provider.dart';
+
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+
 class AlmacenScreen extends StatefulWidget {
   const AlmacenScreen({super.key});
 
@@ -24,6 +29,8 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
       final prov = Provider.of<AlmacenProvider>(context, listen: false);
       prov.fetchProductos(tienda);
       prov.fetchCategorias();
+      // También cargar proveedores para el combo
+      Provider.of<ProveedoresProvider>(context, listen: false).fetchProveedores(tienda);
     });
   }
 
@@ -33,7 +40,10 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
     final codigoCtrl = TextEditingController();
     final stockCtrl = TextEditingController(text: '0');
     final precioVentaCtrl = TextEditingController(text: '0');
+    final fotoUrlCtrl = TextEditingController(text: 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png');
     int? selectedCategoriaId;
+    int? selectedProveedorId;
+    bool isUploading = false;
 
     showDialog(
       context: context,
@@ -49,6 +59,56 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // --- SECCIÓN FOTO ---
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: AppColors.gray100,
+                            backgroundImage: fotoUrlCtrl.text.startsWith('http') ? NetworkImage(fotoUrlCtrl.text) : NetworkImage(ApiService.getFullUrl(fotoUrlCtrl.text)),
+                            child: (fotoUrlCtrl.text.isEmpty) ? const Icon(Icons.image_not_supported_rounded, size: 40) : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: AppColors.primary,
+                              child: isUploading 
+                                ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : IconButton(
+                                    icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                                    onPressed: () async {
+                                      final ImagePicker picker = ImagePicker();
+                                      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
+                                      if (image != null) {
+                                        setDialogState(() => isUploading = true);
+                                        try {
+                                          final String urlServidor = await ApiService.uploadImage(image.path);
+                                          setDialogState(() {
+                                            fotoUrlCtrl.text = urlServidor;
+                                            isUploading = false;
+                                          });
+                                        } catch (e) {
+                                          setDialogState(() => isUploading = false);
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                        }
+                                      }
+                                    },
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: fotoUrlCtrl,
+                      decoration: const InputDecoration(labelText: 'URL de la Foto', prefixIcon: Icon(Icons.link_rounded)),
+                      onChanged: (v) => setDialogState(() {}),
+                    ),
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: nombreCtrl,
                       decoration: const InputDecoration(labelText: 'Nombre del Producto *', prefixIcon: Icon(Icons.shopping_bag_outlined)),
@@ -65,14 +125,31 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                       validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 12),
-                    Consumer<AlmacenProvider>(
-                      builder: (context, prov, _) => DropdownButtonFormField<int>(
-                        decoration: const InputDecoration(labelText: 'Categoría *', prefixIcon: Icon(Icons.category_rounded)),
-                        value: selectedCategoriaId,
-                        items: prov.categorias.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nombre))).toList(),
-                        onChanged: (v) => setDialogState(() => selectedCategoriaId = v),
-                        validator: (v) => v == null ? 'Seleccione categoría' : null,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Consumer<AlmacenProvider>(
+                            builder: (context, prov, _) => DropdownButtonFormField<int>(
+                              decoration: const InputDecoration(labelText: 'Categoría *', prefixIcon: Icon(Icons.category_rounded)),
+                              value: selectedCategoriaId,
+                              items: prov.categorias.map((c) => DropdownMenuItem(value: c.id, child: Text(c.nombre, style: const TextStyle(fontSize: 12)))).toList(),
+                              onChanged: (v) => setDialogState(() => selectedCategoriaId = v),
+                              validator: (v) => v == null ? 'Seleccione' : null,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Consumer<ProveedoresProvider>(
+                            builder: (context, prov, _) => DropdownButtonFormField<int>(
+                              decoration: const InputDecoration(labelText: 'Proveedor', prefixIcon: Icon(Icons.local_shipping_rounded)),
+                              value: selectedProveedorId,
+                              items: prov.proveedores.map((p) => DropdownMenuItem(value: p.id, child: Text(p.nombreEmpresa, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)))).toList(),
+                              onChanged: (v) => setDialogState(() => selectedProveedorId = v),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -106,19 +183,21 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                
+
                 final auth = Provider.of<AuthProvider>(context, listen: false);
                 final prov = Provider.of<AlmacenProvider>(context, listen: false);
-                
+
                 final data = {
                   'nombre': nombreCtrl.text,
                   'codigoBarras': codigoCtrl.text,
                   'categoria': {'id': selectedCategoriaId},
+                  'proveedor': selectedProveedorId != null ? {'id': selectedProveedorId} : null,
                   'stock': int.tryParse(stockCtrl.text) ?? 0,
                   'precioVenta': double.tryParse(precioVentaCtrl.text) ?? 0,
+                  'fotoUrl': fotoUrlCtrl.text,
                   'tienda': auth.tienda ?? 'C1',
                 };
-                
+
                 final exito = await prov.guardarProducto(data);
                 if (exito) {
                   Navigator.pop(context);
@@ -230,6 +309,8 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String fullFotoUrl = ApiService.getFullUrl(producto.fotoUrl);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -245,8 +326,8 @@ class _ProductCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.gray100,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                image: DecorationImage(image: NetworkImage(fullFotoUrl), fit: BoxFit.cover),
               ),
-              child: const Icon(Icons.image_not_supported_rounded, size: 40, color: AppColors.gray400),
             ),
           ),
           Padding(
@@ -254,7 +335,14 @@ class _ProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(producto.categoriaNombre ?? 'Sin Categoría', style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(producto.categoriaNombre ?? 'Sin Categoría', style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                    if (producto.proveedorNombre != null)
+                      Text(producto.proveedorNombre!, style: const TextStyle(fontSize: 8, color: AppColors.gray400)),
+                  ],
+                ),
                 const SizedBox(height: 4),
                 Text(producto.nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 2, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 8),

@@ -24,6 +24,19 @@ class ProveedoresProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> registrarNuevaCompra(Map<String, dynamic> dto) async {
+    _isLoading = true; notifyListeners();
+    try {
+      await ApiService.post('/compras', dto);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false; notifyListeners();
+    }
+  }
+
   Future<bool> crearProveedor(Proveedor proveedor) async {
     _isLoading = true; notifyListeners();
     try {
