@@ -44,4 +44,29 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // --- PALETA ASTRONÓMICA (Nebulosa & Espacio Profundo) ---
+  static const Color cosmicDeep = Color(0xFF0B0D17); // Negro Espacial
+  static const Color nebulaPurple = Color(0xFF6B4EE6); // Púrpura Nebulosa
+  static const Color nebulaPink = Color(0xFFE94560); // Rosa Estelar
+  static const Color starlight = Color(0xFFE0E1DD); // Luz de Estrella
+
+  static const LinearGradient nebulaGradient = LinearGradient(
+    colors: [
+      Color(0xFF0F3460), // Azul Galaxia
+      Color(0xFF533483), // Violeta Cósmico
+      Color(0xFFE94560), // Rosa Estelar
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient spaceGradient = LinearGradient(
+    colors: [
+      Color(0xFF0B0D17),
+      Color(0xFF1B262C),
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 }

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
 import '../../../core/theme/app_colors.dart';
 import '../models/proveedor_model.dart';
+import '../models/compra_proveedor_model.dart';
 import '../providers/proveedores_provider.dart';
+import '../../../core/shared/developer_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../caja/providers/caja_provider.dart';
-import '../../caja/models/nuevo_movimiento_dto.dart';
 import '../../almacen/providers/almacen_provider.dart';
 import '../../almacen/models/almacen_model.dart';
 
@@ -29,96 +31,273 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dev = Provider.of<DeveloperProvider>(context);
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        if (dev.isDevMode) Positioned.fill(child: Container(decoration: const BoxDecoration(gradient: AppColors.spaceGradient))),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Proveedores', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
-                  Text('Directorio de laboratorios y compras detalladas', style: TextStyle(fontSize: 14, color: AppColors.gray500)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Proveedores', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: dev.isDevMode ? Colors.white : AppColors.gray900)),
+                      Text('Directorio de laboratorios y compras detalladas', style: TextStyle(fontSize: 14, color: dev.isDevMode ? Colors.white38 : AppColors.gray500)),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => const _NuevoProveedorDialog()),
+                    icon: const Icon(Icons.domain_add_rounded, size: 18),
+                    label: Text(isMobile ? 'Nuevo' : 'Nuevo Proveedor'),
+                    style: ElevatedButton.styleFrom(backgroundColor: dev.isDevMode ? AppColors.nebulaPurple : AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => const _NuevoProveedorDialog()),
-                icon: const Icon(Icons.domain_add_rounded, size: 18),
-                label: Text(isMobile ? 'Nuevo' : 'Nuevo Proveedor'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Consumer<ProveedoresProvider>(
-            builder: (context, prov, child) {
-              if (prov.isLoading) return const Center(child: CircularProgressIndicator());
-              if (prov.proveedores.isEmpty) return const Center(child: Text('No hay proveedores registrados', style: TextStyle(color: AppColors.gray500)));
+            ),
+            Expanded(
+              child: Consumer<ProveedoresProvider>(
+                builder: (context, prov, child) {
+                  if (prov.isLoading) return Center(child: CircularProgressIndicator(color: dev.isDevMode ? AppColors.nebulaPurple : AppColors.primary));
+                  if (prov.proveedores.isEmpty) return Center(child: Text('No hay proveedores registrados', style: TextStyle(color: dev.isDevMode ? Colors.white38 : AppColors.gray500)));
 
-              return GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(bottom: 24),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: isMobile ? 1 : 3,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: isMobile ? 1.6 : 1.4,
-                ),
-                itemCount: prov.proveedores.length,
-                itemBuilder: (context, index) => _buildProveedorCard(prov.proveedores[index]),
-              );
-            },
-          ),
+                  return GridView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(bottom: 24),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: isMobile ? 1 : 3,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: isMobile ? 1.6 : 1.4,
+                    ),
+                    itemCount: prov.proveedores.length,
+                    itemBuilder: (context, index) => _buildProveedorCard(prov.proveedores[index], dev.isDevMode),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildProveedorCard(Proveedor p) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.gray200)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(backgroundColor: AppColors.primaryLight, child: const Icon(Icons.apartment_rounded, color: AppColors.primary, size: 20)),
-              const SizedBox(width: 12),
-              Expanded(child: Text(p.nombreEmpresa, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis)),
-            ],
+  Widget _buildProveedorCard(Proveedor p, bool isDev) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: isDev ? 10 : 0, sigmaY: isDev ? 10 : 0),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDev ? Colors.white.withOpacity(0.05) : Colors.white, 
+            borderRadius: BorderRadius.circular(16), 
+            border: Border.all(color: isDev ? Colors.white10 : AppColors.gray200)
           ),
-          const SizedBox(height: 12),
-          _infoRow(Icons.person_rounded, p.nombreContacto ?? 'Sin contacto'),
-          const SizedBox(height: 6),
-          _infoRow(Icons.phone_rounded, p.telefono ?? 'Sin teléfono'),
-          const Spacer(),
-          const Divider(height: 1, color: AppColors.gray100),
-          const SizedBox(height: 12),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Historial', style: TextStyle(fontSize: 12)))),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => _CompraDetalladaDialog(proveedor: p)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger.withOpacity(0.1), foregroundColor: AppColors.danger, elevation: 0),
-                  child: const Text('Comprar', style: TextStyle(fontSize: 12)),
-                ),
+              Row(
+                children: [
+                  CircleAvatar(backgroundColor: isDev ? AppColors.nebulaPurple.withOpacity(0.2) : AppColors.primaryLight, child: Icon(Icons.apartment_rounded, color: isDev ? AppColors.starlight : AppColors.primary, size: 20)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(p.nombreEmpresa, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDev ? Colors.white : AppColors.gray900), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _infoRow(Icons.person_rounded, p.nombreContacto ?? 'Sin contacto', isDev),
+              const SizedBox(height: 6),
+              _infoRow(Icons.phone_rounded, p.telefono ?? 'Sin teléfono', isDev),
+              const Spacer(),
+              Divider(height: 1, color: isDev ? Colors.white10 : AppColors.gray100),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton(onPressed: () => showDialog(context: context, builder: (context) => _HistorialComprasDialog(proveedor: p)), style: OutlinedButton.styleFrom(side: BorderSide(color: isDev ? Colors.white24 : AppColors.gray300), foregroundColor: isDev ? Colors.white70 : AppColors.gray700), child: const Text('Historial', style: TextStyle(fontSize: 12)))),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => _CompraDetalladaDialog(proveedor: p)),
+                      style: ElevatedButton.styleFrom(backgroundColor: isDev ? AppColors.nebulaPink.withOpacity(0.2) : AppColors.danger.withOpacity(0.1), foregroundColor: isDev ? AppColors.nebulaPink : AppColors.danger, elevation: 0),
+                      child: const Text('Comprar', style: TextStyle(fontSize: 12)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _infoRow(IconData icon, String text) => Row(children: [Icon(icon, size: 14, color: AppColors.gray400), const SizedBox(width: 6), Text(text, style: const TextStyle(fontSize: 13, color: AppColors.gray600))]);
+  Widget _infoRow(IconData icon, String text, bool isDev) => Row(children: [Icon(icon, size: 14, color: isDev ? Colors.white38 : AppColors.gray400), const SizedBox(width: 6), Text(text, style: TextStyle(fontSize: 13, color: isDev ? Colors.white70 : AppColors.gray600))]);
+}
+
+class _HistorialComprasDialog extends StatefulWidget {
+  final Proveedor proveedor;
+  const _HistorialComprasDialog({required this.proveedor});
+
+  @override
+  State<_HistorialComprasDialog> createState() => _HistorialComprasDialogState();
+}
+
+class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
+  String _filtroTexto = '';
+  DateTimeRange? _rangoFechas;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProveedoresProvider>(context, listen: false).fetchHistorialCompras(widget.proveedor.id!);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        width: 800, height: 700, padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Historial de Compras', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(widget.proveedor.nombreEmpresa, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: const InputDecoration(hintText: 'Buscar por descripción...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()),
+                    onChanged: (v) => setState(() => _filtroTexto = v),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
+                    if (picked != null) setState(() => _rangoFechas = picked);
+                  },
+                  icon: const Icon(Icons.date_range_rounded),
+                  label: Text(_rangoFechas == null ? 'Filtrar Fecha' : 'Filtrado'),
+                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18)),
+                ),
+                if (_rangoFechas != null)
+                  IconButton(icon: const Icon(Icons.clear_rounded, color: AppColors.danger), onPressed: () => setState(() => _rangoFechas = null)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: Consumer<ProveedoresProvider>(
+                builder: (context, prov, child) {
+                  if (prov.isLoading) return const Center(child: CircularProgressIndicator());
+                  
+                  final filtered = prov.historialCompras.where((c) {
+                    final matchTexto = c.descripcion.toLowerCase().contains(_filtroTexto.toLowerCase()) || c.id.toString().contains(_filtroTexto);
+                    bool matchFecha = true;
+                    if (_rangoFechas != null) {
+                      try {
+                        final fecha = DateTime.parse(c.fechaPedido);
+                        matchFecha = fecha.isAfter(_rangoFechas!.start) && fecha.isBefore(_rangoFechas!.end.add(const Duration(days: 1)));
+                      } catch (_) {}
+                    }
+                    return matchTexto && matchFecha;
+                  }).toList();
+
+                  if (filtered.isEmpty) return const Center(child: Text('No se encontraron compras con los filtros aplicados.'));
+
+                  return ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final c = filtered[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.gray200)),
+                        elevation: 0,
+                        child: ExpansionTile(
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Compra #${c.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              _badgeEstado(c.estadoPago),
+                            ],
+                          ),
+                          subtitle: Text('Fecha: ${c.fechaPedido}  •  Total: S/ ${c.monto.toStringAsFixed(2)}'),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Descripción: ${c.descripcion}', style: const TextStyle(fontSize: 13)),
+                                  const SizedBox(height: 8),
+                                  const Text('Productos Detallados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  if (c.detalles != null)
+                                    ...c.detalles!.map((d) => Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('${d.cantidad}x ${d.productoNombre}', style: const TextStyle(fontSize: 12)),
+                                          Text('S/ ${(d.cantidad * d.precioUnitario).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
+                                        ],
+                                      ),
+                                    )),
+                                  const Divider(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Saldo Pendiente: S/ ${c.montoSaldo.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
+                                      if (c.estadoEntrega == 'SOLICITADO')
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            final exito = await prov.registrarEntrega(c.id);
+                                            if (exito) prov.fetchHistorialCompras(widget.proveedor.id!);
+                                          },
+                                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0)),
+                                          child: const Text('Marcar Llegada', style: TextStyle(fontSize: 10)),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _badgeEstado(String estado) {
+    final color = estado == 'PAGADO' ? AppColors.success : AppColors.warning;
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text(estado, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)));
+  }
 }
 
 class _CompraDetalladaDialog extends StatefulWidget {
@@ -134,10 +313,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
   final _formKey = GlobalKey<FormState>();
   final _montoPagadoController = TextEditingController(text: '0');
   
-  // Lista para stock (Pestana 1)
   final List<Map<String, dynamic>> _itemsAlmacen = [];
-  
-  // Lista para gasto directo (Pestana 2)
   final List<Map<String, dynamic>> _itemsDirectos = [];
   final _nombreGastoCtrl = TextEditingController();
   final _precioGastoCtrl = TextEditingController();
@@ -258,7 +434,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
                 if (_nombreGastoCtrl.text.isEmpty || _precioGastoCtrl.text.isEmpty) return;
                 setState(() {
                   _itemsDirectos.add({
-                    'almacenId': null, // Indica que no es de almacén
+                    'almacenId': null,
                     'nombre': _nombreGastoCtrl.text,
                     'cantidad': 1,
                     'precioUnitario': double.tryParse(_precioGastoCtrl.text) ?? 0,
@@ -345,7 +521,6 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final prov = Provider.of<ProveedoresProvider>(context, listen: false);
     
-    // Unir ambas listas para el DTO
     final allItems = [..._itemsAlmacen, ..._itemsDirectos];
 
     final dto = {
@@ -355,7 +530,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
       'descripcion': 'Compra detallada: ${_itemsAlmacen.length} stock, ${_itemsDirectos.length} directos',
       'tienda': auth.tienda ?? 'C1',
       'items': allItems.map((i) => {
-        'almacenId': i['almacenId'], // Puede ser null
+        'almacenId': i['almacenId'],
         'cantidad': i['cantidad'],
         'precioUnitario': i['precioUnitario'],
       }).toList(),
@@ -379,13 +554,24 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
   final _formKey = GlobalKey<FormState>();
   final _empresaController = TextEditingController();
   final _rucController = TextEditingController();
+  final _contactoController = TextEditingController();
+  final _telefonoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _empresaController.dispose();
+    _rucController.dispose();
+    _contactoController.dispose();
+    _telefonoController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        padding: const EdgeInsets.all(24), width: 400,
+        padding: const EdgeInsets.all(24), width: 450,
         child: Form(
           key: _formKey,
           child: Column(
@@ -393,11 +579,47 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
             children: [
               const Text('Nuevo Proveedor', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
-              TextFormField(controller: _empresaController, decoration: const InputDecoration(labelText: 'Empresa *'), validator: (v) => v!.isEmpty ? 'Requerido' : null),
+              TextFormField(
+                controller: _empresaController, 
+                decoration: const InputDecoration(labelText: 'Nombre de la Empresa *', prefixIcon: Icon(Icons.business_rounded)), 
+                validator: (v) => v!.isEmpty ? 'Requerido' : null
+              ),
               const SizedBox(height: 16),
-              TextFormField(controller: _rucController, decoration: const InputDecoration(labelText: 'RUC')),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _rucController, 
+                      decoration: const InputDecoration(labelText: 'RUC', prefixIcon: Icon(Icons.badge_rounded)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _telefonoController, 
+                      decoration: const InputDecoration(labelText: 'Teléfono', prefixIcon: Icon(Icons.phone_rounded)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _contactoController, 
+                decoration: const InputDecoration(labelText: 'Persona de Contacto', prefixIcon: Icon(Icons.person_rounded)),
+              ),
               const SizedBox(height: 24),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')), ElevatedButton(onPressed: _guardar, child: const Text('Guardar'))]),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end, 
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _guardar, 
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                    child: const Text('Guardar Proveedor')
+                  )
+                ]
+              ),
             ],
           ),
         ),
@@ -408,9 +630,18 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
   void _guardar() async {
     if (_formKey.currentState!.validate()) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      final p = Proveedor(nombreEmpresa: _empresaController.text.trim(), ruc: _rucController.text.trim(), tienda: auth.tienda ?? 'C1');
+      final p = Proveedor(
+        nombreEmpresa: _empresaController.text.trim(), 
+        ruc: _rucController.text.trim(), 
+        nombreContacto: _contactoController.text.trim(),
+        telefono: _telefonoController.text.trim(),
+        tienda: auth.tienda ?? 'C1'
+      );
       final exito = await Provider.of<ProveedoresProvider>(context, listen: false).crearProveedor(p);
-      if (exito && mounted) Navigator.pop(context);
+      if (exito && mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proveedor guardado correctamente'), backgroundColor: AppColors.success));
+      }
     }
   }
 }

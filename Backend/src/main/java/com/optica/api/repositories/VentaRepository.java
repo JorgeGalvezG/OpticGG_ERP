@@ -93,4 +93,6 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             @Param("pacienteId") Long pacienteId,
             Pageable pageable);
 
+    Optional<Venta> findByCodigoBarras(String codigoBarras);
+
 }

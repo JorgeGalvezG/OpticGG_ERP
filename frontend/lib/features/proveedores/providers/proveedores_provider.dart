@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import '../models/proveedor_model.dart';
+import '../models/compra_proveedor_model.dart';
 import '../../../core/network/api_service.dart';
 
 class ProveedoresProvider with ChangeNotifier {
   List<Proveedor> _proveedores = [];
+  List<CompraProveedor> _historialCompras = [];
   bool _isLoading = false;
   String _errorMessage = '';
 
   List<Proveedor> get proveedores => _proveedores;
+  List<CompraProveedor> get historialCompras => _historialCompras;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
@@ -16,6 +19,19 @@ class ProveedoresProvider with ChangeNotifier {
     try {
       final response = await ApiService.get('/proveedores/tienda/$tienda');
       _proveedores = (response as List).map((i) => Proveedor.fromJson(i)).toList();
+      _errorMessage = '';
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false; notifyListeners();
+    }
+  }
+
+  Future<void> fetchHistorialCompras(int proveedorId) async {
+    _isLoading = true; notifyListeners();
+    try {
+      final response = await ApiService.get('/compras/proveedor/$proveedorId');
+      _historialCompras = (response as List).map((i) => CompraProveedor.fromJson(i)).toList();
       _errorMessage = '';
     } catch (e) {
       _errorMessage = e.toString();
@@ -46,6 +62,26 @@ class ProveedoresProvider with ChangeNotifier {
     } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false; notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> registrarAbono(int compraId, double monto) async {
+    try {
+      await ApiService.put('/compras/$compraId/abono?monto=$monto', {});
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    }
+  }
+
+  Future<bool> registrarEntrega(int compraId) async {
+    try {
+      await ApiService.put('/compras/$compraId/entregar', {});
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
       return false;
     }
   }

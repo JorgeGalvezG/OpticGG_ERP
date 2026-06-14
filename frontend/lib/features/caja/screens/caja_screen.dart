@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui';
 import '../../../core/theme/app_colors.dart';
 import '../providers/caja_provider.dart';
 import '../models/nuevo_movimiento_dto.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/shared/developer_provider.dart';
 
 class CajaScreen extends StatefulWidget {
   const CajaScreen({super.key});
@@ -13,6 +15,9 @@ class CajaScreen extends StatefulWidget {
 }
 
 class _CajaScreenState extends State<CajaScreen> {
+  String _filtroTexto = '';
+  DateTimeRange? _rangoFechas;
+
   @override
   void initState() {
     super.initState();
@@ -54,73 +59,129 @@ class _CajaScreenState extends State<CajaScreen> {
           ),
         ),
 
+        // BUSCADOR Y FILTROS
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por descripción...',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                  onChanged: (v) => setState(() => _filtroTexto = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
+                  if (picked != null) setState(() => _rangoFechas = picked);
+                },
+                icon: const Icon(Icons.date_range_rounded),
+                label: Text(_rangoFechas == null ? 'Filtrar Fecha' : 'Filtrado'),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              if (_rangoFechas != null)
+                IconButton(icon: const Icon(Icons.clear_rounded, color: AppColors.danger), onPressed: () => setState(() => _rangoFechas = null)),
+            ],
+          ),
+        ),
+
         // CONTENIDO CONECTADO AL PROVIDER
         Expanded(
           child: Consumer<CajaProvider>(
             builder: (context, cajaProv, child) {
+              final dev = Provider.of<DeveloperProvider>(context);
+              
               if (cajaProv.isLoading && cajaProv.movimientos.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              return Column(
+              final movimientosFiltrados = cajaProv.movimientos.where((m) {
+                final matchTexto = m.descripcion.toLowerCase().contains(_filtroTexto.toLowerCase());
+                bool matchFecha = true;
+                if (_rangoFechas != null) {
+                  try {
+                    final fecha = DateTime.parse(m.fecha);
+                    matchFecha = fecha.isAfter(_rangoFechas!.start) && fecha.isBefore(_rangoFechas!.end.add(const Duration(days: 1)));
+                  } catch (_) {}
+                }
+                return matchTexto && matchFecha;
+              }).toList();
+
+              return Stack(
                 children: [
-                  // 1. TARJETAS DE RESUMEN
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: isMobile
-                        ? Column(
-                      children: [
-                        _buildResumenCard('Saldo Actual', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile),
-                        const SizedBox(height: 12),
-                        Row(
+                  if (dev.isDevMode) Positioned.fill(child: Container(decoration: const BoxDecoration(gradient: AppColors.spaceGradient))),
+                  Column(
+                    children: [
+                      // 1. TARJETAS DE RESUMEN (Glassmorphic in Dev Mode)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                        child: isMobile
+                            ? Column(
                           children: [
-                            Expanded(child: _buildResumenCard('Ingresos', cajaProv.totalIngresos, AppColors.success, Icons.arrow_downward_rounded, isMobile)),
-                            const SizedBox(width: 12),
-                            Expanded(child: _buildResumenCard('Salidas', cajaProv.totalSalidas, AppColors.danger, Icons.arrow_upward_rounded, isMobile)),
+                            _buildResumenCard('Saldo Actual', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile, dev.isDevMode),
+                            const SizedBox(height: 12),
+                            _buildResumenCard('Ingresos', cajaProv.totalIngresos, AppColors.success, Icons.arrow_upward_rounded, isMobile, dev.isDevMode),
+                            const SizedBox(height: 12),
+                            _buildResumenCard('Salidas', cajaProv.totalSalidas, AppColors.danger, Icons.arrow_downward_rounded, isMobile, dev.isDevMode),
                           ],
                         )
-                      ],
-                    )
-                        : Row(
-                      children: [
-                        Expanded(child: _buildResumenCard('Saldo Actual (Caja)', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile)),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildResumenCard('Total Ingresos', cajaProv.totalIngresos, AppColors.success, Icons.arrow_downward_rounded, isMobile)),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildResumenCard('Total Salidas (Gastos)', cajaProv.totalSalidas, AppColors.danger, Icons.arrow_upward_rounded, isMobile)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 2. LISTA DE MOVIMIENTOS
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24.0).copyWith(bottom: 24.0),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.gray200)),
-                      child: cajaProv.movimientos.isEmpty
-                          ? const Center(child: Text('No hay movimientos registrados', style: TextStyle(color: AppColors.gray500)))
-                          : ListView.separated(
-                        itemCount: cajaProv.movimientos.length,
-                        separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.gray100),
-                        itemBuilder: (context, index) {
-                          final mov = cajaProv.movimientos[index];
-                          final isIngreso = mov.tipo == 'ENTRADA';
-                          final color = isIngreso ? AppColors.success : AppColors.danger;
-
-                          return Material(
-                            color: Colors.transparent,
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                              leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(isIngreso ? Icons.add_rounded : Icons.remove_rounded, color: color)),
-                              title: Text(mov.descripcion, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              subtitle: Text('${mov.fecha.length >= 10 ? mov.fecha.substring(0, 10) : mov.fecha}  •  Usuario: ${mov.usuarioNombre}', style: const TextStyle(fontSize: 12, color: AppColors.gray500)),
-                              trailing: Text('${isIngreso ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
-                            ),
-                          );
-                        },
+                            : Row(
+                          children: [
+                            Expanded(child: _buildResumenCard('Saldo Actual (Caja)', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile, dev.isDevMode)),
+                            const SizedBox(width: 12),
+                            Expanded(child: _buildResumenCard('Ingresos', cajaProv.totalIngresos, AppColors.success, Icons.arrow_upward_rounded, isMobile, dev.isDevMode)),
+                            const SizedBox(width: 12),
+                            Expanded(child: _buildResumenCard('Salidas', cajaProv.totalSalidas, AppColors.danger, Icons.arrow_downward_rounded, isMobile, dev.isDevMode)),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+
+                      // 2. LISTA DE MOVIMIENTOS
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 24.0).copyWith(bottom: 24.0),
+                          decoration: BoxDecoration(
+                            color: dev.isDevMode ? Colors.white.withOpacity(0.05) : Colors.white, 
+                            borderRadius: BorderRadius.circular(16), 
+                            border: Border.all(color: dev.isDevMode ? Colors.white10 : AppColors.gray200)
+                          ),
+                          child: movimientosFiltrados.isEmpty
+                              ? Center(child: Text('No hay movimientos que coincidan con los filtros', style: TextStyle(color: dev.isDevMode ? Colors.white38 : AppColors.gray500)))
+                              : ListView.separated(
+                            itemCount: movimientosFiltrados.length,
+                            separatorBuilder: (context, index) => Divider(height: 1, color: dev.isDevMode ? Colors.white10 : AppColors.gray100),
+                            itemBuilder: (context, index) {
+                              final mov = movimientosFiltrados[index];
+                              final isIngreso = mov.tipo == 'ENTRADA';
+                              final color = isIngreso ? AppColors.success : (dev.isDevMode ? AppColors.nebulaPink : AppColors.danger);
+
+                              return Material(
+                                color: Colors.transparent,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                                  leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(isIngreso ? Icons.add_rounded : Icons.remove_rounded, color: color)),
+                                  title: Text(mov.descripcion, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: dev.isDevMode ? Colors.white : AppColors.gray900)),
+                                  subtitle: Text('${mov.fecha.length >= 10 ? mov.fecha.substring(0, 10) : mov.fecha}  •  Usuario: ${mov.usuarioNombre}', style: TextStyle(fontSize: 12, color: dev.isDevMode ? Colors.white38 : AppColors.gray500)),
+                                  trailing: Text('${isIngreso ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -131,25 +192,36 @@ class _CajaScreenState extends State<CajaScreen> {
     );
   }
 
-  Widget _buildResumenCard(String title, double monto, Color color, IconData icon, bool isMobile) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.gray200), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]),
-      child: Row(
-        children: [
-          Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: isMobile ? 24 : 32)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(fontSize: isMobile ? 12 : 14, color: AppColors.gray500, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text('S/ ${monto.toStringAsFixed(2)}', style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
-              ],
-            ),
-          )
-        ],
+  Widget _buildResumenCard(String title, double monto, Color color, IconData icon, bool isMobile, bool isDev) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: isDev ? 10 : 0, sigmaY: isDev ? 10 : 0),
+        child: Container(
+          padding: EdgeInsets.all(isMobile ? 16 : 24),
+          decoration: BoxDecoration(
+            color: isDev ? Colors.white.withOpacity(0.05) : Colors.white, 
+            borderRadius: BorderRadius.circular(16), 
+            border: Border.all(color: isDev ? Colors.white.withOpacity(0.1) : AppColors.gray200), 
+            boxShadow: isDev ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]
+          ),
+          child: Row(
+            children: [
+              Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: isMobile ? 24 : 32)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(fontSize: isMobile ? 12 : 14, color: isDev ? Colors.white70 : AppColors.gray500, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text('S/ ${monto.toStringAsFixed(2)}', style: TextStyle(fontSize: isMobile ? 20 : 24, fontWeight: FontWeight.bold, color: isDev ? Colors.white : AppColors.gray900)),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }

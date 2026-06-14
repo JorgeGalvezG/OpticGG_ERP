@@ -58,4 +58,13 @@ class AlmacenProvider with ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> actualizarProducto(int id, Map<String, dynamic> data) async {
+    try {
+      await ApiService.put('/almacen/$id', data);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }

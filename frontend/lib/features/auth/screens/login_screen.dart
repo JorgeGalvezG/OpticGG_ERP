@@ -46,27 +46,29 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDesktop = screenWidth > 850;
 
     return Scaffold(
-      backgroundColor: isDesktop ? AppColors.gray900 : Colors.white,
+      backgroundColor: AppColors.gray900,
       body: Container(
         width: double.infinity,
-        decoration: isDesktop ? null : const BoxDecoration(gradient: AppColors.loginGradient),
+        decoration: BoxDecoration(
+          gradient: isDesktop ? null : AppColors.loginGradient,
+        ),
         child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
       ),
     );
   }
 
   // =========================================================
-  // 💻 DISEÑO PARA PC (Con BANNER DE IMAGEN)
+  //  DISEÑO PARA PC (Con BANNER DE IMAGEN)
   // =========================================================
   Widget _buildDesktopLayout() {
     return Center(
       child: Container(
-        width: 900,
-        height: 600,
+        width: 1000,
+        height: 650,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 40, offset: Offset(0, 15))],
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 50, offset: const Offset(0, 20))],
         ),
         child: Row(
           children: [
@@ -74,28 +76,28 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(
               flex: 5,
               child: Padding(
-                padding: const EdgeInsets.all(48.0),
+                padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 48),
                 child: _buildFormContent(),
               ),
             ),
-            // Mitad Derecha: Banner de Imagen de Óptica
+            // Mitad Derecha: Banner de Imagen
             Expanded(
-              flex: 4,
+              flex: 5,
               child: ClipRRect(
-                borderRadius: const BorderRadius.horizontal(right: Radius.circular(24)),
+                borderRadius: const BorderRadius.horizontal(right: Radius.circular(32)),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     Image.network(
                       'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&q=80&w=1000',
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(color: AppColors.gray800),
+                      errorBuilder: (context, error, stackTrace) => Container(decoration: const BoxDecoration(gradient: AppColors.loginGradient)),
                     ),
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.black.withOpacity(0.7),
+                            Colors.black.withOpacity(0.8),
                             Colors.transparent,
                           ],
                           begin: Alignment.bottomCenter,
@@ -104,20 +106,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const Padding(
-                      padding: EdgeInsets.all(32.0),
+                      padding: EdgeInsets.all(40.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Excelencia Visual',
-                            style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Solución integral para la gestión de tu óptica.',
-                            style: TextStyle(color: Colors.white70, fontSize: 16),
-                          ),
+                          Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 40),
+                          SizedBox(height: 16),
+                          Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold, letterSpacing: -1)),
+                          Text('Solución integral para la gestión de tu óptica.', style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w300)),
                         ],
                       ),
                     ),
@@ -137,22 +134,46 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildMobileLayout() {
     return Column(
       children: [
-        const Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        Expanded(
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              const Icon(Icons.visibility_off_outlined, color: AppColors.primaryLight, size: 64),
-              const SizedBox(height: 16),
-              const Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -1)),
-              const Text('SISTEMA DE GESTIÓN INTEGRAL', style: TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 1.2)),
+              Image.network(
+                'https://images.unsplash.com/photo-1591076482161-42ce6da69f67?auto=format&fit=crop&q=80&w=1000',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(decoration: const BoxDecoration(gradient: AppColors.loginGradient)),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withOpacity(0.7),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
+                ),
+              ),
+              const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 80),
+                    SizedBox(height: 16),
+                    Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold, letterSpacing: -2)),
+                    Text('SISTEMA DE GESTIÓN INTEGRAL', style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.fromLTRB(24, 40, 24, 48),
+          padding: const EdgeInsets.fromLTRB(32, 48, 32, 64),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
           ),
           child: _buildFormContent(),
         ),
@@ -191,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 48),
           ],
 
-          const Text('Bienvenido 👋', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.gray900)),
+          const Text('Bienvenido al Sistema', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.gray900)),
           const SizedBox(height: 6),
           const Text('Por favor, inicia sesión para continuar.', style: TextStyle(color: AppColors.gray500, fontSize: 15)),
           const SizedBox(height: 32),
@@ -201,8 +222,8 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: BoxDecoration(color: AppColors.gray100, borderRadius: BorderRadius.circular(12)),
             child: Row(
               children: [
-                Expanded(child: _buildRoleTab('👑 Admin', true)),
-                Expanded(child: _buildRoleTab('🛍️ Vendedor', false)),
+                Expanded(child: _buildRoleTab('Administrador', true)),
+                Expanded(child: _buildRoleTab('Vendedores por tienda', false)),
               ],
             ),
           ),

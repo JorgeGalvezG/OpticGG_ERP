@@ -25,4 +25,6 @@ public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long
 
     // 3. Obtener Historial de un Paciente
     List<OrdenTrabajo> findByClienteIdOrderByFechaDesc(Long clienteId);
+
+    java.util.Optional<OrdenTrabajo> findByNumeroOrden(String numeroOrden);
 }

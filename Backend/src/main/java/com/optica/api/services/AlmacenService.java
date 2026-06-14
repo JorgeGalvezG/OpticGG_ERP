@@ -37,6 +37,23 @@ public class AlmacenService {
     }
 
     @Transactional
+    public Almacen actualizar(Long id, Almacen data) {
+        Almacen producto = almacenRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        
+        producto.setNombre(data.getNombre());
+        producto.setCodigoBarras(data.getCodigoBarras());
+        producto.setPrecioCompra(data.getPrecioCompra());
+        producto.setPrecioVenta(data.getPrecioVenta());
+        producto.setStock(data.getStock());
+        producto.setFotoUrl(data.getFotoUrl());
+        producto.setCategoria(data.getCategoria());
+        producto.setProveedor(data.getProveedor());
+        
+        return almacenRepository.save(producto);
+    }
+
+    @Transactional
     public void actualizarStock(Long id, Integer cantidad) {
         Almacen producto = almacenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));

@@ -48,4 +48,21 @@ class VentasProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Buscar venta por código de barras o número de orden
+  Future<Map<String, dynamic>?> buscarPorCodigo(String codigo) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final response = await ApiService.get('/ventas/buscar/$codigo');
+      _errorMessage = '';
+      return response as Map<String, dynamic>;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

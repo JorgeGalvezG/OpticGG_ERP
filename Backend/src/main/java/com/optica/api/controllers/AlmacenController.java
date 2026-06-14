@@ -44,6 +44,15 @@ public class AlmacenController {
         return almacenService.guardar(producto);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Almacen> actualizar(@PathVariable Long id, @RequestBody Almacen producto) {
+        try {
+            return ResponseEntity.ok(almacenService.actualizar(id, producto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         almacenService.eliminar(id);

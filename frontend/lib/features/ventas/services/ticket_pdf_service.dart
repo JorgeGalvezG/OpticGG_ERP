@@ -117,6 +117,13 @@ class TicketPdfService {
                 _buildFilaDinero('SALDO:', orden.montoSaldo, isBold: orden.montoSaldo > 0),
 
                 pw.SizedBox(height: 15),
+                pw.BarcodeWidget(
+                  barcode: pw.Barcode.qrCode(),
+                  data: orden.numeroOrden,
+                  width: 65,
+                  height: 65,
+                ),
+                pw.SizedBox(height: 10),
                 pw.Text('¡Gracias por su confianza!', style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic)),
                 pw.Text('Vuelva pronto a $nombreOptica', style: const pw.TextStyle(fontSize: 8)),
                 pw.SizedBox(height: 10),
@@ -190,27 +197,42 @@ class TicketPdfService {
                   // Datos del Paciente
                   pw.Container(
                     width: double.infinity,
-                    padding: const pw.EdgeInsets.all(12),
+                    padding: const pw.EdgeInsets.all(16),
                     decoration: pw.BoxDecoration(
                       color: PdfColors.blue50,
                       borderRadius: pw.BorderRadius.circular(8),
+                      border: pw.Border.all(color: PdfColors.blue100),
                     ),
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text('DATOS DEL PACIENTE', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                        pw.SizedBox(height: 6),
+                        pw.SizedBox(height: 10),
                         pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Expanded(child: _buildInfoLabel('NOMBRE:', orden.pacienteNombre)),
-                            pw.Expanded(child: _buildInfoLabel('FECHA:', fechaFormateada)),
-                          ],
-                        ),
-                        pw.SizedBox(height: 6),
-                        pw.Row(
-                          children: [
-                            pw.Expanded(child: _buildInfoLabel('TELÉFONO:', orden.pacienteTelefono ?? '-')),
-                            pw.Expanded(child: _buildInfoLabel('NUMERO DE TRABAJO:', orden.numeroOrden)),
+                            pw.Expanded(
+                              flex: 2,
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                children: [
+                                  _buildInfoLabel('NOMBRE:', orden.pacienteNombre),
+                                  pw.SizedBox(height: 4),
+                                  _buildInfoLabel('TELÉFONO:', orden.pacienteTelefono ?? '-'),
+                                ],
+                              ),
+                            ),
+                            pw.Expanded(
+                              flex: 1,
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                children: [
+                                  _buildInfoLabel('FECHA:', fechaFormateada),
+                                  pw.SizedBox(height: 4),
+                                  _buildInfoLabel('N° ORDEN:', orden.numeroOrden),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -265,7 +287,16 @@ class TicketPdfService {
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
                             pw.Text('OBSERVACIONES:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                            pw.Text(orden.observaciones ?? 'Sin observaciones adicionales.', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Text(orden.observaciones ?? 'Sin observaciones adicionales.', style: pw.TextStyle(fontSize: 10)),
+                            pw.SizedBox(height: 15),
+                            pw.BarcodeWidget(
+                              barcode: pw.Barcode.code128(),
+                              data: orden.numeroOrden,
+                              width: 140,
+                              height: 35,
+                              drawText: true,
+                              textStyle: pw.TextStyle(fontSize: 8),
+                            ),
                           ],
                         ),
                       ),

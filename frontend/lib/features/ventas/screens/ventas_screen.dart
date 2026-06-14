@@ -100,6 +100,10 @@ class _VentasScreenState extends State<VentasScreen> {
                       decoration: InputDecoration(
                         hintText: 'Buscar por paciente o #orden...',
                         prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+                          onPressed: () => _mostrarDialogoEscaneo(context),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
@@ -520,6 +524,125 @@ class _VentasScreenState extends State<VentasScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
+  }
+
+  void _mostrarDialogoEscaneo(BuildContext context) {
+    final TextEditingController codigoCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Escanear Boleta', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Posicione el escáner sobre el código de barras o escriba el código manual.', style: TextStyle(fontSize: 13)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: codigoCtrl,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Código (Ej: OT-...)',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.qr_code_rounded),
+              ),
+              onSubmitted: (v) => _procesarBusquedaCodigo(context, v),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () => _procesarBusquedaCodigo(context, codigoCtrl.text.trim()),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text('Buscar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _procesarBusquedaCodigo(BuildContext context, String codigo) async {
+    if (codigo.isEmpty) return;
+    Navigator.pop(context);
+
+    final prov = Provider.of<VentasProvider>(context, listen: false);
+    final venta = await prov.buscarPorCodigo(codigo);
+
+    if (venta != null && mounted) {
+      _verDetalleVenta(venta);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se encontró ninguna venta con ese código'), backgroundColor: AppColors.danger));
+    }
+  }
+
+  void _verDetalleVenta(Map<String, dynamic> v) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Detalle de Venta', style: TextStyle(fontWeight: FontWeight.bold)),
+            _badgeEstado(v['estado']),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _infoDetalle('Paciente', (v['cliente']['nombre'] ?? '') + ' ' + (v['cliente']['apellidos'] ?? '')),
+                _infoDetalle('Fecha', v['fecha'] ?? '---'),
+                _infoDetalle('Vendedor', v['vendedor']['username'] ?? '---'),
+                const Divider(height: 32),
+                const Text('RESUMEN ECONÓMICO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _montoBox('TOTAL', v['montoTotal'], AppColors.primary),
+                    _montoBox('A CUENTA', v['montoACuenta'], AppColors.success),
+                    _montoBox('SALDO', v['montoSaldo'], AppColors.danger),
+                  ],
+                ),
+                const Divider(height: 32),
+                if (v['graduacionOd'] != null) ...[
+                  const Text('RECETA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+                  const SizedBox(height: 8),
+                  Text('O.D: ${v['graduacionOd']}', style: const TextStyle(fontSize: 13)),
+                  Text('O.I: ${v['graduacionOi']}', style: const TextStyle(fontSize: 13)),
+                  const SizedBox(height: 8),
+                ],
+                _infoDetalle('Montura', v['montura'] ?? 'N/A'),
+                _infoDetalle('Lunas', v['tipoLuna'] ?? 'N/A'),
+                const SizedBox(height: 16),
+                _infoDetalle('Observaciones', v['observaciones'] ?? 'Sin observaciones'),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.print_rounded, size: 18),
+            label: const Text('Cerrar'),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _infoDetalle(String l, String v) => Padding(padding: const EdgeInsets.only(bottom: 8), child: Row(children: [Text('$l: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), Expanded(child: Text(v, style: const TextStyle(fontSize: 13)))]));
+
+  Widget _montoBox(String l, dynamic v, Color c) => Column(children: [Text(l, style: TextStyle(fontSize: 9, color: AppColors.gray500)), Text('S/ $v', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: c))]);
+
+  Widget _badgeEstado(String? e) {
+    final color = e == 'PAGADO' ? AppColors.success : AppColors.warning;
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text(e ?? 'PENDIENTE', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)));
   }
 
   Color _getStatusColor(String estado) {

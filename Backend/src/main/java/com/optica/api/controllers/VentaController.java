@@ -23,4 +23,13 @@ public class VentaController {
     public ResponseEntity<Venta> registrarPagoSaldo(@RequestBody com.optica.api.dto.PagoSaldoDTO request) {
         return ResponseEntity.ok(ventaService.registrarPagoSaldo(request));
     }
+
+    @GetMapping("/buscar/{codigo}")
+    public ResponseEntity<Venta> buscarPorCodigo(@PathVariable String codigo) {
+        try {
+            return ResponseEntity.ok(ventaService.buscarPorCodigo(codigo));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

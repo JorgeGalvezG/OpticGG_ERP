@@ -217,4 +217,15 @@ public class VentaService {
 
         return venta;
     }
+
+    public Venta buscarPorCodigo(String codigo) {
+        if (codigo.startsWith("OT-")) {
+            return ordenTrabajoRepository.findByNumeroOrden(codigo)
+                    .map(OrdenTrabajo::getVenta)
+                    .orElseThrow(() -> new RuntimeException("Orden no encontrada: " + codigo));
+        } else {
+            return ventaRepository.findByCodigoBarras(codigo)
+                    .orElseThrow(() -> new RuntimeException("Venta no encontrada: " + codigo));
+        }
+    }
 }

@@ -35,23 +35,22 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
     });
   }
 
-  void _showNuevoProductoDialog(BuildContext context) {
+  void _showProductoDialog(BuildContext context, {Almacen? producto}) {
     final formKey = GlobalKey<FormState>();
-    final nombreCtrl = TextEditingController();
-    final codigoCtrl = TextEditingController();
-    final stockCtrl = TextEditingController(text: '0');
-    final precioVentaCtrl = TextEditingController(text: '0');
-    final fotoUrlCtrl = TextEditingController(text: 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png');
-    int? selectedCategoriaId;
-    int? selectedProveedorId;
-    bool isUploading = false;
+    final nombreCtrl = TextEditingController(text: producto?.nombre);
+    final codigoCtrl = TextEditingController(text: producto?.codigoBarras);
+    final stockCtrl = TextEditingController(text: producto?.stock.toString() ?? '0');
+    final precioVentaCtrl = TextEditingController(text: producto?.precioVenta.toString() ?? '0');
+    final precioCompraCtrl = TextEditingController(text: producto?.precioCompra.toString() ?? '0');
+    int? selectedCategoriaId = producto?.categoriaId;
+    int? selectedProveedorId = producto?.proveedorId;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Nuevo Producto / Montura', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(producto == null ? 'Nuevo Producto / Montura' : 'Editar Producto', style: const TextStyle(fontWeight: FontWeight.bold)),
           content: SizedBox(
             width: 500,
             child: Form(
@@ -60,56 +59,6 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // --- SECCIÓN FOTO ---
-                    Center(
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: AppColors.gray100,
-                            backgroundImage: fotoUrlCtrl.text.startsWith('http') ? NetworkImage(fotoUrlCtrl.text) : NetworkImage(ApiService.getFullUrl(fotoUrlCtrl.text)),
-                            child: (fotoUrlCtrl.text.isEmpty) ? const Icon(Icons.image_not_supported_rounded, size: 40) : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: CircleAvatar(
-                              radius: 18,
-                              backgroundColor: AppColors.primary,
-                              child: isUploading 
-                                ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : IconButton(
-                                    icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
-                                    onPressed: () async {
-                                      final ImagePicker picker = ImagePicker();
-                                      final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
-                                      if (image != null) {
-                                        setDialogState(() => isUploading = true);
-                                        try {
-                                          final String urlServidor = await ApiService.uploadImage(image.path);
-                                          setDialogState(() {
-                                            fotoUrlCtrl.text = urlServidor;
-                                            isUploading = false;
-                                          });
-                                        } catch (e) {
-                                          setDialogState(() => isUploading = false);
-                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-                                        }
-                                      }
-                                    },
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: fotoUrlCtrl,
-                      decoration: const InputDecoration(labelText: 'URL de la Foto', prefixIcon: Icon(Icons.link_rounded)),
-                      onChanged: (v) => setDialogState(() {}),
-                    ),
-                    const SizedBox(height: 12),
                     TextFormField(
                       controller: nombreCtrl,
                       decoration: const InputDecoration(labelText: 'Nombre del Producto *', prefixIcon: Icon(Icons.shopping_bag_outlined)),
@@ -165,13 +114,19 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextFormField(
-                            controller: precioVentaCtrl,
+                            controller: precioCompraCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            decoration: const InputDecoration(labelText: 'Precio Venta S/', prefixIcon: Icon(Icons.sell_rounded)),
+                            decoration: const InputDecoration(labelText: 'Precio Compra S/', prefixIcon: Icon(Icons.shopping_cart_rounded)),
                             validator: (v) => v!.isEmpty ? 'Requerido' : null,
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: precioVentaCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Precio Venta S/ (Sugerido)', prefixIcon: Icon(Icons.sell_rounded)),
                     ),
                   ],
                 ),
@@ -194,16 +149,23 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                   'categoria': {'id': selectedCategoriaId},
                   'proveedor': selectedProveedorId != null ? {'id': selectedProveedorId} : null,
                   'stock': int.tryParse(stockCtrl.text) ?? 0,
+                  'precioCompra': double.tryParse(precioCompraCtrl.text) ?? 0,
                   'precioVenta': double.tryParse(precioVentaCtrl.text) ?? 0,
-                  'fotoUrl': fotoUrlCtrl.text,
+                  'fotoUrl': producto?.fotoUrl ?? 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png',
                   'tienda': auth.tienda ?? 'C1',
                 };
 
-                final exito = await prov.guardarProducto(data);
+                bool exito;
+                if (producto == null) {
+                  exito = await prov.guardarProducto(data);
+                } else {
+                  exito = await prov.actualizarProducto(producto.id!, data);
+                }
+
                 if (exito) {
                   Navigator.pop(context);
                   prov.fetchProductos(auth.tienda ?? 'C1');
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Producto guardado'), backgroundColor: AppColors.success));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(producto == null ? 'Producto guardado' : 'Producto actualizado'), backgroundColor: AppColors.success));
                 }
               },
               child: const Text('Guardar'),
@@ -238,7 +200,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 ],
               ),
               ElevatedButton.icon(
-                onPressed: () => _showNuevoProductoDialog(context),
+                onPressed: () => _showProductoDialog(context),
                 icon: const Icon(Icons.add_shopping_cart_rounded),
                 label: const Text('Nuevo Producto'),
                 style: ElevatedButton.styleFrom(
@@ -322,13 +284,30 @@ class _ProductCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: AppColors.gray100,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                image: DecorationImage(image: NetworkImage(fullFotoUrl), fit: BoxFit.cover),
-              ),
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.gray100,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    image: DecorationImage(image: NetworkImage(fullFotoUrl), fit: BoxFit.cover),
+                  ),
+                ),
+                Positioned(
+                  top: 8, right: 8,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.8),
+                    child: IconButton(
+                      icon: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
+                      onPressed: () {
+                        final state = context.findAncestorStateOfType<_AlmacenScreenState>();
+                        state?._showProductoDialog(context, producto: producto);
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
