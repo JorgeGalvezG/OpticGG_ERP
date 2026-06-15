@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Paleta Óptica Cubas: Cian Clínico Vivo y Azul Medianoche
+  // Paleta Centro Óptico Cubas 20/20: Cian Clínico Vivo y Azul Medianoche
   // Un balance entre energía (modernidad) y sobriedad (medicina)
   
   static const Color primary = Color(0xFF0077B6); // Azul Océano Vibrante

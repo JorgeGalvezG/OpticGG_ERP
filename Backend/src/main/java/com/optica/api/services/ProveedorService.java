@@ -1,10 +1,12 @@
 package com.optica.api.services;
 
 import com.optica.api.models.Proveedor;
+import com.optica.api.models.ProveedorContacto;
 import com.optica.api.models.enums.Tienda;
 import com.optica.api.repositories.ProveedorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,13 +24,23 @@ public class ProveedorService {
         return proveedorRepository.save(proveedor);
     }
 
-    public Proveedor actualizarProveedor(Long id, Proveedor proveedorActualizado) {
+    @Transactional
+    public Proveedor actualizarProveedor(Long id, Proveedor data) {
         Proveedor existente = proveedorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Proveedor no encontrado: " + id));
-        existente.setNombreEmpresa(proveedorActualizado.getNombreEmpresa());
-        existente.setNombreContacto(proveedorActualizado.getNombreContacto());
-        existente.setTelefono(proveedorActualizado.getTelefono());
-        existente.setRuc(proveedorActualizado.getRuc());
+        
+        existente.setNombreEmpresa(data.getNombreEmpresa());
+        existente.setRuc(data.getRuc());
+        
+        // Sincronizar contactos
+        existente.getContactos().clear();
+        if (data.getContactos() != null) {
+            for (ProveedorContacto c : data.getContactos()) {
+                c.setProveedor(existente);
+                existente.getContactos().add(c);
+            }
+        }
+        
         return proveedorRepository.save(existente);
     }
 }

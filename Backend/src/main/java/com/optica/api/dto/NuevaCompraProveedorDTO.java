@@ -9,6 +9,7 @@ import java.util.List;
 @Getter @Setter
 public class NuevaCompraProveedorDTO {
     private Long proveedorId;
+    private String titulo;
     private BigDecimal montoTotal;
     private BigDecimal montoPagado;
     private String descripcion;

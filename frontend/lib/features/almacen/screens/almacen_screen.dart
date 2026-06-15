@@ -5,6 +5,8 @@ import '../../auth/providers/auth_provider.dart';
 import '../../../core/network/api_service.dart';
 import '../providers/almacen_provider.dart';
 import '../models/almacen_model.dart';
+import '../models/categoria_model.dart';
+import '../../../core/shared/developer_provider.dart';
 
 import '../../proveedores/providers/proveedores_provider.dart';
 
@@ -42,8 +44,11 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
     final stockCtrl = TextEditingController(text: producto?.stock.toString() ?? '0');
     final precioVentaCtrl = TextEditingController(text: producto?.precioVenta.toString() ?? '0');
     final precioCompraCtrl = TextEditingController(text: producto?.precioCompra.toString() ?? '0');
+    final fotoUrlCtrl = TextEditingController(text: producto?.fotoUrl ?? 'default_product.png');
+    
     int? selectedCategoriaId = producto?.categoriaId;
     int? selectedProveedorId = producto?.proveedorId;
+    bool isUploading = false;
 
     showDialog(
       context: context,
@@ -59,6 +64,54 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // --- SECCIÓN FOTO (NUEVA) ---
+                    Center(
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: AppColors.gray100,
+                            backgroundImage: fotoUrlCtrl.text.startsWith('http') 
+                                ? NetworkImage(fotoUrlCtrl.text) 
+                                : NetworkImage(ApiService.getFullUrl(fotoUrlCtrl.text)),
+                            child: (fotoUrlCtrl.text.isEmpty || fotoUrlCtrl.text == 'default_product.png') 
+                                ? const Icon(Icons.image_not_supported_rounded, size: 40) 
+                                : null,
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: AppColors.primary,
+                              child: isUploading 
+                                ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : IconButton(
+                                    icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                                    onPressed: () async {
+                                      final ImagePicker picker = ImagePicker();
+                                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+                                      if (image != null) {
+                                        setDialogState(() => isUploading = true);
+                                        try {
+                                          final String urlServidor = await ApiService.uploadImage(image.path);
+                                          setDialogState(() {
+                                            fotoUrlCtrl.text = urlServidor;
+                                            isUploading = false;
+                                          });
+                                        } catch (e) {
+                                          setDialogState(() => isUploading = false);
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al subir: $e')));
+                                        }
+                                      }
+                                    },
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: nombreCtrl,
                       decoration: const InputDecoration(labelText: 'Nombre del Producto *', prefixIcon: Icon(Icons.shopping_bag_outlined)),
@@ -151,7 +204,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                   'stock': int.tryParse(stockCtrl.text) ?? 0,
                   'precioCompra': double.tryParse(precioCompraCtrl.text) ?? 0,
                   'precioVenta': double.tryParse(precioVentaCtrl.text) ?? 0,
-                  'fotoUrl': producto?.fotoUrl ?? 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png',
+                  'fotoUrl': fotoUrlCtrl.text,
                   'tienda': auth.tienda ?? 'C1',
                 };
 

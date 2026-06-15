@@ -122,7 +122,37 @@ class ApiService {
     }
   }
 
-  // 4. Petición PATCH con Token
+  // 4. Petición DELETE con Token
+  static Future<dynamic> delete(String endpoint) async {
+    try {
+      final headers = await _getHeaders();
+      
+      String cleanEndpoint = endpoint;
+      if (endpoint.startsWith('/api/')) {
+        cleanEndpoint = endpoint.substring(4);
+      } else if (endpoint.startsWith('api/')) {
+        cleanEndpoint = endpoint.substring(3);
+      }
+
+      final url = cleanEndpoint.startsWith('/') ? '$baseUrl$cleanEndpoint' : '$baseUrl/$cleanEndpoint';
+      
+      final response = await http.delete(
+        Uri.parse(url),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      } else {
+        throw Exception('Error al eliminar: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ ERROR HTTP DELETE ($endpoint): $e');
+      throw Exception('Error de conexión');
+    }
+  }
+
+  // 5. Petición PATCH con Token
   static Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
     try {
       final headers = await _getHeaders();

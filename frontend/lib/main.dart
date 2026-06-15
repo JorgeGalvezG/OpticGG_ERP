@@ -47,7 +47,7 @@ class OpticaCubasApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Óptica Cubas ERP',
+      title: 'Centro Óptico Cubas 20/20',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: AppColors.primary,

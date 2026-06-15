@@ -66,6 +66,19 @@ class ProveedoresProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> actualizarProveedor(Proveedor proveedor) async {
+    _isLoading = true; notifyListeners();
+    try {
+      await ApiService.put('/proveedores/${proveedor.id}', proveedor.toJson());
+      await fetchProveedores(proveedor.tienda);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      _isLoading = false; notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> registrarAbono(int compraId, double monto) async {
     try {
       await ApiService.put('/compras/$compraId/abono?monto=$monto', {});

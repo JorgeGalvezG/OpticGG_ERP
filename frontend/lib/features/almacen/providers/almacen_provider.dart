@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/network/api_service.dart';
 import '../models/almacen_model.dart';
-
 import '../models/categoria_model.dart';
 
 class AlmacenProvider with ChangeNotifier {
@@ -17,11 +16,13 @@ class AlmacenProvider with ChangeNotifier {
 
   Future<void> fetchCategorias() async {
     try {
-      final response = await ApiService.get('/categorias'); // Asumiendo este endpoint
-      _categorias = (response as List).map((item) => CategoriaProducto.fromJson(item)).toList();
+      final response = await ApiService.get('/categorias');
+      if (response != null && response is List) {
+        _categorias = response.map((item) => CategoriaProducto.fromJson(item as Map<String, dynamic>)).toList();
+      }
       notifyListeners();
     } catch (e) {
-      print("Error cargando categorías: $e");
+      debugPrint("Error cargando categorias: $e");
     }
   }
 
@@ -32,20 +33,27 @@ class AlmacenProvider with ChangeNotifier {
 
     try {
       final response = await ApiService.get('/almacen/tienda/$tienda');
-      _productos = (response as List).map((item) => Almacen.fromJson(item)).toList();
+      if (response != null && response is List) {
+        _productos = response.map((item) => Almacen.fromJson(item as Map<String, dynamic>)).toList();
+      }
     } catch (e) {
       _errorMessage = e.toString();
+      debugPrint("Error cargando productos: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<Almacen?> buscarPorCodigo(String codigo) async {
     try {
       final response = await ApiService.get('/almacen/codigo/$codigo');
-      return Almacen.fromJson(response);
+      if (response != null) {
+        return Almacen.fromJson(response as Map<String, dynamic>);
+      }
+      return null;
     } catch (e) {
+      debugPrint("Error buscando por codigo: $e");
       return null;
     }
   }
@@ -55,6 +63,7 @@ class AlmacenProvider with ChangeNotifier {
       await ApiService.post('/almacen', data);
       return true;
     } catch (e) {
+      debugPrint("Error guardando producto: $e");
       return false;
     }
   }
@@ -64,6 +73,41 @@ class AlmacenProvider with ChangeNotifier {
       await ApiService.put('/almacen/$id', data);
       return true;
     } catch (e) {
+      debugPrint("Error actualizando producto: $e");
+      return false;
+    }
+  }
+
+  // --- METODOS PARA CATEGORIAS ---
+  Future<bool> guardarCategoria(Map<String, dynamic> data) async {
+    try {
+      await ApiService.post('/categorias', data);
+      await fetchCategorias();
+      return true;
+    } catch (e) {
+      debugPrint("Error guardando categoria: $e");
+      return false;
+    }
+  }
+
+  Future<bool> actualizarCategoria(int id, Map<String, dynamic> data) async {
+    try {
+      await ApiService.put('/categorias/$id', data);
+      await fetchCategorias();
+      return true;
+    } catch (e) {
+      debugPrint("Error actualizando categoria: $e");
+      return false;
+    }
+  }
+
+  Future<bool> eliminarCategoria(int id) async {
+    try {
+      await ApiService.delete('/categorias/$id');
+      await fetchCategorias();
+      return true;
+    } catch (e) {
+      debugPrint("Error eliminando categoria: $e");
       return false;
     }
   }

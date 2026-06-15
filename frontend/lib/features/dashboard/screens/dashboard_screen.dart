@@ -176,7 +176,7 @@ class _HeaderSection extends StatelessWidget {
           children: [
             Container(width: 4, height: 24, decoration: BoxDecoration(color: isDev ? AppColors.nebulaPink : AppColors.primary, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 12),
-            Text(isDev ? 'SISTEMA DE CONTROL CÓSMICO' : 'ÓPTICA CUBAS ERP', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: isDev ? AppColors.nebulaPink : AppColors.primary, letterSpacing: 2)),
+            Text(isDev ? 'SISTEMA DE CONTROL CÓSMICO' : 'CENTRO ÓPTICO CUBAS 20/20 ERP', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: isDev ? AppColors.nebulaPink : AppColors.primary, letterSpacing: 2)),
           ],
         ),
         const SizedBox(height: 8),

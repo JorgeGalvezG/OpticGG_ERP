@@ -1,6 +1,7 @@
 package com.optica.api.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.optica.api.models.enums.Tienda;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -27,6 +28,10 @@ public class Proveedor {
 
     @Column(length = 20)
     private String ruc;
+
+    @OneToMany(mappedBy = "proveedor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("proveedor")
+    private java.util.List<ProveedorContacto> contactos = new java.util.ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

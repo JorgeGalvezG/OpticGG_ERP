@@ -29,7 +29,7 @@ class _VipScreenState extends State<VipScreen> {
   // 2. LÓGICA DE ENVÍO SELECTIVO POR WHATSAPP
   void _enviarPromociones(List<Paciente> seleccionados) async {
     for (var p in seleccionados) {
-      final String mensaje = "¡Hola ${p.nombre}! ✨ Te saludamos de Óptica Cubas. Por ser uno de nuestros clientes VIP, tienes un beneficio exclusivo del 20% en tus próximas resinas. ¡Te esperamos!";
+      final String mensaje = "¡Hola ${p.nombre}! ✨ Te saludamos de Centro Óptico Cubas 20/20. Por ser uno de nuestros clientes VIP, tienes un beneficio exclusivo del 20% en tus próximas resinas. ¡Te esperamos!";
 
       // Limpiamos el número (asumiendo formato Perú +51)
       final String phone = p.telefono?.replaceAll(RegExp(r'\D'), '') ?? '';

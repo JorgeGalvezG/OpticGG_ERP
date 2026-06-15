@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 40),
                           SizedBox(height: 16),
-                          Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold, letterSpacing: -1)),
+                          Text('Centro Óptico Cubas 20/20', style: TextStyle(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold, letterSpacing: -1)),
                           Text('Solución integral para la gestión de tu óptica.', style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w300)),
                         ],
                       ),
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Icon(Icons.remove_red_eye_rounded, color: Colors.white, size: 80),
                     SizedBox(height: 16),
-                    Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold, letterSpacing: -2)),
+                    Text('Centro Óptico Cubas 20/20', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold, letterSpacing: -2)),
                     Text('SISTEMA DE GESTIÓN INTEGRAL', style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -203,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Óptica Cubas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
+                    Text('Centro Óptico Cubas 20/20', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
                     Text('GESTIÓN EMPRESARIAL', style: TextStyle(fontSize: 10, color: AppColors.gray400, letterSpacing: 1)),
                   ],
                 ),

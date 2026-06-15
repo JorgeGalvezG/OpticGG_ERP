@@ -1,6 +1,7 @@
 class CompraProveedor {
   final int id;
   final int proveedorId;
+  final String? titulo;
   final double monto;
   final double montoPagado;
   final double montoSaldo;
@@ -15,6 +16,7 @@ class CompraProveedor {
   CompraProveedor({
     required this.id,
     required this.proveedorId,
+    this.titulo,
     required this.monto,
     required this.montoPagado,
     required this.montoSaldo,
@@ -31,6 +33,7 @@ class CompraProveedor {
     return CompraProveedor(
       id: json['id'],
       proveedorId: json['proveedor'] != null ? json['proveedor']['id'] : 0,
+      titulo: json['titulo'],
       monto: (json['monto'] as num).toDouble(),
       montoPagado: (json['montoPagado'] as num? ?? 0).toDouble(),
       montoSaldo: (json['montoSaldo'] as num? ?? 0).toDouble(),

@@ -44,6 +44,7 @@ public class CompraProveedorService {
 
         CompraProveedor compra = new CompraProveedor();
         compra.setProveedor(proveedor);
+        compra.setTitulo(dto.getTitulo());
         compra.setMonto(dto.getMontoTotal());
         compra.setMontoPagado(dto.getMontoPagado());
         compra.setDescripcion(dto.getDescripcion());

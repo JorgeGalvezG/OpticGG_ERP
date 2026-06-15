@@ -1,6 +1,6 @@
 # OpticGG ERP - Frontend (Flutter)
 
-Interfaz de usuario multiplataforma para la gestión operativa de Óptica Cubas.
+Interfaz de usuario multiplataforma para la gestión operativa de Centro Óptico Cubas 20/20.
 
 ## Tecnologías
 - **Framework**: Flutter 3.x

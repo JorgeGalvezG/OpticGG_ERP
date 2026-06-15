@@ -107,12 +107,20 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                   CircleAvatar(backgroundColor: isDev ? AppColors.nebulaPurple.withOpacity(0.2) : AppColors.primaryLight, child: Icon(Icons.apartment_rounded, color: isDev ? AppColors.starlight : AppColors.primary, size: 20)),
                   const SizedBox(width: 12),
                   Expanded(child: Text(p.nombreEmpresa, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDev ? Colors.white : AppColors.gray900), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  IconButton(
+                    icon: Icon(Icons.edit_rounded, size: 18, color: isDev ? AppColors.starlight : AppColors.primary),
+                    onPressed: () => showDialog(context: context, builder: (context) => _NuevoProveedorDialog(proveedor: p)),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              _infoRow(Icons.person_rounded, p.nombreContacto ?? 'Sin contacto', isDev),
-              const SizedBox(height: 6),
-              _infoRow(Icons.phone_rounded, p.telefono ?? 'Sin teléfono', isDev),
+              if (p.contactos.isNotEmpty)
+                ...p.contactos.take(2).map((c) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4.0),
+                  child: _infoRow(Icons.person_outline_rounded, '${c.nombre} (${c.telefono ?? "S/T"})', isDev),
+                ))
+              else
+                _infoRow(Icons.person_off_rounded, 'Sin contactos', isDev),
               const Spacer(),
               Divider(height: 1, color: isDev ? Colors.white10 : AppColors.gray100),
               const SizedBox(height: 12),
@@ -235,11 +243,11 @@ class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
                           title: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Compra #${c.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Expanded(child: Text(c.titulo ?? 'Compra #${c.id}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
                               _badgeEstado(c.estadoPago),
                             ],
                           ),
-                          subtitle: Text('Fecha: ${c.fechaPedido}  •  Total: S/ ${c.monto.toStringAsFixed(2)}'),
+                          subtitle: Text('ID: #${c.id}  •  Fecha: ${c.fechaPedido}  •  Total: S/ ${c.monto.toStringAsFixed(2)}'),
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -311,6 +319,7 @@ class _CompraDetalladaDialog extends StatefulWidget {
 class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
+  final _tituloController = TextEditingController(text: 'Compra de Lentes');
   final _montoPagadoController = TextEditingController(text: '0');
   
   final List<Map<String, dynamic>> _itemsAlmacen = [];
@@ -328,6 +337,16 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
       final auth = Provider.of<AuthProvider>(context, listen: false);
       Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(auth.tienda ?? 'C1');
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _tituloController.dispose();
+    _montoPagadoController.dispose();
+    _nombreGastoCtrl.dispose();
+    _precioGastoCtrl.dispose();
+    super.dispose();
   }
 
   void _recalcularTotal() {
@@ -363,6 +382,12 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
                   ),
                   IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context)),
                 ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _tituloController,
+                decoration: const InputDecoration(labelText: 'Título de la Compra (Ej: Compra Anual de Lunas)', prefixIcon: Icon(Icons.label_important_rounded), border: OutlineInputBorder()),
+                validator: (v) => v!.isEmpty ? 'Requerido' : null,
               ),
               const SizedBox(height: 16),
               TabBar(
@@ -545,7 +570,8 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
 }
 
 class _NuevoProveedorDialog extends StatefulWidget {
-  const _NuevoProveedorDialog();
+  final Proveedor? proveedor;
+  const _NuevoProveedorDialog({this.proveedor});
   @override
   State<_NuevoProveedorDialog> createState() => _NuevoProveedorDialogState();
 }
@@ -554,73 +580,121 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
   final _formKey = GlobalKey<FormState>();
   final _empresaController = TextEditingController();
   final _rucController = TextEditingController();
-  final _contactoController = TextEditingController();
-  final _telefonoController = TextEditingController();
+  
+  List<ProveedorContacto> _contactos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.proveedor != null) {
+      _empresaController.text = widget.proveedor!.nombreEmpresa;
+      _rucController.text = widget.proveedor!.ruc ?? '';
+      _contactos = List.from(widget.proveedor!.contactos);
+    }
+    if (_contactos.isEmpty) {
+      _contactos.add(ProveedorContacto(nombre: '', cargo: 'Principal'));
+    }
+  }
 
   @override
   void dispose() {
     _empresaController.dispose();
     _rucController.dispose();
-    _contactoController.dispose();
-    _telefonoController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final dev = Provider.of<DeveloperProvider>(context);
+    
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        padding: const EdgeInsets.all(24), width: 450,
+        padding: const EdgeInsets.all(24), width: 550,
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Nuevo Proveedor', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _empresaController, 
-                decoration: const InputDecoration(labelText: 'Nombre de la Empresa *', prefixIcon: Icon(Icons.business_rounded)), 
-                validator: (v) => v!.isEmpty ? 'Requerido' : null
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _rucController, 
-                      decoration: const InputDecoration(labelText: 'RUC', prefixIcon: Icon(Icons.badge_rounded)),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(widget.proveedor == null ? 'Nuevo Proveedor' : 'Editar Proveedor', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _empresaController, 
+                  decoration: const InputDecoration(labelText: 'Nombre de la Empresa *', prefixIcon: Icon(Icons.business_rounded), border: OutlineInputBorder()), 
+                  validator: (v) => v!.isEmpty ? 'Requerido' : null
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _rucController, 
+                  decoration: const InputDecoration(labelText: 'RUC', prefixIcon: Icon(Icons.badge_rounded), border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Personas de Contacto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    TextButton.icon(
+                      onPressed: () => setState(() => _contactos.add(ProveedorContacto(nombre: ''))),
+                      icon: const Icon(Icons.add_circle_outline, size: 18),
+                      label: const Text('Añadir Contacto', style: TextStyle(fontSize: 12)),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ..._contactos.asMap().entries.map((entry) {
+                  int idx = entry.key;
+                  ProveedorContacto c = entry.value;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: AppColors.gray50, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.gray200)),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: TextFormField(
+                              initialValue: c.nombre,
+                              decoration: const InputDecoration(labelText: 'Nombre', isDense: true),
+                              onChanged: (v) => _contactos[idx] = ProveedorContacto(id: c.id, nombre: v, telefono: c.telefono, cargo: c.cargo),
+                            )),
+                            const SizedBox(width: 8),
+                            Expanded(child: TextFormField(
+                              initialValue: c.cargo,
+                              decoration: const InputDecoration(labelText: 'Cargo (Opcional)', isDense: true),
+                              onChanged: (v) => _contactos[idx] = ProveedorContacto(id: c.id, nombre: c.nombre, telefono: c.telefono, cargo: v),
+                            )),
+                            IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.danger, size: 20), onPressed: () => setState(() => _contactos.removeAt(idx))),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          initialValue: c.telefono,
+                          decoration: const InputDecoration(labelText: 'Teléfono / WhatsApp', prefixIcon: Icon(Icons.phone, size: 16), isDense: true),
+                          onChanged: (v) => _contactos[idx] = ProveedorContacto(id: c.id, nombre: c.nombre, telefono: v, cargo: c.cargo),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _telefonoController, 
-                      decoration: const InputDecoration(labelText: 'Teléfono', prefixIcon: Icon(Icons.phone_rounded)),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _contactoController, 
-                decoration: const InputDecoration(labelText: 'Persona de Contacto', prefixIcon: Icon(Icons.person_rounded)),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end, 
-                children: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
+                  );
+                }),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity, height: 50,
+                  child: ElevatedButton(
                     onPressed: _guardar, 
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-                    child: const Text('Guardar Proveedor')
-                  )
-                ]
-              ),
-            ],
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    child: Text(widget.proveedor == null ? 'Crear Proveedor' : 'Guardar Cambios')
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -630,17 +704,26 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
   void _guardar() async {
     if (_formKey.currentState!.validate()) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
+      final provProv = Provider.of<ProveedoresProvider>(context, listen: false);
+      
       final p = Proveedor(
+        id: widget.proveedor?.id,
         nombreEmpresa: _empresaController.text.trim(), 
         ruc: _rucController.text.trim(), 
-        nombreContacto: _contactoController.text.trim(),
-        telefono: _telefonoController.text.trim(),
-        tienda: auth.tienda ?? 'C1'
+        tienda: auth.tienda ?? 'C1',
+        contactos: _contactos.where((c) => c.nombre.isNotEmpty).toList(),
       );
-      final exito = await Provider.of<ProveedoresProvider>(context, listen: false).crearProveedor(p);
+
+      bool exito;
+      if (widget.proveedor == null) {
+        exito = await provProv.crearProveedor(p);
+      } else {
+        exito = await provProv.actualizarProveedor(p);
+      }
+
       if (exito && mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proveedor guardado correctamente'), backgroundColor: AppColors.success));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(widget.proveedor == null ? 'Proveedor creado' : 'Proveedor actualizado'), backgroundColor: AppColors.success));
       }
     }
   }

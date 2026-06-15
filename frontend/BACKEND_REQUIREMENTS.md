@@ -1,6 +1,6 @@
 # Guía de Integración Backend (Java / Spring Boot)
 
-Para que las nuevas funcionalidades de **Óptica Cubas** (Historial, Tickets Detallados y Pagos) funcionen correctamente, el backend debe alinearse con los siguientes requerimientos técnicos.
+Para que las nuevas funcionalidades de **Centro Óptico Cubas 20/20** (Historial, Tickets Detallados y Pagos) funcionen correctamente, el backend debe alinearse con los siguientes requerimientos técnicos.
 
 ## 1. Actualización de la Entidad `OrdenTrabajo` / `Venta`
 Asegúrate de que tu tabla en la base de datos y tu entidad Java tengan los siguientes campos:

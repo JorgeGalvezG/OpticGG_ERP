@@ -11,6 +11,7 @@ import '../../ventas/screens/ventas_screen.dart';
 import '../../pacientes/screens/pacientes_screen.dart';
 import '../../proveedores/screens/proveedores_screen.dart';
 import '../../almacen/screens/almacen_screen.dart';
+import '../../almacen/screens/categorias_screen.dart';
 import '../../vip/screens/vip_screen.dart';
 import '../../usuarios/screens/usuarios_screen.dart';
 
@@ -45,7 +46,8 @@ class _MainLayoutState extends State<MainLayout> {
     const ProveedoresScreen(), // 5
     const VipScreen(), // 6
     const UsuariosScreen(), // 7
-    const _AuditPanel(), // 8 (Nuevo: Auditoría Dev)
+    const CategoriasScreen(), // 8
+    const _AuditPanel(), // 9
   ];
 
   final List<String> _titles = [
@@ -57,6 +59,7 @@ class _MainLayoutState extends State<MainLayout> {
     'Proveedores',
     'Clientes VIP',
     'Gestión de Personal',
+    'Categorías de Productos',
     '🔎 Auditoría de Sistemas',
   ];
 
@@ -143,13 +146,20 @@ class _MainLayoutState extends State<MainLayout> {
             selected: _selectedIndex == 5,
             onTap: () { setState(() => _selectedIndex = 5); Navigator.pop(context); },
           ),
-          if (auth.rol == 'ADMIN')
+          if (auth.rol == 'ADMIN') ...[
             ListTile(
               leading: const Icon(Icons.badge_rounded),
               title: const Text('Gestión de Personal'),
               selected: _selectedIndex == 7,
               onTap: () { setState(() => _selectedIndex = 7); Navigator.pop(context); },
             ),
+            ListTile(
+              leading: const Icon(Icons.category_rounded),
+              title: const Text('Categorías'),
+              selected: _selectedIndex == 8,
+              onTap: () { setState(() => _selectedIndex = 8); Navigator.pop(context); },
+            ),
+          ],
           ListTile(
             leading: const Icon(Icons.star_rounded, color: Colors.orange),
             title: const Text('Clientes VIP'),
@@ -160,8 +170,8 @@ class _MainLayoutState extends State<MainLayout> {
             ListTile(
               leading: const Icon(Icons.troubleshoot_rounded, color: AppColors.nebulaPink),
               title: const Text('Auditoría Dev'),
-              selected: _selectedIndex == 8,
-              onTap: () { setState(() => _selectedIndex = 8); Navigator.pop(context); },
+              selected: _selectedIndex == 9,
+              onTap: () { setState(() => _selectedIndex = 9); Navigator.pop(context); },
             ),
           const Spacer(),
           const Divider(),
@@ -261,7 +271,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           const SizedBox(height: 40),
           Icon(dev.isDevMode ? Icons.auto_awesome : Icons.remove_red_eye, color: Colors.white, size: 40),
-          const Text('Óptica Cubas', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('Centro Óptico Cubas 20/20', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
           if (dev.isDevMode) const Text('COSMIC EDITION', style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 2)),
           const SizedBox(height: 30),
 
@@ -279,6 +289,7 @@ class _MainLayoutState extends State<MainLayout> {
             ),
             _buildSidebarItem(6, Icons.star_rounded, 'Clientes VIP'),
             _buildSidebarItem(7, Icons.badge_rounded, 'Personal'),
+            _buildSidebarItem(8, Icons.category_rounded, 'Categorías'),
           ],
           
           if (dev.isDevMode) ...[
@@ -286,7 +297,7 @@ class _MainLayoutState extends State<MainLayout> {
               padding: EdgeInsets.only(left: 24, top: 20, bottom: 10),
               child: Align(alignment: Alignment.centerLeft, child: Text('DEVELOPER TOOLS', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold))),
             ),
-            _buildSidebarItem(8, Icons.troubleshoot_rounded, 'Auditoría'),
+            _buildSidebarItem(9, Icons.troubleshoot_rounded, 'Auditoría'),
           ],
 
           const Spacer(),

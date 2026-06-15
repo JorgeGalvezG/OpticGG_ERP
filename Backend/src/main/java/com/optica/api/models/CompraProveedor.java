@@ -25,6 +25,9 @@ public class CompraProveedor {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Proveedor proveedor;
 
+    @Column(length = 200)
+    private String titulo;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
