@@ -32,8 +32,11 @@ class _UsuariosScreenState extends State<UsuariosScreen> {
         // 1. Cabecera (Idéntica a la anterior)
         Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
             children: [
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

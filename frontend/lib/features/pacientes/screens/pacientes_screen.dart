@@ -30,133 +30,126 @@ class _PacientesScreenState extends State<PacientesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tiendaActual =
-        Provider.of<AuthProvider>(context, listen: false).tienda ?? 'C1';
+    final tiendaActual = Provider.of<AuthProvider>(context, listen: false).tienda ?? 'C1';
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 1. CABECERA
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: isMobile
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Directorio de Pacientes',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.gray900,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. CABECERA
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Directorio de Pacientes',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.gray900,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: _buildBotonNuevo(context, isMobile),
-                    ),
-                  ],
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Directorio de Pacientes',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.gray900,
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildBotonNuevo(context, isMobile),
+                      ),
+                    ],
+                  )
+                : Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 16,
+                    runSpacing: 16,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Directorio de Pacientes',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.gray900,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Historial clínico y registro de clientes',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.gray500,
+                          SizedBox(height: 4),
+                          Text(
+                            'Historial clínico y registro de clientes',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.gray500,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    _buildBotonNuevo(context, isMobile),
-                  ],
-                ),
-        ),
-
-        // 2. BUSCADOR
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: isMobile
-              ? Column(
-                  children: [
-                    _buildBuscador(tiendaActual),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: _buildBotonFecha(context),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(flex: 3, child: _buildBuscador(tiendaActual)),
-                    const SizedBox(width: 16),
-                    _buildBotonFecha(context),
-                  ],
-                ),
-        ),
-        const SizedBox(height: 24),
-
-        // 3. LISTA CONECTADA
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-            ).copyWith(bottom: 24.0),
-            decoration: BoxDecoration(
-              color: isMobile ? Colors.transparent : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: isMobile ? null : Border.all(color: AppColors.gray200),
-            ),
-            child: Consumer<PacientesProvider>(
-              builder: (context, provider, child) {
-                if (provider.isLoading)
-                  return const Center(child: CircularProgressIndicator());
-                if (provider.errorMessage.isNotEmpty)
-                  return Center(
-                    child: Text(
-                      'Error: ${provider.errorMessage}',
-                      style: const TextStyle(color: AppColors.danger),
-                    ),
-                  );
-                if (provider.pacientes.isEmpty)
-                  return const Center(
-                    child: Text(
-                      'No hay pacientes registrados',
-                      style: TextStyle(color: AppColors.gray500),
-                    ),
-                  );
-
-                return ListView.separated(
-                  itemCount: provider.pacientes.length,
-                  separatorBuilder: (context, index) => isMobile
-                      ? const SizedBox.shrink()
-                      : const Divider(height: 1, color: AppColors.gray100),
-                  itemBuilder: (context, index) => _PatientRow(
-                    paciente: provider.pacientes[index],
-                    isMobile: isMobile,
+                        ],
+                      ),
+                      _buildBotonNuevo(context, isMobile),
+                    ],
                   ),
-                );
-              },
-            ),
           ),
-        ),
-      ],
+
+          // 2. BUSCADOR Y FILTROS
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: isMobile
+                ? Column(
+                    children: [
+                      _buildBuscador(tiendaActual),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildBotonFecha(context),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(flex: 3, child: _buildBuscador(tiendaActual)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildBotonFecha(context)),
+                    ],
+                  ),
+          ),
+          const SizedBox(height: 24),
+
+          // 3. LISTA CONECTADA
+          Consumer<PacientesProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading)
+                return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
+              if (provider.errorMessage.isNotEmpty)
+                return Center(
+                  child: Padding(padding: const EdgeInsets.all(40), child: Text(
+                    'Error: ${provider.errorMessage}',
+                    style: const TextStyle(color: AppColors.danger),
+                  )),
+                );
+              if (provider.pacientes.isEmpty)
+                return const Center(
+                  child: Padding(padding: EdgeInsets.all(40), child: Text(
+                    'No hay pacientes registrados',
+                    style: TextStyle(color: AppColors.gray500),
+                  )),
+                );
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(bottom: 40),
+                itemCount: provider.pacientes.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) => _PatientRow(
+                  paciente: provider.pacientes[index],
+                  isMobile: isMobile,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -222,82 +215,185 @@ class _PacientesScreenState extends State<PacientesScreen> {
           ),
         );
         if (picked != null && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Buscando desde ${picked.start.toString().substring(0, 10)} hasta ${picked.end.toString().substring(0, 10)}',
-              ),
-            ),
-          );
+          Provider.of<PacientesProvider>(context, listen: false)
+              .filtrarPorFecha(picked);
         }
       },
-      icon: const Icon(
-        Icons.calendar_month_rounded,
-        color: AppColors.gray600,
-        size: 18,
-      ),
-      label: const Text(
-        'Filtrar Fecha',
-        style: TextStyle(color: AppColors.gray700),
-      ),
+      icon: const Icon(Icons.calendar_month_rounded, size: 18),
+      label: const Text('Filtrar Fecha'),
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: Colors.white,
         side: const BorderSide(color: AppColors.gray200),
+        foregroundColor: AppColors.gray700,
       ),
     );
   }
 }
 
-// =========================================================
-// FILA DE PACIENTE — RESPONSIVA
-// =========================================================
 class _PatientRow extends StatelessWidget {
   final Paciente paciente;
   final bool isMobile;
 
   const _PatientRow({required this.paciente, required this.isMobile});
 
-  void _abrirVenta(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => NuevaVentaDialog(
-        pacienteIdPrecargado: paciente.id,
-        pacienteNombrePrecargado: '${paciente.nombre} ${paciente.apellidos}',
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final String name = '${paciente.nombre} ${paciente.apellidos}';
+    final bool isVip = paciente.esDestacado;
     final String phone = paciente.telefono ?? 'No registrado';
     final String lastVisit = paciente.fechaNacimiento ?? 'No registrada';
-    final bool isVip = paciente.esDestacado;
 
-    if (isMobile) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.gray200),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: isVip
+                          ? AppColors.warning.withOpacity(0.1)
+                          : AppColors.primary.withOpacity(0.1),
+                      child: Text(
+                        paciente.nombre[0].toUpperCase(),
+                        style: TextStyle(
+                          color: isVip ? AppColors.warning : AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${paciente.nombre} ${paciente.apellidos}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          if (isVip)
+                            const Text(
+                              'PACIENTE DESTACADO',
+                              style: TextStyle(
+                                color: AppColors.warning,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'DNI / Celular:',
+                          style: TextStyle(fontSize: 11, color: AppColors.gray400),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${paciente.dni ?? "S/D"} / $phone',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.gray700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Nacimiento:',
+                          style: TextStyle(fontSize: 11, color: AppColors.gray400),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          lastVisit,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.gray700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.start,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _abrirVenta(context),
+                      icon: const Icon(
+                        Icons.shopping_cart_checkout_rounded,
+                        size: 16,
+                      ),
+                      label: const Text('Venta', style: TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryLight,
+                        foregroundColor: AppColors.primary,
+                        elevation: 0,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => _PacienteHistorialDialog(paciente: paciente),
+                      ),
+                      icon: const Icon(Icons.history_edu_rounded, size: 16),
+                      label: const Text('Historial', style: TextStyle(fontSize: 12)),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) =>
+                            _EditarPacienteDialog(paciente: paciente),
+                      ),
+                      icon: const Icon(Icons.edit_document, size: 16),
+                      label: const Text('Editar', style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : Row(
               children: [
                 CircleAvatar(
-                  radius: 20,
                   backgroundColor: isVip
-                      ? AppColors.warning.withOpacity(0.15)
-                      : AppColors.primaryLight,
+                      ? AppColors.warning.withOpacity(0.1)
+                      : AppColors.primary.withOpacity(0.1),
                   child: Text(
-                    name.substring(0, 2).toUpperCase(),
+                    paciente.nombre[0].toUpperCase(),
                     style: TextStyle(
                       color: isVip ? AppColors.warning : AppColors.primary,
                       fontWeight: FontWeight.bold,
@@ -311,58 +407,33 @@ class _PatientRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        '${paciente.nombre} ${paciente.apellidos}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: AppColors.gray900,
+                          fontSize: 16,
                         ),
                       ),
-                      if (isVip)
-                        const Text(
-                          'Paciente VIP',
-                          style: TextStyle(
-                            color: AppColors.warning,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'DNI: ${paciente.dni ?? "S/D"}  •  Celular: $phone',
+                        style: const TextStyle(
+                          color: AppColors.gray500,
+                          fontSize: 13,
                         ),
+                      ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(height: 1, color: AppColors.gray100),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Celular:',
-                      style: TextStyle(fontSize: 11, color: AppColors.gray400),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      phone,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.gray700,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     const Text(
                       'Nacimiento:',
-                      style: TextStyle(fontSize: 11, color: AppColors.gray400),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.gray400,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -375,185 +446,64 @@ class _PatientRow extends StatelessWidget {
                     ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _abrirVenta(context),
-                    icon: const Icon(
-                      Icons.shopping_cart_checkout_rounded,
-                      size: 16,
-                    ),
-                    label: const Text('Venta', style: TextStyle(fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryLight,
-                      foregroundColor: AppColors.primary,
-                      elevation: 0,
-                    ),
+                const SizedBox(width: 12),
+                if (isVip)
+                  const Tooltip(
+                    message: 'Paciente VIP',
+                    child: Icon(Icons.stars_rounded,
+                        color: AppColors.warning, size: 24),
+                  ),
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart_checkout_rounded,
+                      color: AppColors.primary),
+                  tooltip: 'Nueva Venta',
+                  onPressed: () => _abrirVenta(context),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.history_edu_rounded,
+                      color: AppColors.gray400),
+                  tooltip: 'Ver Historial Médico',
+                  onPressed: () => showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => _PacienteHistorialDialog(paciente: paciente),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => _PacienteHistorialDialog(paciente: paciente),
-                    ),
-                    icon: const Icon(Icons.history_edu_rounded, size: 16),
-                    label: const Text('Historial', style: TextStyle(fontSize: 12)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) =>
-                          _EditarPacienteDialog(paciente: paciente),
-                    ),
-                    icon: const Icon(Icons.edit_document, size: 16),
-                    label: const Text('Editar', style: TextStyle(fontSize: 12)),
+                IconButton(
+                  icon: const Icon(Icons.edit_document, color: AppColors.gray400),
+                  tooltip: 'Editar/Ver Ficha',
+                  onPressed: () => showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => _EditarPacienteDialog(paciente: paciente),
                   ),
                 ),
               ],
             ),
-          ],
-        ),
-      );
-    }
+    );
+  }
 
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: isVip
-                ? AppColors.warning.withOpacity(0.15)
-                : AppColors.primaryLight,
-            child: Text(
-              name.substring(0, 2).toUpperCase(),
-              style: TextStyle(
-                color: isVip ? AppColors.warning : AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: AppColors.gray900,
-                      ),
-                    ),
-                    if (isVip)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 8),
-                        child: Icon(
-                          Icons.star_rounded,
-                          color: AppColors.warning,
-                          size: 16,
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Celular: $phone',
-                  style: const TextStyle(
-                    color: AppColors.gray500,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'F. Nacimiento / Ref:',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.gray400,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  lastVisit,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.gray700,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          OutlinedButton.icon(
-            onPressed: () => showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => _PacienteHistorialDialog(paciente: paciente),
-            ),
-            icon: const Icon(Icons.history_edu_rounded, size: 16),
-            label: const Text('Historial', style: TextStyle(fontSize: 12)),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              side: const BorderSide(color: AppColors.gray300),
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            onPressed: () => _abrirVenta(context),
-            icon: const Icon(Icons.shopping_cart_checkout_rounded, size: 16),
-            label: const Text('Generar Venta', style: TextStyle(fontSize: 12)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryLight,
-              foregroundColor: AppColors.primary,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.edit_document, color: AppColors.gray400),
-            tooltip: 'Editar/Ver Ficha',
-            onPressed: () => showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => _EditarPacienteDialog(paciente: paciente),
-            ),
-          ),
-        ],
+  void _abrirVenta(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => NuevaVentaDialog(
+        pacienteIdPrecargado: paciente.id,
+        pacienteNombrePrecargado: "${paciente.nombre} ${paciente.apellidos}",
       ),
     );
   }
 }
 
 // =========================================================
-// HELPER PARA FORMULARIOS RESPONSIVOS
+// WIDGETS AUXILIARES
 // =========================================================
+
 Widget _buildFormRow(bool isMobile, List<Widget> children) {
   if (isMobile) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: children
           .map(
             (w) =>
@@ -573,15 +523,9 @@ Widget _buildFormRow(bool isMobile, List<Widget> children) {
   );
 }
 
-// =========================================================
-// HELPER COMPARTIDO: Toggle VIP
-// =========================================================
-Widget _buildVipToggle({
-  required bool value,
-  required void Function(bool) onChanged,
-}) {
+Widget _buildVipToggle({required bool value, required Function(bool) onChanged}) {
   return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 4),
     decoration: BoxDecoration(
       color: AppColors.warning.withOpacity(0.05),
       borderRadius: BorderRadius.circular(12),
@@ -622,6 +566,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _apellidosController = TextEditingController();
+  final _dniController = TextEditingController();
   final _telefonoController = TextEditingController();
   final _edadController = TextEditingController();
   final _fechaNacController = TextEditingController();
@@ -658,6 +603,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
     _fechaNacController.removeListener(_calcularEdad);
     _nombreController.dispose();
     _apellidosController.dispose();
+    _dniController.dispose();
     _telefonoController.dispose();
     _edadController.dispose();
     _fechaNacController.dispose();
@@ -731,10 +677,25 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                       if (!isMobile) const SizedBox(height: 16),
                       _buildFormRow(isMobile, [
                         _buildTextField(
+                          'DNI',
+                          Icons.badge_rounded,
+                          controller: _dniController,
+                          isNumber: true,
+                        ),
+                        _buildTextField(
                           'Teléfono',
                           Icons.phone_android_rounded,
                           controller: _telefonoController,
                           isNumber: true,
+                        ),
+                      ]),
+                      if (!isMobile) const SizedBox(height: 16),
+                      _buildFormRow(isMobile, [
+                        _buildTextField(
+                          'Fecha de Nacimiento',
+                          Icons.calendar_today_rounded,
+                          controller: _fechaNacController,
+                          hint: 'Ej: 1990-12-25',
                         ),
                         _buildTextField(
                           'Edad',
@@ -744,13 +705,6 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                           hint: 'Ej: 32',
                         ),
                       ]),
-                      if (!isMobile) const SizedBox(height: 16),
-                      _buildTextField(
-                        'Fecha de Nacimiento',
-                        Icons.calendar_today_rounded,
-                        controller: _fechaNacController,
-                        hint: 'Ej: 1990-12-25',
-                      ),
                       const SizedBox(height: 16),
                       _buildVipToggle(
                         value: _esVip,
@@ -796,6 +750,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                           final nuevo = Paciente(
                             nombre: _nombreController.text.trim(),
                             apellidos: _apellidosController.text.trim(),
+                            dni: _dniController.text.trim().isEmpty ? null : _dniController.text.trim(),
                             telefono: _telefonoController.text.trim().isEmpty
                                 ? null
                                 : _telefonoController.text.trim(),
@@ -896,6 +851,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nombreController;
   late TextEditingController _apellidosController;
+  late TextEditingController _dniController;
   late TextEditingController _telefonoController;
   late TextEditingController _edadController;
   late TextEditingController _fechaNacController;
@@ -908,6 +864,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
     _apellidosController = TextEditingController(
       text: widget.paciente.apellidos,
     );
+    _dniController = TextEditingController(text: widget.paciente.dni ?? '');
     _telefonoController = TextEditingController(
       text: widget.paciente.telefono ?? '',
     );
@@ -947,6 +904,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
     _fechaNacController.removeListener(_calcularEdad);
     _nombreController.dispose();
     _apellidosController.dispose();
+    _dniController.dispose();
     _telefonoController.dispose();
     _edadController.dispose();
     _fechaNacController.dispose();
@@ -1020,10 +978,25 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                       if (!isMobile) const SizedBox(height: 16),
                       _buildFormRow(isMobile, [
                         _buildTextField(
+                          'DNI',
+                          Icons.badge_rounded,
+                          controller: _dniController,
+                          isNumber: true,
+                        ),
+                        _buildTextField(
                           'Teléfono',
                           Icons.phone_android_rounded,
                           controller: _telefonoController,
                           isNumber: true,
+                        ),
+                      ]),
+                      if (!isMobile) const SizedBox(height: 16),
+                      _buildFormRow(isMobile, [
+                        _buildTextField(
+                          'Fecha de Nacimiento',
+                          Icons.calendar_today_rounded,
+                          controller: _fechaNacController,
+                          hint: 'Ej: 1990-12-25',
                         ),
                         _buildTextField(
                           'Edad',
@@ -1032,13 +1005,6 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                           isNumber: true,
                         ),
                       ]),
-                      if (!isMobile) const SizedBox(height: 16),
-                      _buildTextField(
-                        'Fecha de Nacimiento',
-                        Icons.calendar_today_rounded,
-                        controller: _fechaNacController,
-                        hint: 'Ej: 1990-12-25',
-                      ),
                       const SizedBox(height: 16),
                       _buildVipToggle(
                         value: _esVip,
@@ -1081,6 +1047,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                             id: widget.paciente.id,
                             nombre: _nombreController.text.trim(),
                             apellidos: _apellidosController.text.trim(),
+                            dni: _dniController.text.trim().isEmpty ? null : _dniController.text.trim(),
                             telefono: _telefonoController.text.trim().isEmpty
                                 ? null
                                 : _telefonoController.text.trim(),
@@ -1187,11 +1154,9 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
   }
 
   void _cargarHistorial() async {
-    print("🔍 Cargando historial para paciente ID: ${widget.paciente.id}");
     final ordenesProv = Provider.of<OrdenesProvider>(context, listen: false);
     final lista = await ordenesProv.fetchOrdenesPorPaciente(widget.paciente.id ?? 0);
-    print("📦 Órdenes encontradas para historial: ${lista.length}");
-    
+
     if (mounted) {
       setState(() {
         _historial = lista;
@@ -1223,7 +1188,7 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
                       'Historial del Paciente',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primary),
                     ),
-                    Text('${widget.paciente.nombre} ${widget.paciente.apellidos}', 
+                    Text('${widget.paciente.nombre} ${widget.paciente.apellidos}',
                       style: const TextStyle(color: AppColors.gray500, fontSize: 14)),
                   ],
                 ),
@@ -1231,7 +1196,7 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
               ],
             ),
             const Divider(height: 32),
-            
+
             if (_loading)
               const Expanded(child: Center(child: CircularProgressIndicator()))
             else if (_historial.isEmpty)

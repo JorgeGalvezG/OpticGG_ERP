@@ -22,8 +22,14 @@ public class HistorialClinico {
     @Column(name = "graduacion_od", length = 255)
     private String graduacionOd;
 
+    @Column(name = "av_od", length = 50)
+    private String avOd;
+
     @Column(name = "graduacion_oi", length = 255)
     private String graduacionOi;
+
+    @Column(name = "av_oi", length = 50)
+    private String avOi;
 
     @Column(name = "adicion", length = 50)
     private String adicion;

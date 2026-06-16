@@ -14,6 +14,7 @@ import '../../almacen/screens/almacen_screen.dart';
 import '../../almacen/screens/categorias_screen.dart';
 import '../../vip/screens/vip_screen.dart';
 import '../../usuarios/screens/usuarios_screen.dart';
+import '../screens/reportes_screen.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -47,7 +48,8 @@ class _MainLayoutState extends State<MainLayout> {
     const VipScreen(), // 6
     const UsuariosScreen(), // 7
     const CategoriasScreen(), // 8
-    const _AuditPanel(), // 9
+    const ReportesScreen(), // 9 (Historial General)
+    const _AuditPanel(), // 10
   ];
 
   final List<String> _titles = [
@@ -60,6 +62,7 @@ class _MainLayoutState extends State<MainLayout> {
     'Clientes VIP',
     'Gestión de Personal',
     'Categorías de Productos',
+    'Historial General (Reportes)',
     '🔎 Auditoría de Sistemas',
   ];
 
@@ -83,12 +86,13 @@ class _MainLayoutState extends State<MainLayout> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         title: Text(
-          _titles[_selectedIndex],
+          _selectedIndex == 0 ? 'Gestor OCC' : _titles[_selectedIndex],
           style: const TextStyle(
             color: AppColors.gray900,
             fontSize: 16,
@@ -159,6 +163,12 @@ class _MainLayoutState extends State<MainLayout> {
               selected: _selectedIndex == 8,
               onTap: () { setState(() => _selectedIndex = 8); Navigator.pop(context); },
             ),
+            ListTile(
+              leading: const Icon(Icons.analytics_rounded),
+              title: const Text('Historial (Reportes)'),
+              selected: _selectedIndex == 9,
+              onTap: () { setState(() => _selectedIndex = 9); Navigator.pop(context); },
+            ),
           ],
           ListTile(
             leading: const Icon(Icons.star_rounded, color: Colors.orange),
@@ -170,8 +180,8 @@ class _MainLayoutState extends State<MainLayout> {
             ListTile(
               leading: const Icon(Icons.troubleshoot_rounded, color: AppColors.nebulaPink),
               title: const Text('Auditoría Dev'),
-              selected: _selectedIndex == 9,
-              onTap: () { setState(() => _selectedIndex = 9); Navigator.pop(context); },
+              selected: _selectedIndex == 10,
+              onTap: () { setState(() => _selectedIndex = 10); Navigator.pop(context); },
             ),
           const Spacer(),
           const Divider(),
@@ -271,7 +281,7 @@ class _MainLayoutState extends State<MainLayout> {
         children: [
           const SizedBox(height: 40),
           Icon(dev.isDevMode ? Icons.auto_awesome : Icons.remove_red_eye, color: Colors.white, size: 40),
-          const Text('Centro Óptico Cubas 20/20', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('Gestor OCC', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
           if (dev.isDevMode) const Text('COSMIC EDITION', style: TextStyle(color: Colors.white70, fontSize: 10, letterSpacing: 2)),
           const SizedBox(height: 30),
 
@@ -290,6 +300,7 @@ class _MainLayoutState extends State<MainLayout> {
             _buildSidebarItem(6, Icons.star_rounded, 'Clientes VIP'),
             _buildSidebarItem(7, Icons.badge_rounded, 'Personal'),
             _buildSidebarItem(8, Icons.category_rounded, 'Categorías'),
+            _buildSidebarItem(9, Icons.analytics_rounded, 'Historial (Reportes)'),
           ],
           
           if (dev.isDevMode) ...[
@@ -297,7 +308,7 @@ class _MainLayoutState extends State<MainLayout> {
               padding: EdgeInsets.only(left: 24, top: 20, bottom: 10),
               child: Align(alignment: Alignment.centerLeft, child: Text('DEVELOPER TOOLS', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold))),
             ),
-            _buildSidebarItem(9, Icons.troubleshoot_rounded, 'Auditoría'),
+            _buildSidebarItem(10, Icons.troubleshoot_rounded, 'Auditoría'),
           ],
 
           const Spacer(),

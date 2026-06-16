@@ -2,6 +2,7 @@ class Paciente {
   final int? id;
   final String nombre;
   final String apellidos;
+  final String? dni;
   final String? telefono; // Puede ser null en tu BD
   final int? edad; // Puede ser null
   final String? fechaNacimiento; // Puede ser null, lo tratamos como String "YYYY-MM-DD"
@@ -12,6 +13,7 @@ class Paciente {
     this.id,
     required this.nombre,
     required this.apellidos,
+    this.dni,
     this.telefono,
     this.edad,
     this.fechaNacimiento,
@@ -25,6 +27,7 @@ class Paciente {
       id: json['id'],
       nombre: json['nombre'] ?? 'Sin Nombre',
       apellidos: json['apellidos'] ?? '',
+      dni: json['dni'],
       telefono: json['telefono'], // Permitimos null
       edad: json['edad'],
       fechaNacimiento: json['fechaNacimiento'],
@@ -39,6 +42,7 @@ class Paciente {
       'id': id,
       'nombre': nombre,
       'apellidos': apellidos,
+      'dni': dni,
       'telefono': telefono,
       'edad': edad,
       'fechaNacimiento': fechaNacimiento,

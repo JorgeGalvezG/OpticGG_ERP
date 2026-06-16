@@ -63,8 +63,14 @@ public class Venta {
     @Column(name = "graduacion_od")
     private String graduacionOd;
 
+    @Column(name = "av_od")
+    private String avOd;
+
     @Column(name = "graduacion_oi")
     private String graduacionOi;
+
+    @Column(name = "av_oi")
+    private String avOi;
 
     @Column(name = "adicion")
     private String adicion;

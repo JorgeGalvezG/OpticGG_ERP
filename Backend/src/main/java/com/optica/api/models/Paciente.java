@@ -24,6 +24,9 @@ public class Paciente {
     @Column(nullable = false, length = 100)
     private String apellidos;
 
+    @Column(length = 15)
+    private String dni;
+
     @Column(length = 20)
     private String telefono;
 

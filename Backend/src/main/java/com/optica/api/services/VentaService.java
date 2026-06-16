@@ -89,7 +89,9 @@ public class VentaService {
             HistorialClinico historial = new HistorialClinico();
             historial.setConsulta(consultaGuardada);
             historial.setGraduacionOd(dto.getGraduacionOd());
+            historial.setAvOd(dto.getAvOd());
             historial.setGraduacionOi(dto.getGraduacionOi());
+            historial.setAvOi(dto.getAvOi());
             historial.setAdicion(dto.getAdicion());
             historial.setDip(dto.getDip());
             historial.setTipoLuna(dto.getTipoLuna());
@@ -100,7 +102,9 @@ public class VentaService {
             historialClinicoRepository.save(historial);
 
             venta.setGraduacionOd(dto.getGraduacionOd());
+            venta.setAvOd(dto.getAvOd());
             venta.setGraduacionOi(dto.getGraduacionOi());
+            venta.setAvOi(dto.getAvOi());
             venta.setAdicion(dto.getAdicion());
             venta.setDip(dto.getDip());
             venta.setTipoLuna(dto.getTipoLuna());
@@ -150,7 +154,9 @@ public class VentaService {
             orden.setEstado(EstadoTrabajo.PENDIENTE);
             orden.setFecha(ahora);
             orden.setGraduacionOd(dto.getGraduacionOd());
+            orden.setAvOd(dto.getAvOd());
             orden.setGraduacionOi(dto.getGraduacionOi());
+            orden.setAvOi(dto.getAvOi());
             orden.setAdicion(dto.getAdicion());
             orden.setDip(dto.getDip());
             orden.setTipoLuna(dto.getTipoLuna());

@@ -86,22 +86,16 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
 
     // ── HISTÓRICO: ventas por vendedor en un mes/año específico (por tienda) ─
     // Usado para el histórico mensual del admin
-   /* @Query("SELECT v.vendedor.username, SUM(v.montoTotal) FROM Venta v " +
-            "WHERE v.tienda = :tienda " +
-            "AND MONTH(v.fecha) = :mes AND YEAR(v.fecha) = :anio " +
-            "GROUP BY v.vendedor.username " +
-            "ORDER BY SUM(v.montoTotal) DESC")
-    List<Object[]> ventasPorVendedorEnMes(
-            @Param("tienda") Tienda tienda,
-            @Param("mes") int mes,
-            @Param("anio") int anio);
+    // ── HISTÓRICO GENERAL DE LA EMPRESA (ADMIN) ──────────────────────────────────
+    @Query("SELECT YEAR(m.fecha) as anio, MONTH(m.fecha) as mes, m.tienda as tienda, " +
+           "SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.monto ELSE 0 END) as ingresos, " +
+           "SUM(CASE WHEN m.tipo = 'SALIDA' THEN m.monto ELSE 0 END) as egresos " +
+           "FROM MovimientoCaja m GROUP BY YEAR(m.fecha), MONTH(m.fecha), m.tienda ORDER BY anio DESC, mes DESC")
+    List<Object[]> getReporteGlobalMensual();
 
-    // ── HISTÓRICO: ventas por vendedor en un mes/año específico (global) ─────
-    @Query("SELECT v.vendedor.username, SUM(v.montoTotal) FROM Venta v " +
-            "WHERE MONTH(v.fecha) = :mes AND YEAR(v.fecha) = :anio " +
-            "GROUP BY v.vendedor.username " +
-            "ORDER BY SUM(v.montoTotal) DESC")
-    List<Object[]> ventasPorVendedorEnMesGlobal(
-            @Param("mes") int mes,
-            @Param("anio") int anio);*/
+    @Query("SELECT DATE(m.fecha) as dia, m.tienda as tienda, " +
+           "SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.monto ELSE 0 END) as ingresos, " +
+           "SUM(CASE WHEN m.tipo = 'SALIDA' THEN m.monto ELSE 0 END) as egresos " +
+           "FROM MovimientoCaja m GROUP BY DATE(m.fecha), m.tienda ORDER BY dia DESC")
+    List<Object[]> getReporteGlobalDiario();
 }

@@ -14,13 +14,11 @@ import 'features/ventas/providers/ordenes_provider.dart';
 import 'features/ventas/providers/ventas_provider.dart';
 import 'features/almacen/providers/almacen_provider.dart';
 import 'core/shared/developer_provider.dart';
+import 'features/dashboard/providers/reportes_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.clear();
-  print("🧹 Memoria SharedPreferences limpiada por completo");
   runApp(
     MultiProvider(
       providers: [
@@ -35,6 +33,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => AlmacenProvider()),
         ChangeNotifierProvider(create: (_) => DeveloperProvider()),
+        ChangeNotifierProvider(create: (_) => ReportesProvider()),
       ],
       child: const OpticaCubasApp(),
     ),

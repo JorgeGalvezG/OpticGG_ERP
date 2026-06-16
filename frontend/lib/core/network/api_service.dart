@@ -9,11 +9,16 @@ class ApiService {
 
   // --- HELPER PARA IMÁGENES ---
   static String getFullUrl(String? path) {
-    if (path == null || path.isEmpty) return 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
-    if (path.startsWith('http')) return path;
+    if (path == null || path.isEmpty || path == 'default_product.png') {
+      return 'https://cdn-icons-png.flaticon.com/512/3081/3081986.png';
+    }
+    
+    // Si ya es un Data URL (Base64) o una URL completa (http), lo devolvemos tal cual
+    if (path.startsWith('data:image') || path.startsWith('http')) {
+      return path;
+    }
     
     // Si es una ruta relativa del backend (ej: /uploads/products/xxx.jpg)
-    // El baseUrl suele terminar en /api, así que hay que tener cuidado
     String base = baseUrl.replaceAll('/api', '');
     return '$base$path';
   }

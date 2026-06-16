@@ -11,7 +11,9 @@ class NuevaVentaDTO {
 
   // Datos para ORDEN_TRABAJO
   final String? graduacionOd;
+  final String? avOd;
   final String? graduacionOi;
+  final String? avOi;
   final String? adicion;
   final String? dip;
   final bool? esLunaCliente;
@@ -32,7 +34,9 @@ class NuevaVentaDTO {
     required this.montoACuenta,
     required this.metodoPago,
     this.graduacionOd,
+    this.avOd,
     this.graduacionOi,
+    this.avOi,
     this.adicion,
     this.dip,
     this.esLunaCliente,
@@ -57,7 +61,9 @@ class NuevaVentaDTO {
     if (tipoVenta == 'ORDEN_TRABAJO') {
       map.addAll({
         'graduacionOd': graduacionOd ?? '',
+        'avOd': avOd ?? '',
         'graduacionOi': graduacionOi ?? '',
+        'avOi': avOi ?? '',
         'adicion': adicion ?? '',
         'dip': dip ?? '',
         'esLunaCliente': esLunaCliente ?? false,

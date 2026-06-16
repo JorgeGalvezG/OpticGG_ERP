@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -7,9 +8,7 @@ import '../providers/almacen_provider.dart';
 import '../models/almacen_model.dart';
 import '../models/categoria_model.dart';
 import '../../../core/shared/developer_provider.dart';
-
 import '../../proveedores/providers/proveedores_provider.dart';
-
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -24,6 +23,18 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _filter = '';
 
+  ImageProvider _getImageProvider(String url) {
+    if (url.startsWith('data:image')) {
+      try {
+        final base64String = url.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (e) {
+        return const NetworkImage('https://cdn-icons-png.flaticon.com/512/3081/3081986.png');
+      }
+    }
+    return NetworkImage(ApiService.getFullUrl(url));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -32,7 +43,6 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
       final prov = Provider.of<AlmacenProvider>(context, listen: false);
       prov.fetchProductos(tienda);
       prov.fetchCategorias();
-      // También cargar proveedores para el combo
       Provider.of<ProveedoresProvider>(context, listen: false).fetchProveedores(tienda);
     });
   }
@@ -45,7 +55,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
     final precioVentaCtrl = TextEditingController(text: producto?.precioVenta.toString() ?? '0');
     final precioCompraCtrl = TextEditingController(text: producto?.precioCompra.toString() ?? '0');
     final fotoUrlCtrl = TextEditingController(text: producto?.fotoUrl ?? 'default_product.png');
-    
+
     int? selectedCategoriaId = producto?.categoriaId;
     int? selectedProveedorId = producto?.proveedorId;
     bool isUploading = false;
@@ -64,18 +74,15 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // --- SECCIÓN FOTO (NUEVA) ---
                     Center(
                       child: Stack(
                         children: [
                           CircleAvatar(
                             radius: 50,
                             backgroundColor: AppColors.gray100,
-                            backgroundImage: fotoUrlCtrl.text.startsWith('http') 
-                                ? NetworkImage(fotoUrlCtrl.text) 
-                                : NetworkImage(ApiService.getFullUrl(fotoUrlCtrl.text)),
-                            child: (fotoUrlCtrl.text.isEmpty || fotoUrlCtrl.text == 'default_product.png') 
-                                ? const Icon(Icons.image_not_supported_rounded, size: 40) 
+                            backgroundImage: _getImageProvider(fotoUrlCtrl.text),
+                            child: (fotoUrlCtrl.text.isEmpty || fotoUrlCtrl.text == 'default_product.png')
+                                ? const Icon(Icons.image_not_supported_rounded, size: 40)
                                 : null,
                           ),
                           Positioned(
@@ -84,24 +91,25 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                             child: CircleAvatar(
                               radius: 18,
                               backgroundColor: AppColors.primary,
-                              child: isUploading 
+                              child: isUploading
                                 ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                 : IconButton(
                                     icon: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
                                     onPressed: () async {
                                       final ImagePicker picker = ImagePicker();
-                                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+                                      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 30);
                                       if (image != null) {
                                         setDialogState(() => isUploading = true);
                                         try {
-                                          final String urlServidor = await ApiService.uploadImage(image.path);
+                                          final bytes = await image.readAsBytes();
+                                          final String base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
                                           setDialogState(() {
-                                            fotoUrlCtrl.text = urlServidor;
+                                            fotoUrlCtrl.text = base64Image;
                                             isUploading = false;
                                           });
                                         } catch (e) {
                                           setDialogState(() => isUploading = false);
-                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al subir: $e')));
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al procesar imagen: $e')));
                                         }
                                       }
                                     },
@@ -120,11 +128,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: codigoCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Código de Barras *',
-                        prefixIcon: Icon(Icons.qr_code_rounded),
-                        suffixIcon: Icon(Icons.camera_alt_outlined),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Código de Barras *', prefixIcon: Icon(Icons.qr_code_rounded)),
                       validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                     ),
                     const SizedBox(height: 12),
@@ -192,10 +196,8 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-
                 final auth = Provider.of<AuthProvider>(context, listen: false);
                 final prov = Provider.of<AlmacenProvider>(context, listen: false);
-
                 final data = {
                   'nombre': nombreCtrl.text,
                   'codigoBarras': codigoCtrl.text,
@@ -207,14 +209,12 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                   'fotoUrl': fotoUrlCtrl.text,
                   'tienda': auth.tienda ?? 'C1',
                 };
-
                 bool exito;
                 if (producto == null) {
                   exito = await prov.guardarProducto(data);
                 } else {
                   exito = await prov.actualizarProducto(producto.id!, data);
                 }
-
                 if (exito) {
                   Navigator.pop(context);
                   prov.fetchProductos(auth.tienda ?? 'C1');
@@ -233,17 +233,19 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
   Widget build(BuildContext context) {
     final almacenProv = Provider.of<AlmacenProvider>(context);
     final productosFiltrados = almacenProv.productos.where((p) {
-      return p.nombre.toLowerCase().contains(_filter.toLowerCase()) || 
+      return p.nombre.toLowerCase().contains(_filter.toLowerCase()) ||
              p.codigoBarras.contains(_filter);
     }).toList();
 
     return Column(
       children: [
-        // CABECERA
         Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
             children: [
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,36 +268,25 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
             ],
           ),
         ),
-
-        // BUSCADOR
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: TextField(
             controller: _searchController,
             onChanged: (v) => setState(() => _filter = v),
             decoration: InputDecoration(
-              hintText: 'Buscar por nombre o código de barras...',
+              hintText: 'Buscar por nombre o código...',
               prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.qr_code_scanner_rounded),
-                onPressed: () {
-                  // TODO: Integrar scanner de codigo de barras
-                },
-              ),
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
           ),
         ),
-
         const SizedBox(height: 20),
-
-        // LISTADO
         Expanded(
-          child: almacenProv.isLoading 
+          child: almacenProv.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : productosFiltrados.isEmpty 
+            : productosFiltrados.isEmpty
               ? const Center(child: Text('No hay productos en inventario'))
               : Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -308,8 +299,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                     ),
                     itemCount: productosFiltrados.length,
                     itemBuilder: (context, index) {
-                      final p = productosFiltrados[index];
-                      return _ProductCard(producto: p);
+                      return _ProductCard(producto: productosFiltrados[index]);
                     },
                   ),
                 ),
@@ -323,10 +313,20 @@ class _ProductCard extends StatelessWidget {
   final Almacen producto;
   const _ProductCard({required this.producto});
 
+  ImageProvider _getImageProvider(String url) {
+    if (url.startsWith('data:image')) {
+      try {
+        final base64String = url.split(',').last;
+        return MemoryImage(base64Decode(base64String));
+      } catch (e) {
+        return const NetworkImage('https://cdn-icons-png.flaticon.com/512/3081/3081986.png');
+      }
+    }
+    return NetworkImage(ApiService.getFullUrl(url));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final String fullFotoUrl = ApiService.getFullUrl(producto.fotoUrl);
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -344,7 +344,7 @@ class _ProductCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.gray100,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    image: DecorationImage(image: NetworkImage(fullFotoUrl), fit: BoxFit.cover),
+                    image: DecorationImage(image: _getImageProvider(producto.fotoUrl), fit: BoxFit.cover),
                   ),
                 ),
                 Positioned(

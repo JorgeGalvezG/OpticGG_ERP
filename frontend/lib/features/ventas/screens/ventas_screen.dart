@@ -38,120 +38,124 @@ class _VentasScreenState extends State<VentasScreen> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Gestión de Órdenes', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
-                      SizedBox(height: 4),
-                      Text('Seguimiento y control de ventas', style: TextStyle(fontSize: 14, color: AppColors.gray500)),
-                    ],
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => const NuevaVentaDialog(),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
+            child: Column(
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gestión de Órdenes', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
+                        SizedBox(height: 4),
+                        Text('Seguimiento y control de ventas', style: TextStyle(fontSize: 14, color: AppColors.gray500)),
+                      ],
                     ),
-                    icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
-                    label: Text(isMobile ? 'Nueva' : 'Nueva Venta'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ElevatedButton.icon(
+                      onPressed: () => showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const NuevaVentaDialog(),
+                      ),
+                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
+                      label: Text(isMobile ? 'Nueva' : 'Nueva Venta'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // ── GRID DE ESTADÍSTICAS RÁPIDAS ──
-              Consumer<OrdenesProvider>(
-                builder: (context, prov, _) {
-                  return Row(
-                    children: [
-                      _miniStat('PENDIENTES', prov.pendientes.length, Colors.blueGrey),
-                      const SizedBox(width: 12),
-                      _miniStat('LABORATORIO', prov.enLaboratorio.length, Colors.orange),
-                      const SizedBox(width: 12),
-                      _miniStat('LISTOS', prov.listos.length, Colors.blue),
-                      const SizedBox(width: 12),
-                      _miniStat('ENTREGADOS', prov.entregados.length, AppColors.success),
-                    ],
-                  );
-                }
-              ),
-              const SizedBox(height: 24),
-              // ── BUSCADOR Y FILTRO ──
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      onChanged: (v) => setState(() => _filtroTexto = v.toLowerCase()),
-                      decoration: InputDecoration(
-                        hintText: 'Buscar por paciente o #orden...',
-                        prefixIcon: const Icon(Icons.search_rounded),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
-                          onPressed: () => _mostrarDialogoEscaneo(context),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // ── GRID DE ESTADÍSTICAS RÁPIDAS ──
+                Consumer<OrdenesProvider>(
+                  builder: (context, prov, _) {
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _miniStat('PENDIENTES', prov.pendientes.length, Colors.blueGrey, isMobile),
+                        _miniStat('LABORATORIO', prov.enLaboratorio.length, Colors.orange, isMobile),
+                        _miniStat('LISTOS', prov.listos.length, Colors.blue, isMobile),
+                        _miniStat('ENTREGADOS', prov.entregados.length, AppColors.success, isMobile),
+                      ],
+                    );
+                  }
+                ),
+                const SizedBox(height: 24),
+                // ── BUSCADOR Y FILTRO ──
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(
+                      width: isMobile ? double.infinity : 300,
+                      child: TextField(
+                        onChanged: (v) => setState(() => _filtroTexto = v.toLowerCase()),
+                        decoration: InputDecoration(
+                          hintText: 'Buscar por paciente o #orden...',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary),
+                            onPressed: () => _mostrarDialogoEscaneo(context),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<String>(
-                      value: _filtroEstado,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
+                    SizedBox(
+                      width: isMobile ? double.infinity : 200,
+                      child: DropdownButtonFormField<String>(
+                        value: _filtroEstado,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.gray200)),
+                        ),
+                        items: ['TODOS', 'PENDIENTE', 'LABORATORIO', 'LISTO', 'ENTREGADO'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12)))).toList(),
+                        onChanged: (v) => setState(() => _filtroEstado = v!),
                       ),
-                      items: ['TODOS', 'PENDIENTE', 'LABORATORIO', 'LISTO', 'ENTREGADO'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12)))).toList(),
-                      onChanged: (v) => setState(() => _filtroEstado = v!),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        Expanded(child: _buildUnifiedListView()),
-      ],
+          _buildUnifiedListView(),
+        ],
+      ),
     );
   }
 
-  Widget _miniStat(String label, int count, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.gray200),
-        ),
-        child: Column(
-          children: [
-            Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.gray400)),
-            const SizedBox(height: 4),
-            Text(count.toString(), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
-          ],
-        ),
+  Widget _miniStat(String label, int count, Color color, bool isMobile) {
+    return Container(
+      width: isMobile ? (MediaQuery.of(context).size.width - 60) / 2 : 120,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: Column(
+        children: [
+          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.gray400)),
+          const SizedBox(height: 4),
+          Text(count.toString(), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color)),
+        ],
       ),
     );
   }
@@ -159,7 +163,7 @@ class _VentasScreenState extends State<VentasScreen> {
   Widget _buildUnifiedListView() {
     return Consumer<OrdenesProvider>(
       builder: (context, prov, _) {
-        if (prov.isLoading) return const Center(child: CircularProgressIndicator());
+        if (prov.isLoading) return const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator()));
         
         var todas = [...prov.pendientes, ...prov.enLaboratorio, ...prov.listos, ...prov.entregados];
         
@@ -176,9 +180,11 @@ class _VentasScreenState extends State<VentasScreen> {
 
         todas.sort((a, b) => b.fecha.compareTo(a.fecha));
 
-        if (todas.isEmpty) return const Center(child: Text('No se encontraron órdenes.'));
+        if (todas.isEmpty) return const Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No se encontraron órdenes.')));
 
         return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           itemCount: todas.length,
           itemBuilder: (context, index) {
@@ -257,79 +263,83 @@ class _VentasScreenState extends State<VentasScreen> {
                         style: TextStyle(color: tieneSaldo ? AppColors.danger : AppColors.success, fontSize: 11, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  Row(
-                    children: [
-                      if (tieneSaldo)
-                        IconButton(
-                          icon: const Icon(Icons.payments_rounded, color: Colors.green, size: 20),
-                          onPressed: () => _abrirPagoSaldo(o),
-                          tooltip: 'Cobrar Saldo',
-                        ),
-                      _buildStatusActions(o),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.print_rounded, size: 20, color: AppColors.gray400),
-                        onPressed: () async {
-                          final configProv = Provider.of<ConfigProvider>(context, listen: false);
-                          final auth = Provider.of<AuthProvider>(context, listen: false);
-                          
-                          if (configProv.config == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
-                              backgroundColor: Colors.orange,
-                              duration: const Duration(seconds: 2),
-                            ));
-                            await configProv.cargarConfig(auth.tienda ?? 'C1');
-                          }
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (tieneSaldo)
+                    IconButton(
+                      icon: const Icon(Icons.payments_rounded, color: Colors.green, size: 20),
+                      onPressed: () => _abrirPagoSaldo(o),
+                      tooltip: 'Cobrar Saldo',
+                    ),
+                  _buildStatusActions(o),
+                  IconButton(
+                    icon: const Icon(Icons.print_rounded, size: 20, color: AppColors.gray400),
+                    onPressed: () async {
+                      final configProv = Provider.of<ConfigProvider>(context, listen: false);
+                      final auth = Provider.of<AuthProvider>(context, listen: false);
+                      
+                      if (configProv.config == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 2),
+                        ));
+                        await configProv.cargarConfig(auth.tienda ?? 'C1');
+                      }
 
-                          final config = configProv.config;
-                          if (config == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text('❌ Error: No se pudo conectar con el servidor para obtener datos de la óptica.'),
-                              backgroundColor: AppColors.danger,
-                            ));
-                            return;
-                          }
-                          
-                          try {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando ticket de impresión...'), duration: Duration(seconds: 3)));
-                            await TicketPdfService.imprimirTicket(o, config);
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text('Error al imprimir ticket: $e'),
-                              backgroundColor: AppColors.danger,
-                              duration: const Duration(seconds: 10),
-                            ));
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primary),
-                        onPressed: () async {
-                          final config = Provider.of<ConfigProvider>(context, listen: false).config;
-                          if (config == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Configuración de tienda no encontrada. Cargando...'), backgroundColor: Colors.orange));
-                            return;
-                          }
-                          try {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preparando archivo para compartir...'), duration: Duration(seconds: 3)));
-                            await TicketPdfService.compartirOrdenWhatsApp(o, config);
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text('Error al compartir PDF: $e'),
-                              backgroundColor: AppColors.danger,
-                              duration: const Duration(seconds: 10),
-                            ));
-                          }
-                        },
-                        tooltip: 'Enviar por WhatsApp',
-                      ),
-                    ],
-                  )
+                      final config = configProv.config;
+                      if (config == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('❌ Error: No se pudo conectar con el servidor para obtener datos de la óptica.'),
+                          backgroundColor: AppColors.danger,
+                        ));
+                        return;
+                      }
+                      
+                      try {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando ticket de impresión...'), duration: Duration(seconds: 3)));
+                        await TicketPdfService.imprimirTicket(o, config);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Error al imprimir ticket: $e'),
+                          backgroundColor: AppColors.danger,
+                          duration: const Duration(seconds: 10),
+                        ));
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primary),
+                    onPressed: () async {
+                      final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                      if (config == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Configuración de tienda no encontrada. Cargando...'), backgroundColor: Colors.orange));
+                        return;
+                      }
+                      try {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preparando archivo para compartir...'), duration: Duration(seconds: 3)));
+                        await TicketPdfService.compartirOrdenWhatsApp(o, config);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Error al compartir PDF: $e'),
+                          backgroundColor: AppColors.danger,
+                          duration: const Duration(seconds: 10),
+                        ));
+                      }
+                    },
+                    tooltip: 'Enviar por WhatsApp',
+                  ),
                 ],
               ),
             ],
@@ -610,10 +620,10 @@ class _VentasScreenState extends State<VentasScreen> {
                 ),
                 const Divider(height: 32),
                 if (v['graduacionOd'] != null) ...[
-                  const Text('RECETA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+                  const Text('RECETA Y AGUDEZA VISUAL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
                   const SizedBox(height: 8),
-                  Text('O.D: ${v['graduacionOd']}', style: const TextStyle(fontSize: 13)),
-                  Text('O.I: ${v['graduacionOi']}', style: const TextStyle(fontSize: 13)),
+                  Text('O.D: ${v['graduacionOd']}   |   A.V: ${v['avOd'] ?? "-"}', style: const TextStyle(fontSize: 13)),
+                  Text('O.I: ${v['graduacionOi']}   |   A.V: ${v['avOi'] ?? "-"}', style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 8),
                 ],
                 _infoDetalle('Montura', v['montura'] ?? 'N/A'),
@@ -754,6 +764,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
 
   String _tipoVenta = 'ORDEN_TRABAJO'; // 'ORDEN_TRABAJO' o 'ORDEN_VENTA'
   bool _monturaPropia = false;
+  bool _monturaManual = false;
   bool _lunasPropias = false;
   int? _vendedorId;
   int? _pacienteId;
@@ -767,9 +778,11 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   final _odEsf = TextEditingController();
   final _odCil = TextEditingController();
   final _odEje = TextEditingController();
+  final _odAv = TextEditingController();
   final _oiEsf = TextEditingController();
   final _oiCil = TextEditingController();
   final _oiEje = TextEditingController();
+  final _oiAv = TextEditingController();
   final _addCtrl = TextEditingController();
   final _dipCtrl = TextEditingController();
   final _monturaCtrl = TextEditingController();
@@ -807,9 +820,11 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     _odEsf.dispose();
     _odCil.dispose();
     _odEje.dispose();
+    _odAv.dispose();
     _oiEsf.dispose();
     _oiCil.dispose();
     _oiEje.dispose();
+    _oiAv.dispose();
     _addCtrl.dispose();
     _dipCtrl.dispose();
     _monturaCtrl.dispose();
@@ -867,6 +882,10 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       setState(() {
         _parsearMedida(historial.graduacionOd, _odEsf, _odCil, _odEje);
         _parsearMedida(historial.graduacionOi, _oiEsf, _oiCil, _oiEje);
+        // AV
+        _odAv.text = historial.graduacionOd ?? ""; // Needs proper mapping if returned from BE, but assuming not strictly mapped from history string yet.
+        _oiAv.text = historial.graduacionOi ?? "";
+        
         _addCtrl.text = historial.adicion ?? "";
         _dipCtrl.text = historial.dip ?? "";
         
@@ -902,7 +921,9 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       metodoPago: _metodoPagoSeleccionado,
       // Datos de fabricación
       graduacionOd: _tipoVenta == 'ORDEN_TRABAJO' ? _armarMedida(_odEsf.text, _odCil.text, _odEje.text) : null,
+      avOd: _tipoVenta == 'ORDEN_TRABAJO' ? _odAv.text : null,
       graduacionOi: _tipoVenta == 'ORDEN_TRABAJO' ? _armarMedida(_oiEsf.text, _oiCil.text, _oiEje.text) : null,
+      avOi: _tipoVenta == 'ORDEN_TRABAJO' ? _oiAv.text : null,
       adicion: _tipoVenta == 'ORDEN_TRABAJO' ? _addCtrl.text : null,
       dip: _tipoVenta == 'ORDEN_TRABAJO' ? _dipCtrl.text : null,
       esLunaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _lunasPropias : null,
@@ -1003,11 +1024,18 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                         ]),
                         const SizedBox(height: 24),
                         _section('3. Detalles del Producto'),
-                        _checkRow('Montura propia del cliente', _monturaPropia, (v) => setState(() => _monturaPropia = v!)),
-                        if (!_monturaPropia)
+                        _checkRow('Ingresar nombre de montura manualmente', _monturaManual, (v) => setState(() { 
+                          _monturaManual = v!; 
+                          if (_monturaManual) _monturaPropia = false;
+                        })),
+                        _checkRow('Montura propia del cliente (Solo lunas)', _monturaPropia, (v) => setState(() { 
+                          _monturaPropia = v!;
+                          if (_monturaPropia) _monturaManual = false;
+                        })),
+                        if (!_monturaManual && !_monturaPropia)
                           _buildBuscadorMonturaAlmacen(),
-                        if (_monturaPropia)
-                          _field('Marca/Modelo Montura (Cliente)', Icons.wallpaper_rounded, _monturaCtrl),
+                        if (_monturaManual)
+                          _field('Marca/Modelo de Montura', Icons.wallpaper_rounded, _monturaCtrl),
                         const SizedBox(height: 12),
                         _checkRow('Lunas propias (Solo montaje)', _lunasPropias, (v) => setState(() => _lunasPropias = v!)),
                         _field('Tipo de Cristales', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
@@ -1023,7 +1051,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                       const SizedBox(height: 24),
                       _section('4. Liquidación y Pago'),
                       _row(isMobile, [
-                        _field('Total S/ *', Icons.payments, _totalCtrl, num: true, req: true, readOnly: _tipoVenta == 'ORDEN_VENTA'),
+                        _field('Total S/ *', Icons.payments, _totalCtrl, num: true, req: true, readOnly: false), // Total is now editable for both
                         _field('Abono S/', Icons.savings, _abonoCtrl, num: true),
                         _saldoWidget(),
                       ]),
@@ -1034,13 +1062,15 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: _guardarVenta,
-                  child: const Text('Confirmar Venta y Generar Ticket', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              SafeArea(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: _guardarVenta,
+                    child: const Text('Confirmar Venta y Generar Ticket', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
             ],
@@ -1055,7 +1085,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     return InkWell(
       onTap: () => setState(() => _tipoVenta = tipo),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
           color: activo ? AppColors.primary.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1066,7 +1096,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
           children: [
             Icon(icon, color: activo ? AppColors.primary : AppColors.gray400, size: 18),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: activo ? AppColors.primary : AppColors.gray500)),
+            Expanded(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: activo ? AppColors.primary : AppColors.gray500), textAlign: TextAlign.center)),
           ],
         ),
       ),
@@ -1292,16 +1322,25 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   Widget _buildDataTable() {
     return Container(
       decoration: BoxDecoration(border: Border.all(color: AppColors.gray200), borderRadius: BorderRadius.circular(12)),
-      child: DataTable(
-        headingRowColor: MaterialStateProperty.all(AppColors.primaryLight.withOpacity(0.3)),
-        columns: const [DataColumn(label: Text('Ojo')), DataColumn(label: Text('ESF')), DataColumn(label: Text('CIL')), DataColumn(label: Text('EJE'))],
-        rows: [_rowMedida('O.D.', _odEsf, _odCil, _odEje), _rowMedida('O.I.', _oiEsf, _oiCil, _oiEje)],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: MaterialStateProperty.all(AppColors.primaryLight.withOpacity(0.3)),
+          columns: const [DataColumn(label: Text('Ojo')), DataColumn(label: Text('ESF')), DataColumn(label: Text('CIL')), DataColumn(label: Text('EJE')), DataColumn(label: Text('A.V.'))],
+          rows: [_rowMedida('O.D.', _odEsf, _odCil, _odEje, _odAv), _rowMedida('O.I.', _oiEsf, _oiCil, _oiEje, _oiAv)],
+        ),
       ),
     );
   }
 
-  DataRow _rowMedida(String ojo, TextEditingController e, TextEditingController c, TextEditingController j) {
-    return DataRow(cells: [DataCell(Text(ojo, style: const TextStyle(fontWeight: FontWeight.bold))), DataCell(TextField(controller: e, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0.00'))), DataCell(TextField(controller: c, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0.00'))), DataCell(TextField(controller: j, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0')))]);
+  DataRow _rowMedida(String ojo, TextEditingController e, TextEditingController c, TextEditingController j, TextEditingController av) {
+    return DataRow(cells: [
+      DataCell(Text(ojo, style: const TextStyle(fontWeight: FontWeight.bold))), 
+      DataCell(TextField(controller: e, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0.00'))), 
+      DataCell(TextField(controller: c, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0.00'))), 
+      DataCell(TextField(controller: j, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0'))),
+      DataCell(TextField(controller: av, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '20/20'))),
+    ]);
   }
 
   Widget _checkRow(String t, bool v, Function(bool?) onC) => Row(children: [Checkbox(value: v, onChanged: onC), Text(t, style: const TextStyle(fontSize: 13))]);

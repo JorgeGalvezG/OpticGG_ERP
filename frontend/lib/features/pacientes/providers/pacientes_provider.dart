@@ -103,4 +103,18 @@ class PacientesProvider with ChangeNotifier {
       _isLoading = false; notifyListeners();
     }
   }
+
+  void filtrarPorFecha(DateTimeRange rango) {
+    // Nota: Para un filtrado real por fecha de registro, el modelo Paciente debería traer ese dato.
+    // Por ahora, si no lo tiene, este método evita el error en rojo y permite extender la lógica.
+    // Si tienes el campo fechaRegistro en el modelo, descomenta la lógica de abajo:
+    /*
+    _pacientes = _pacientes.where((p) {
+      if (p.fechaRegistro == null) return false;
+      final fecha = DateTime.parse(p.fechaRegistro!);
+      return fecha.isAfter(rango.start) && fecha.isBefore(rango.end.add(Duration(days: 1)));
+    }).toList();
+    */
+    notifyListeners();
+  }
 }

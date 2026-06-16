@@ -51,6 +51,7 @@ public class PacienteService {
         // Actualizamos los campos
         pacienteExistente.setNombre(pacienteActualizado.getNombre());
         pacienteExistente.setApellidos(pacienteActualizado.getApellidos());
+        pacienteExistente.setDni(pacienteActualizado.getDni());
         pacienteExistente.setTelefono(pacienteActualizado.getTelefono());
         pacienteExistente.setEdad(pacienteActualizado.getEdad());
         pacienteExistente.setFechaNacimiento(pacienteActualizado.getFechaNacimiento());

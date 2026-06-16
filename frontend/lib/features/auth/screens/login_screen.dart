@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,7 +17,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passController = TextEditingController();
   bool _isAdmin = true;
   String _selectedStore = 'C1';
-  bool _obscurePassword = true; // ← NUEVO: Estado para ocultar/ver contraseña
+  bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUser = prefs.getString('saved_username');
+    final savedPass = prefs.getString('saved_password');
+
+    if (savedUser != null && savedPass != null) {
+      setState(() {
+        _userController.text = savedUser;
+        _passController.text = savedPass;
+        _rememberMe = true;
+      });
+    }
+  }
 
   void _submitLogin() async {
     final user = _userController.text.trim();
@@ -33,7 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (!success) {
+    if (success) {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString('saved_username', user);
+        await prefs.setString('saved_password', pass);
+      } else {
+        await prefs.remove('saved_username');
+        await prefs.remove('saved_password');
+      }
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Usuario o contraseña incorrectos o servidor apagado'), backgroundColor: AppColors.danger),
       );
@@ -262,6 +294,16 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20),
           ],
 
+          Row(
+            children: [
+              Checkbox(
+                value: _rememberMe,
+                onChanged: (value) => setState(() => _rememberMe = value ?? false),
+                activeColor: AppColors.primary,
+              ),
+              const Text('Recordar usuario y contraseña', style: TextStyle(color: AppColors.gray700, fontSize: 13, fontWeight: FontWeight.w600)),
+            ],
+          ),
           const SizedBox(height: 12),
 
           Consumer<AuthProvider>(
