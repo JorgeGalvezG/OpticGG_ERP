@@ -21,6 +21,11 @@ public class ProveedorService {
     }
 
     public Proveedor guardarProveedor(Proveedor proveedor) {
+        if (proveedor.getContactos() != null) {
+            for (ProveedorContacto c : proveedor.getContactos()) {
+                c.setProveedor(proveedor);
+            }
+        }
         return proveedorRepository.save(proveedor);
     }
 

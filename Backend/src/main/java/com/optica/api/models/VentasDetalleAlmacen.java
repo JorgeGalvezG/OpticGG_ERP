@@ -19,8 +19,11 @@ public class VentasDetalleAlmacen {
     private Venta venta;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "almacen_id", nullable = false)
+    @JoinColumn(name = "almacen_id", nullable = true)
     private Almacen almacen;
+
+    @Column(name = "nombre_producto_manual", length = 255)
+    private String nombreProductoManual;
 
     @Column(nullable = false)
     private Integer cantidad;

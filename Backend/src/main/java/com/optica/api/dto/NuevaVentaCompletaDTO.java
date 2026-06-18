@@ -17,6 +17,7 @@ public class NuevaVentaCompletaDTO {
     private BigDecimal montoACuenta;
     private String metodoPago;
     private TipoVenta tipoVenta;
+    private String fechaManual;
 
     // Datos para ORDEN_TRABAJO (Fabricación)
     private String graduacionOd;
@@ -26,8 +27,13 @@ public class NuevaVentaCompletaDTO {
     private String adicion;
     private String dip;
     private String tipoLuna;
+    private String tipoLunaOd;
+    private BigDecimal precioLunaOd;
+    private String tipoLunaOi;
+    private BigDecimal precioLunaOi;
     private Boolean esLunaCliente;
     private String montura;
+    private BigDecimal precioMontura;
     private Boolean esMonturaCliente;
     private String observaciones;
 
@@ -37,6 +43,7 @@ public class NuevaVentaCompletaDTO {
     @Getter @Setter
     public static class DetalleVentaAlmacenDTO {
         private Long almacenId;
+        private String nombreProductoManual;
         private Integer cantidad;
         private BigDecimal precioUnitario;
     }

@@ -43,7 +43,7 @@ class TicketPdfService {
                 pw.SizedBox(height: 10),
                 pw.Divider(borderStyle: pw.BorderStyle.dashed),
                 pw.SizedBox(height: 5),
-                pw.FittedBox(fit: pw.BoxFit.scaleDown, child: pw.Text('TICKET DE VENTA', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
+                pw.FittedBox(fit: pw.BoxFit.scaleDown, child: pw.Text('ORDEN DE VENTA', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
                 pw.FittedBox(fit: pw.BoxFit.scaleDown, child: pw.Text('Nro: ${orden.numeroOrden}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold))),
                 pw.SizedBox(height: 8),
                 _buildFilaTexto('Fecha:', fechaFormateada),
@@ -62,7 +62,14 @@ class TicketPdfService {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('MONTURA:', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700, fontWeight: pw.FontWeight.bold)),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('MONTURA:', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700, fontWeight: pw.FontWeight.bold)),
+                          if (orden.precioMontura != null && orden.precioMontura! > 0)
+                            pw.Text('S/ ${orden.precioMontura!.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold)),
+                        ]
+                      ),
                       pw.Text(
                         (orden.montura != null && orden.montura!.isNotEmpty) 
                           ? '${orden.montura!.toUpperCase()}${orden.esMonturaCliente == true ? " (PROPIA)" : ""}'
@@ -83,12 +90,17 @@ class TicketPdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text('PRODUCTOS / CRISTALES:', style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700, fontWeight: pw.FontWeight.bold)),
-                      pw.Text(
-                        (orden.tipoLuna != null && orden.tipoLuna!.isNotEmpty)
-                          ? '${orden.tipoLuna!.toUpperCase()}${orden.esLunaCliente == true ? " (PROPIO)" : ""}'
-                          : 'SERVICIO ÓPTICO INTEGRAL',
-                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)
-                      ),
+                      if (orden.tipoLunaOd != null && orden.tipoLunaOd!.isNotEmpty)
+                        _buildFilaMedidaTicket('OD: ${orden.tipoLunaOd}', orden.precioLunaOd ?? 0),
+                      if (orden.tipoLunaOi != null && orden.tipoLunaOi!.isNotEmpty)
+                        _buildFilaMedidaTicket('OI: ${orden.tipoLunaOi}', orden.precioLunaOi ?? 0),
+                      if ((orden.tipoLunaOd == null || orden.tipoLunaOd!.isEmpty) && (orden.tipoLunaOi == null || orden.tipoLunaOi!.isEmpty))
+                        pw.Text(
+                          (orden.tipoLuna != null && orden.tipoLuna!.isNotEmpty)
+                            ? '${orden.tipoLuna!.toUpperCase()}${orden.esLunaCliente == true ? " (PROPIO)" : ""}'
+                            : 'SERVICIO ÓPTICO INTEGRAL',
+                          style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)
+                        ),
                     ],
                   ),
                 ),
@@ -161,7 +173,7 @@ class TicketPdfService {
                         child: pw.Column(
                           mainAxisSize: pw.MainAxisSize.min,
                           children: [
-                            pw.Text('BOLETA DE VENTA', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900), textAlign: pw.TextAlign.center),
+                            pw.Text('ORDEN DE VENTA', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900), textAlign: pw.TextAlign.center),
                             pw.SizedBox(height: 6),
                             pw.FittedBox(fit: pw.BoxFit.scaleDown, child: pw.Text('N° ${orden.numeroOrden}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.red900))),
                           ],
@@ -209,7 +221,14 @@ class TicketPdfService {
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Container(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: pw.BoxDecoration(color: PdfColors.blue900, borderRadius: pw.BorderRadius.all(pw.Radius.circular(4))), child: pw.Text('MONTURA', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white))),
+                            pw.Row(
+                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                              children: [
+                                pw.Container(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: pw.BoxDecoration(color: PdfColors.blue900, borderRadius: pw.BorderRadius.all(pw.Radius.circular(4))), child: pw.Text('MONTURA', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white))),
+                                if (orden.precioMontura != null && orden.precioMontura! > 0)
+                                  pw.Text('S/ ${orden.precioMontura!.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                              ]
+                            ),
                             pw.SizedBox(height: 12),
                             pw.Text((orden.montura != null && orden.montura!.isNotEmpty) ? orden.montura!.toUpperCase() : 'SIN MONTURA', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
                             if (orden.esMonturaCliente == true) pw.Text('(PROPIA DEL CLIENTE)', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700, fontStyle: pw.FontStyle.italic)),
@@ -227,8 +246,15 @@ class TicketPdfService {
                           children: [
                             pw.Container(padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: pw.BoxDecoration(color: PdfColors.blue900, borderRadius: pw.BorderRadius.all(pw.Radius.circular(4))), child: pw.Text('PRODUCTOS / CRISTALES', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white))),
                             pw.SizedBox(height: 12),
-                            pw.Text((orden.tipoLuna != null && orden.tipoLuna!.isNotEmpty) ? orden.tipoLuna!.toUpperCase() : 'SERVICIO ÓPTICO INTEGRAL', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-                            if (orden.esLunaCliente == true) pw.Text('(PROPIAS DEL CLIENTE)', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700, fontStyle: pw.FontStyle.italic)),
+                            if (orden.tipoLunaOd != null && orden.tipoLunaOd!.isNotEmpty)
+                              _buildFilaMedidaA4('O.D: ${orden.tipoLunaOd}', orden.precioLunaOd ?? 0),
+                            if (orden.tipoLunaOi != null && orden.tipoLunaOi!.isNotEmpty)
+                              _buildFilaMedidaA4('O.I: ${orden.tipoLunaOi}', orden.precioLunaOi ?? 0),
+                            
+                            if ((orden.tipoLunaOd == null || orden.tipoLunaOd!.isEmpty) && (orden.tipoLunaOi == null || orden.tipoLunaOi!.isEmpty)) ...[
+                              pw.Text((orden.tipoLuna != null && orden.tipoLuna!.isNotEmpty) ? orden.tipoLuna!.toUpperCase() : 'SERVICIO ÓPTICO INTEGRAL', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                              if (orden.esLunaCliente == true) pw.Text('(PROPIAS DEL CLIENTE)', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700, fontStyle: pw.FontStyle.italic)),
+                            ],
                           ],
                         ),
                       ),
@@ -286,7 +312,7 @@ class TicketPdfService {
         ),
       );
 
-      await Printing.sharePdf(bytes: await pdf.save(), filename: "Boleta_${orden.numeroOrden}.pdf");
+      await Printing.sharePdf(bytes: await pdf.save(), filename: "Orden_${orden.numeroOrden}.pdf");
     } catch (e) {
       rethrow;
     }
@@ -338,6 +364,34 @@ class TicketPdfService {
         children: [
           pw.Text(etiqueta, style: style),
           pw.Text('S/ ${valor.toStringAsFixed(2)}', style: style),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildFilaMedidaTicket(String label, double price) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(top: 2),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: 8)),
+          if (price > 0)
+            pw.Text('S/ ${price.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildFilaMedidaA4(String label, double price) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          if (price > 0)
+            pw.Text('S/ ${price.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
         ],
       ),
     );

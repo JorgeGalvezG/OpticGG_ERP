@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -542,7 +543,7 @@ class _VentasScreenState extends State<VentasScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Escanear Boleta', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Escanear Orden', style: TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -769,12 +770,15 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   int? _vendedorId;
   int? _pacienteId;
   String _metodoPagoSeleccionado = 'EFECTIVO';
+  bool _totalManual = false;
+  DateTime? _fechaVenta;
 
   // Productos seleccionados (para ORDEN_VENTA)
   final List<DetalleVentaAlmacenDTO> _productosSeleccionados = [];
 
   // Controladores
   final _pacienteSearchCtrl = TextEditingController();
+  final _fechaVentaCtrl = TextEditingController();
   final _odEsf = TextEditingController();
   final _odCil = TextEditingController();
   final _odEje = TextEditingController();
@@ -786,7 +790,12 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   final _addCtrl = TextEditingController();
   final _dipCtrl = TextEditingController();
   final _monturaCtrl = TextEditingController();
+  final _precioMonturaCtrl = TextEditingController(text: '0.00');
   final _lunaCtrl = TextEditingController();
+  final _tipoLunaOdCtrl = TextEditingController();
+  final _precioLunaOdCtrl = TextEditingController(text: '0.00');
+  final _tipoLunaOiCtrl = TextEditingController();
+  final _precioLunaOiCtrl = TextEditingController(text: '0.00');
   final _obsCtrl = TextEditingController();
   final _totalCtrl = TextEditingController();
   final _abonoCtrl = TextEditingController();
@@ -797,6 +806,11 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     super.initState();
     _totalCtrl.addListener(_calc);
     _abonoCtrl.addListener(_calc);
+    
+    // Listeners para auto-cálculo en fabricación
+    _precioMonturaCtrl.addListener(_recalcularTotalFabricacion);
+    _precioLunaOdCtrl.addListener(_recalcularTotalFabricacion);
+    _precioLunaOiCtrl.addListener(_recalcularTotalFabricacion);
     
     if (widget.pacienteIdPrecargado != null) {
       _pacienteId = widget.pacienteIdPrecargado;
@@ -833,6 +847,46 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     super.dispose();
   }
 
+  void _mostrarDialogoProductoManual() {
+    final TextEditingController nameCtrl = TextEditingController();
+    final TextEditingController priceCtrl = TextEditingController(text: '0.00');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Agregar Producto Manual', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _field('Nombre del Producto', Icons.inventory_2_rounded, nameCtrl, req: true),
+            const SizedBox(height: 16),
+            _field('Precio de Venta S/', Icons.sell_rounded, priceCtrl, num: true, req: true),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (nameCtrl.text.isEmpty) return;
+              setState(() {
+                _productosSeleccionados.add(DetalleVentaAlmacenDTO(
+                  nombreProductoManual: nameCtrl.text.trim(),
+                  cantidad: 1,
+                  precioUnitario: double.tryParse(priceCtrl.text) ?? 0.0,
+                ));
+                _recalcularTotalDesdeProductos();
+              });
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text('Agregar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _calc() {
     double t = double.tryParse(_totalCtrl.text) ?? 0;
     double a = double.tryParse(_abonoCtrl.text) ?? 0;
@@ -840,12 +894,21 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   }
 
   void _recalcularTotalDesdeProductos() {
-    if (_tipoVenta == 'ORDEN_VENTA') {
+    if (_tipoVenta == 'ORDEN_VENTA' && !_totalManual) {
       double total = 0;
       for (var p in _productosSeleccionados) {
         total += p.precioUnitario * p.cantidad;
       }
       _totalCtrl.text = total.toStringAsFixed(2);
+    }
+  }
+
+  void _recalcularTotalFabricacion() {
+    if (_tipoVenta == 'ORDEN_TRABAJO' && !_totalManual) {
+      double pM = double.tryParse(_precioMonturaCtrl.text) ?? 0;
+      double pLod = double.tryParse(_precioLunaOdCtrl.text) ?? 0;
+      double pLoi = double.tryParse(_precioLunaOiCtrl.text) ?? 0;
+      _totalCtrl.text = (pM + pLod + pLoi).toStringAsFixed(2);
     }
   }
 
@@ -883,8 +946,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         _parsearMedida(historial.graduacionOd, _odEsf, _odCil, _odEje);
         _parsearMedida(historial.graduacionOi, _oiEsf, _oiCil, _oiEje);
         // AV
-        _odAv.text = historial.graduacionOd ?? ""; // Needs proper mapping if returned from BE, but assuming not strictly mapped from history string yet.
-        _oiAv.text = historial.graduacionOi ?? "";
+        _odAv.text = historial.avOd ?? "";
+        _oiAv.text = historial.avOi ?? "";
         
         _addCtrl.text = historial.adicion ?? "";
         _dipCtrl.text = historial.dip ?? "";
@@ -919,6 +982,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       montoTotal: double.tryParse(_totalCtrl.text) ?? 0,
       montoACuenta: double.tryParse(_abonoCtrl.text) ?? 0,
       metodoPago: _metodoPagoSeleccionado,
+      fechaManual: _fechaVenta?.toIso8601String(),
       // Datos de fabricación
       graduacionOd: _tipoVenta == 'ORDEN_TRABAJO' ? _armarMedida(_odEsf.text, _odCil.text, _odEje.text) : null,
       avOd: _tipoVenta == 'ORDEN_TRABAJO' ? _odAv.text : null,
@@ -928,8 +992,13 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       dip: _tipoVenta == 'ORDEN_TRABAJO' ? _dipCtrl.text : null,
       esLunaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _lunasPropias : null,
       tipoLuna: _tipoVenta == 'ORDEN_TRABAJO' ? (_lunasPropias ? "PROPIA" : _lunaCtrl.text) : null,
+      tipoLunaOd: _tipoVenta == 'ORDEN_TRABAJO' ? _tipoLunaOdCtrl.text : null,
+      precioLunaOd: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioLunaOdCtrl.text) ?? 0) : null,
+      tipoLunaOi: _tipoVenta == 'ORDEN_TRABAJO' ? _tipoLunaOiCtrl.text : null,
+      precioLunaOi: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioLunaOiCtrl.text) ?? 0) : null,
       esMonturaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _monturaPropia : null,
       montura: _tipoVenta == 'ORDEN_TRABAJO' ? (_monturaPropia ? "PROPIA" : _monturaCtrl.text) : null,
+      precioMontura: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioMonturaCtrl.text) ?? 0) : null,
       observaciones: _obsCtrl.text,
       // Productos de almacén
       productos: _tipoVenta == 'ORDEN_VENTA' ? _productosSeleccionados : null,
@@ -1000,6 +1069,29 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                         _buildPacienteSearcher(),
                         _vendedorDropdown(),
                       ]),
+                      const SizedBox(height: 12),
+                      _row(isMobile, [
+                        _field('Fecha de Venta (Opcional)', Icons.calendar_today_rounded, _fechaVentaCtrl, readOnly: true, hint: 'Dejar vacío para hoy'),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final d = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                            );
+                            if (d != null) {
+                              setState(() {
+                                _fechaVenta = d;
+                                _fechaVentaCtrl.text = "${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}";
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.edit_calendar_rounded),
+                          label: const Text('Cambiar Fecha'),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.gray200, foregroundColor: AppColors.gray900),
+                        ),
+                      ]),
                       const SizedBox(height: 16),
                       
                       if (_tipoVenta == 'ORDEN_TRABAJO') ...[
@@ -1036,12 +1128,44 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                           _buildBuscadorMonturaAlmacen(),
                         if (_monturaManual)
                           _field('Marca/Modelo de Montura', Icons.wallpaper_rounded, _monturaCtrl),
-                        const SizedBox(height: 12),
+                        
+                        if (!_monturaPropia)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12.0),
+                            child: _field('Precio Montura S/', Icons.sell_rounded, _precioMonturaCtrl, num: true),
+                          ),
+                        
+                        const Divider(height: 32),
                         _checkRow('Lunas propias (Solo montaje)', _lunasPropias, (v) => setState(() => _lunasPropias = v!)),
-                        _field('Tipo de Cristales', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
+                        if (!_lunasPropias) ...[
+                          const Text("Detalle de Cristales", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          _row(isMobile, [
+                            _field('Tipo Luna O.D.', Icons.remove_red_eye, _tipoLunaOdCtrl, hint: 'Resina UV'),
+                            _field('Precio O.D. S/', Icons.sell, _precioLunaOdCtrl, num: true),
+                          ]),
+                          const SizedBox(height: 8),
+                          _row(isMobile, [
+                            _field('Tipo Luna O.I.', Icons.remove_red_eye, _tipoLunaOiCtrl, hint: 'Resina UV'),
+                            _field('Precio O.I. S/', Icons.sell, _precioLunaOiCtrl, num: true),
+                          ]),
+                        ],
+                        const SizedBox(height: 12),
+                        _field('Tipo de Cristales (General/Comentario)', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
                       ] else ...[
                         _section('2. Productos de Almacén'),
-                        _buildBuscadorProductosAlmacen(),
+                        Row(
+                          children: [
+                            Expanded(child: _buildBuscadorProductosAlmacen()),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              onPressed: _mostrarDialogoProductoManual,
+                              icon: const Icon(Icons.edit_note_rounded),
+                              label: const Text('Manual'),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryLight, foregroundColor: AppColors.primary),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 12),
                         _buildTablaProductosSeleccionados(),
                       ],
@@ -1050,6 +1174,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                       _field('Observaciones Finales', Icons.comment, _obsCtrl, maxLines: 2),
                       const SizedBox(height: 24),
                       _section('4. Liquidación y Pago'),
+                      if (_tipoVenta == 'ORDEN_VENTA')
+                        _checkRow('Ingreso manual de monto total (Desactiva auto-cálculo)', _totalManual, (v) => setState(() => _totalManual = v!)),
                       _row(isMobile, [
                         _field('Total S/ *', Icons.payments, _totalCtrl, num: true, req: true, readOnly: false), // Total is now editable for both
                         _field('Abono S/', Icons.savings, _abonoCtrl, num: true),
@@ -1178,12 +1304,21 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         separatorBuilder: (context, index) => const Divider(height: 1),
         itemBuilder: (context, index) {
           final item = _productosSeleccionados[index];
-          // Buscar el nombre del producto en el provider
-          final prov = Provider.of<AlmacenProvider>(context, listen: false);
-          final pInfo = prov.productos.firstWhere((p) => p.id == item.almacenId);
+          String nombreProducto = item.nombreProductoManual ?? 'Producto Manual';
+
+          // Buscar el nombre del producto en el provider si tiene ID
+          if (item.almacenId != null) {
+            final prov = Provider.of<AlmacenProvider>(context, listen: false);
+            try {
+              final pInfo = prov.productos.firstWhere((p) => p.id == item.almacenId);
+              nombreProducto = pInfo.nombre;
+            } catch (e) {
+              nombreProducto = 'Producto no encontrado';
+            }
+          }
 
           return ListTile(
-            title: Text(pInfo.nombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            title: Text(nombreProducto, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             subtitle: Text('Precio: S/ ${item.precioUnitario.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1365,7 +1500,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         onSelected: (p) {
           setState(() {
             _monturaCtrl.text = p.nombre;
-            _productosSeleccionados.add(DetalleVentaAlmacenDTO(almacenId: p.id, cantidad: 1, precioUnitario: 0));
+            _precioMonturaCtrl.text = p.precioVenta.toStringAsFixed(2);
+            _recalcularTotalFabricacion();
           });
         },
         fieldViewBuilder: (ctx, ctrl, focus, onFieldSubmitted) => TextFormField(controller: ctrl, focusNode: focus, decoration: const InputDecoration(labelText: 'Buscar Montura en Stock', prefixIcon: Icon(Icons.search), border: OutlineInputBorder())),

@@ -12,7 +12,9 @@ class HistorialPacienteDTO {
 
   // Última medida
   final String? graduacionOd;
+  final String? avOd;
   final String? graduacionOi;
+  final String? avOi;
   final String? adicion;
   final String? dip;
   final String? tipoLuna;
@@ -32,7 +34,9 @@ class HistorialPacienteDTO {
     this.estadoPago,
     this.metodoPago,
     this.graduacionOd,
+    this.avOd,
     this.graduacionOi,
+    this.avOi,
     this.adicion,
     this.dip,
     this.tipoLuna,
@@ -54,7 +58,9 @@ class HistorialPacienteDTO {
       estadoPago: json['estadoPago'],
       metodoPago: json['metodoPago'],
       graduacionOd: json['graduacionOd'],
+      avOd: json['avOd'],
       graduacionOi: json['graduacionOi'],
+      avOi: json['avOi'],
       adicion: json['adicion'],
       dip: json['dip'],
       tipoLuna: json['tipoLuna'],

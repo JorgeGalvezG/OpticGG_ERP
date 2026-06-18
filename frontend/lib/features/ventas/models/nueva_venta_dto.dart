@@ -3,6 +3,7 @@ class NuevaVentaDTO {
   final int vendedorId;
   final String tienda;
   final String tipoVenta; // ORDEN_TRABAJO o ORDEN_VENTA
+  final String? fechaManual;
 
   // Finanzas
   final double montoTotal;
@@ -16,10 +17,18 @@ class NuevaVentaDTO {
   final String? avOi;
   final String? adicion;
   final String? dip;
+  
   final bool? esLunaCliente;
   final String? tipoLuna;
+  final String? tipoLunaOd;
+  final double? precioLunaOd;
+  final String? tipoLunaOi;
+  final double? precioLunaOi;
+
   final bool? esMonturaCliente;
   final String? montura;
+  final double? precioMontura;
+
   final String? observaciones;
 
   // Datos para ORDEN_VENTA (Productos)
@@ -33,6 +42,7 @@ class NuevaVentaDTO {
     required this.montoTotal,
     required this.montoACuenta,
     required this.metodoPago,
+    this.fechaManual,
     this.graduacionOd,
     this.avOd,
     this.graduacionOi,
@@ -41,8 +51,13 @@ class NuevaVentaDTO {
     this.dip,
     this.esLunaCliente,
     this.tipoLuna,
+    this.tipoLunaOd,
+    this.precioLunaOd,
+    this.tipoLunaOi,
+    this.precioLunaOi,
     this.esMonturaCliente,
     this.montura,
+    this.precioMontura,
     this.observaciones,
     this.productos,
   });
@@ -56,6 +71,7 @@ class NuevaVentaDTO {
       'montoTotal': montoTotal,
       'montoACuenta': montoACuenta,
       'metodoPago': metodoPago,
+      'fechaManual': fechaManual,
     };
 
     if (tipoVenta == 'ORDEN_TRABAJO') {
@@ -68,8 +84,13 @@ class NuevaVentaDTO {
         'dip': dip ?? '',
         'esLunaCliente': esLunaCliente ?? false,
         'tipoLuna': tipoLuna ?? '',
+        'tipoLunaOd': tipoLunaOd ?? '',
+        'precioLunaOd': precioLunaOd ?? 0.0,
+        'tipoLunaOi': tipoLunaOi ?? '',
+        'precioLunaOi': precioLunaOi ?? 0.0,
         'esMonturaCliente': esMonturaCliente ?? false,
         'montura': montura ?? '',
+        'precioMontura': precioMontura ?? 0.0,
         'observaciones': observaciones ?? '',
       });
     } else {
@@ -81,18 +102,21 @@ class NuevaVentaDTO {
 }
 
 class DetalleVentaAlmacenDTO {
-  final int almacenId;
+  final int? almacenId;
+  final String? nombreProductoManual;
   final int cantidad;
   final double precioUnitario;
 
   DetalleVentaAlmacenDTO({
-    required this.almacenId,
+    this.almacenId,
+    this.nombreProductoManual,
     required this.cantidad,
     required this.precioUnitario,
   });
 
   Map<String, dynamic> toJson() => {
     'almacenId': almacenId,
+    'nombreProductoManual': nombreProductoManual,
     'cantidad': cantidad,
     'precioUnitario': precioUnitario,
   };

@@ -10,9 +10,16 @@ class OrdenTrabajo {
 
   // Campos del historial clínico (para el ticket PDF)
   final String? tipoLuna;
+  final String? tipoLunaOd;
+  final double? precioLunaOd;
+  final String? tipoLunaOi;
+  final double? precioLunaOi;
   final bool? esLunaCliente;
+  
   final String? montura;
+  final double? precioMontura;
   final bool? esMonturaCliente;
+
   final String? graduacionOd;
   final String? graduacionOi;
   final String? adicion;
@@ -29,8 +36,13 @@ class OrdenTrabajo {
     required this.montoSaldo,
     required this.fecha,
     this.tipoLuna,
+    this.tipoLunaOd,
+    this.precioLunaOd,
+    this.tipoLunaOi,
+    this.precioLunaOi,
     this.esLunaCliente,
     this.montura,
+    this.precioMontura,
     this.esMonturaCliente,
     this.graduacionOd,
     this.graduacionOi,
@@ -55,8 +67,13 @@ class OrdenTrabajo {
       montoSaldo: (json['montoSaldo'] ?? 0).toDouble(),
       fecha: json['fecha'] ?? '',
       tipoLuna: json['tipoLuna'],
+      tipoLunaOd: json['tipoLunaOd'],
+      precioLunaOd: (json['precioLunaOd'] ?? 0).toDouble(),
+      tipoLunaOi: json['tipoLunaOi'],
+      precioLunaOi: (json['precioLunaOi'] ?? 0).toDouble(),
       esLunaCliente: json['esLunaCliente'],
       montura: json['montura'],
+      precioMontura: (json['precioMontura'] ?? 0).toDouble(),
       esMonturaCliente: json['esMonturaCliente'],
       graduacionOd: json['graduacionOd'],
       graduacionOi: json['graduacionOi'],

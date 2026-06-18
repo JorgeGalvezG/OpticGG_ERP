@@ -66,7 +66,9 @@ public class PacienteHistorialService {
         // Datos de la última medida
         historial.ifPresent(h -> builder
                 .graduacionOd(h.getGraduacionOd())
+                .avOd(h.getAvOd())
                 .graduacionOi(h.getGraduacionOi())
+                .avOi(h.getAvOi())
                 .adicion(h.getAdicion())
                 .dip(h.getDip())
                 .tipoLuna(h.getTipoLuna())

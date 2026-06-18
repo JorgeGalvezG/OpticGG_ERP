@@ -23,7 +23,9 @@ public class HistorialPacienteDTO {
 
     // Última medida (historial clínico)
     private String graduacionOd;
+    private String avOd;
     private String graduacionOi;
+    private String avOi;
     private String adicion;
     private String dip;
     private String tipoLuna;

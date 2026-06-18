@@ -81,11 +81,26 @@ public class Venta {
     @Column(name = "tipo_luna")
     private String tipoLuna;
 
+    @Column(name = "tipo_luna_od")
+    private String tipoLunaOd;
+
+    @Column(name = "precio_luna_od", precision = 10, scale = 2)
+    private BigDecimal precioLunaOd = BigDecimal.ZERO;
+
+    @Column(name = "tipo_luna_oi")
+    private String tipoLunaOi;
+
+    @Column(name = "precio_luna_oi", precision = 10, scale = 2)
+    private BigDecimal precioLunaOi = BigDecimal.ZERO;
+
     @Column(name = "es_luna_cliente")
     private Boolean esLunaCliente = false;
 
     @Column(name = "montura")
     private String montura;
+
+    @Column(name = "precio_montura", precision = 10, scale = 2)
+    private BigDecimal precioMontura = BigDecimal.ZERO;
 
     @Column(name = "es_montura_cliente")
     private Boolean esMonturaCliente = false;

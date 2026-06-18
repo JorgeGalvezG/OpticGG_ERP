@@ -40,6 +40,18 @@ public class VentaService {
     @Transactional
     public Venta procesarNuevaVenta(NuevaVentaCompletaDTO dto) {
         LocalDateTime ahora = LocalDateTime.now();
+        if (dto.getFechaManual() != null && !dto.getFechaManual().isEmpty()) {
+            try {
+                // Soportar formatos comunes que vienen del frontend
+                if (dto.getFechaManual().contains("T")) {
+                    ahora = LocalDateTime.parse(dto.getFechaManual());
+                } else if (dto.getFechaManual().length() == 10) {
+                    ahora = LocalDateTime.parse(dto.getFechaManual() + "T00:00:00");
+                }
+            } catch (Exception e) {
+                System.err.println("Error parseando fecha manual: " + dto.getFechaManual());
+            }
+        }
 
         // 1. Validar que existan paciente y vendedor
         Paciente paciente = pacienteRepository.findById(dto.getPacienteId())
@@ -108,8 +120,13 @@ public class VentaService {
             venta.setAdicion(dto.getAdicion());
             venta.setDip(dto.getDip());
             venta.setTipoLuna(dto.getTipoLuna());
+            venta.setTipoLunaOd(dto.getTipoLunaOd());
+            venta.setPrecioLunaOd(dto.getPrecioLunaOd());
+            venta.setTipoLunaOi(dto.getTipoLunaOi());
+            venta.setPrecioLunaOi(dto.getPrecioLunaOi());
             venta.setEsLunaCliente(dto.getEsLunaCliente());
             venta.setMontura(dto.getMontura());
+            venta.setPrecioMontura(dto.getPrecioMontura());
             venta.setEsMonturaCliente(dto.getEsMonturaCliente());
             venta.setObservaciones(dto.getObservaciones());
         }
@@ -119,24 +136,30 @@ public class VentaService {
         // Si es ORDEN_VENTA (Productos), registramos detalles y descargamos stock
         if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_VENTA && dto.getProductos() != null) {
             for (NuevaVentaCompletaDTO.DetalleVentaAlmacenDTO itemDto : dto.getProductos()) {
-                Almacen producto = almacenRepository.findById(itemDto.getAlmacenId())
-                        .orElseThrow(() -> new RuntimeException("Producto no encontrado en almacén: " + itemDto.getAlmacenId()));
-                
-                if (producto.getStock() < itemDto.getCantidad()) {
-                    throw new RuntimeException("Stock insuficiente para: " + producto.getNombre());
-                }
-
                 VentasDetalleAlmacen detalle = new VentasDetalleAlmacen();
                 detalle.setVenta(ventaGuardada);
-                detalle.setAlmacen(producto);
+
+                if (itemDto.getAlmacenId() != null) {
+                    Almacen producto = almacenRepository.findById(itemDto.getAlmacenId())
+                            .orElseThrow(() -> new RuntimeException("Producto no encontrado en almacén: " + itemDto.getAlmacenId()));
+
+                    if (producto.getStock() < itemDto.getCantidad()) {
+                        throw new RuntimeException("Stock insuficiente para: " + producto.getNombre());
+                    }
+
+                    // Restar stock
+                    producto.setStock(producto.getStock() - itemDto.getCantidad());
+                    almacenRepository.save(producto);
+
+                    detalle.setAlmacen(producto);
+                } else {
+                    detalle.setNombreProductoManual(itemDto.getNombreProductoManual());
+                }
+
                 detalle.setCantidad(itemDto.getCantidad());
                 detalle.setPrecioUnitario(itemDto.getPrecioUnitario());
                 detalle.setSubtotal(itemDto.getPrecioUnitario().multiply(new BigDecimal(itemDto.getCantidad())));
                 ventasDetalleAlmacenRepository.save(detalle);
-
-                // Descargar stock
-                producto.setStock(producto.getStock() - itemDto.getCantidad());
-                almacenRepository.save(producto);
             }
         }
 
@@ -160,8 +183,13 @@ public class VentaService {
             orden.setAdicion(dto.getAdicion());
             orden.setDip(dto.getDip());
             orden.setTipoLuna(dto.getTipoLuna());
+            orden.setTipoLunaOd(dto.getTipoLunaOd());
+            orden.setPrecioLunaOd(dto.getPrecioLunaOd());
+            orden.setTipoLunaOi(dto.getTipoLunaOi());
+            orden.setPrecioLunaOi(dto.getPrecioLunaOi());
             orden.setEsLunaCliente(dto.getEsLunaCliente());
             orden.setMontura(dto.getMontura());
+            orden.setPrecioMontura(dto.getPrecioMontura());
             orden.setEsMonturaCliente(dto.getEsMonturaCliente());
             orden.setObservaciones(dto.getObservaciones());
             orden.setMetodoPago(dto.getMetodoPago());
