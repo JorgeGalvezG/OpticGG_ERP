@@ -37,7 +37,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         // 1. Verificamos si trae el Pase VIP (Token)
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
-            username = jwtUtil.extraerUsername(jwt);
+            try {
+                username = jwtUtil.extraerUsername(jwt);
+            } catch (Exception e) {
+                // Si el token expiró o es inválido, simplemente no seteamos el username
+                // y dejamos que la cadena continúe. Spring Security se encargará del resto.
+                logger.warn("JWT inválido o expirado: " + e.getMessage());
+            }
         }
 
         // 2. Si trae el pase y no ha entrado aún, lo validamos

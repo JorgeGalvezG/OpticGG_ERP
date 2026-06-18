@@ -34,7 +34,7 @@ public class AuthController {
             Usuario usuario = usuarioRepository.findByUsername(request.getUsername()).orElseThrow();
 
             // 3. Fabricamos su Pase VIP (Token)
-            String token = jwtUtil.generarToken(usuario.getUsername(), usuario.getRol().name());
+            String token = jwtUtil.generarToken(usuario.getUsername(), usuario.getRol().name(), request.isRememberMe());
 
             // 4. Se lo entregamos al frontend
             return ResponseEntity.ok(new LoginResponseDTO(

@@ -17,15 +17,19 @@ public class JwtUtil {
     private static final String SECRET_KEY_STRING = "OpticGG_Super_Secret_Key_For_JWT_Tokens_2026_Secure!";
     private final Key SECRET_KEY = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes());
 
-    // El token durará 24 horas
+    // El token durará 24 horas por defecto
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
+    // Si elige "Mantener sesión", durará 30 días
+    private static final long REMEMBER_ME_EXPIRATION_TIME = 1000L * 60 * 60 * 24 * 30;
 
-    public String generarToken(String username, String rol) {
+    public String generarToken(String username, String rol, boolean rememberMe) {
+        long tiempoExpiracion = rememberMe ? REMEMBER_ME_EXPIRATION_TIME : EXPIRATION_TIME;
+
         return Jwts.builder()
                 .setSubject(username)
                 .claim("rol", rol)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + tiempoExpiracion))
                 .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
