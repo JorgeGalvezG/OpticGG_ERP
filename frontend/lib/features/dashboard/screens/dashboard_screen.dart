@@ -195,13 +195,44 @@ class _MainStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final balance = resumen.ingresosHoy - resumen.egresosHoy;
+    
+    if (isMobile) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 155,
+              child: _StatCard('Ingresos Hoy', resumen.ingresosHoy, Icons.add_circle_outline_rounded, Colors.green, isDev: isDev, pct: resumen.pctIngresosHoy),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 155,
+              child: _StatCard('Egresos Hoy', resumen.egresosHoy, Icons.remove_circle_outline_rounded, isDev ? AppColors.nebulaPink : Colors.redAccent, isDev: isDev, pct: resumen.pctEgresosHoy, reversePct: true),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 155,
+              child: _StatCard('Balance Neto', balance, Icons.account_balance_wallet_outlined, isDev ? Colors.cyanAccent : Colors.blue, isDev: isDev),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 155,
+              child: _StatCard('Pendientes Lab.', resumen.ordenesPendientes.toDouble(), Icons.biotech_rounded, isDev ? AppColors.nebulaPurple : Colors.orange, isMoney: false, isDev: isDev),
+            ),
+          ],
+        ),
+      );
+    }
+
     return GridView.count(
-      crossAxisCount: isMobile ? 2 : 4,
+      crossAxisCount: 4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 20,
       mainAxisSpacing: 20,
-      childAspectRatio: isMobile ? 1.1 : 1.5,
+      childAspectRatio: 1.5,
       children: [
         _StatCard('Ingresos Hoy', resumen.ingresosHoy, Icons.add_circle_outline_rounded, Colors.green, isDev: isDev, pct: resumen.pctIngresosHoy),
         _StatCard('Egresos Hoy', resumen.egresosHoy, Icons.remove_circle_outline_rounded, isDev ? AppColors.nebulaPink : Colors.redAccent, isDev: isDev, pct: resumen.pctEgresosHoy, reversePct: true),

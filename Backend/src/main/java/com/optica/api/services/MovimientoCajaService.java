@@ -34,6 +34,7 @@ public class MovimientoCajaService {
         movimiento.setDescripcion(dto.getDescripcion());
         movimiento.setUsuario(usuario);
         movimiento.setTienda(dto.getTienda());
+        movimiento.setFecha(java.time.LocalDateTime.now());
 
         return cajaRepository.save(movimiento);
     }

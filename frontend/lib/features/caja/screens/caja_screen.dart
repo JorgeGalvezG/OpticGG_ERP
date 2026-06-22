@@ -130,15 +130,28 @@ class _CajaScreenState extends State<CajaScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                         child: isMobile
-                            ? Column(
-                          children: [
-                            _buildResumenCard('Saldo Actual', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile, dev.isDevMode),
-                            const SizedBox(height: 12),
-                            _buildResumenCard('Ingresos', cajaProv.totalIngresos, AppColors.success, Icons.arrow_upward_rounded, isMobile, dev.isDevMode),
-                            const SizedBox(height: 12),
-                            _buildResumenCard('Salidas', cajaProv.totalSalidas, AppColors.danger, Icons.arrow_downward_rounded, isMobile, dev.isDevMode),
-                          ],
-                        )
+                            ? SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 250,
+                                      child: _buildResumenCard('Saldo Actual', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile, dev.isDevMode),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    SizedBox(
+                                      width: 250,
+                                      child: _buildResumenCard('Ingresos', cajaProv.totalIngresos, AppColors.success, Icons.arrow_upward_rounded, isMobile, dev.isDevMode),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    SizedBox(
+                                      width: 250,
+                                      child: _buildResumenCard('Salidas', cajaProv.totalSalidas, AppColors.danger, Icons.arrow_downward_rounded, isMobile, dev.isDevMode),
+                                    ),
+                                  ],
+                                ),
+                              )
                             : Row(
                           children: [
                             Expanded(child: _buildResumenCard('Saldo Actual (Caja)', cajaProv.saldoActual, AppColors.primary, Icons.account_balance_wallet_rounded, isMobile, dev.isDevMode)),

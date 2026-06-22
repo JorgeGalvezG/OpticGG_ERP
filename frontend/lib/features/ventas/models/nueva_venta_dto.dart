@@ -1,5 +1,6 @@
 class NuevaVentaDTO {
-  final int pacienteId;
+  final int? pacienteId;
+  final String? pacienteNombreManual;
   final int vendedorId;
   final String tienda;
   final String tipoVenta; // ORDEN_TRABAJO o ORDEN_VENTA
@@ -35,7 +36,8 @@ class NuevaVentaDTO {
   final List<DetalleVentaAlmacenDTO>? productos;
 
   NuevaVentaDTO({
-    required this.pacienteId,
+    this.pacienteId,
+    this.pacienteNombreManual,
     required this.vendedorId,
     required this.tienda,
     required this.tipoVenta,
@@ -65,6 +67,7 @@ class NuevaVentaDTO {
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> map = {
       'pacienteId': pacienteId,
+      'pacienteNombreManual': pacienteNombreManual,
       'vendedorId': vendedorId,
       'tienda': tienda,
       'tipoVenta': tipoVenta,

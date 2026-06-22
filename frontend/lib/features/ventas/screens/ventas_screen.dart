@@ -81,6 +81,23 @@ class _VentasScreenState extends State<VentasScreen> {
                 // ── GRID DE ESTADÍSTICAS RÁPIDAS ──
                 Consumer<OrdenesProvider>(
                   builder: (context, prov, _) {
+                    if (isMobile) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: [
+                            _miniStat('PENDIENTES', prov.pendientes.length, Colors.blueGrey, isMobile),
+                            const SizedBox(width: 12),
+                            _miniStat('LABORATORIO', prov.enLaboratorio.length, Colors.orange, isMobile),
+                            const SizedBox(width: 12),
+                            _miniStat('LISTOS', prov.listos.length, Colors.blue, isMobile),
+                            const SizedBox(width: 12),
+                            _miniStat('ENTREGADOS', prov.entregados.length, AppColors.success, isMobile),
+                          ],
+                        ),
+                      );
+                    }
                     return Wrap(
                       spacing: 12,
                       runSpacing: 12,
@@ -144,7 +161,7 @@ class _VentasScreenState extends State<VentasScreen> {
 
   Widget _miniStat(String label, int count, Color color, bool isMobile) {
     return Container(
-      width: isMobile ? (MediaQuery.of(context).size.width - 60) / 2 : 120,
+      width: isMobile ? 110 : 120,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -772,12 +789,14 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   String _metodoPagoSeleccionado = 'EFECTIVO';
   bool _totalManual = false;
   DateTime? _fechaVenta;
+  bool _pacienteNuevoManual = false;
 
   // Productos seleccionados (para ORDEN_VENTA)
   final List<DetalleVentaAlmacenDTO> _productosSeleccionados = [];
 
   // Controladores
   final _pacienteSearchCtrl = TextEditingController();
+  final _pacienteManualCtrl = TextEditingController();
   final _fechaVentaCtrl = TextEditingController();
   final _odEsf = TextEditingController();
   final _odCil = TextEditingController();
@@ -831,6 +850,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     _totalCtrl.dispose();
     _abonoCtrl.dispose();
     _pacienteSearchCtrl.dispose();
+    _pacienteManualCtrl.dispose();
     _odEsf.dispose();
     _odCil.dispose();
     _odEje.dispose();
@@ -964,8 +984,12 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   }
 
   void _guardarVenta() async {
-    if (_pacienteId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un paciente"), backgroundColor: AppColors.warning));
+    if (!_pacienteNuevoManual && _pacienteId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Seleccione un paciente o marque Paciente Nuevo"), backgroundColor: AppColors.warning));
+      return;
+    }
+    if (_pacienteNuevoManual && _pacienteManualCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Ingrese el nombre del paciente"), backgroundColor: AppColors.warning));
       return;
     }
     if (!_formKey.currentState!.validate()) return;
@@ -974,13 +998,20 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     final ventasProv = Provider.of<VentasProvider>(context, listen: false);
     final ordenesProv = Provider.of<OrdenesProvider>(context, listen: false);
 
+    final total = double.tryParse(_totalCtrl.text) ?? 0;
+    double abono = double.tryParse(_abonoCtrl.text) ?? 0;
+    if (_tipoVenta == 'ORDEN_VENTA' && abono == 0 && _abonoCtrl.text.trim().isEmpty) {
+      abono = total;
+    }
+
     final dto = NuevaVentaDTO(
-      pacienteId: _pacienteId!,
+      pacienteId: _pacienteNuevoManual ? null : _pacienteId,
+      pacienteNombreManual: _pacienteNuevoManual ? _pacienteManualCtrl.text.trim() : null,
       vendedorId: _vendedorId ?? 1,
       tienda: auth.tienda ?? 'C1',
       tipoVenta: _tipoVenta,
-      montoTotal: double.tryParse(_totalCtrl.text) ?? 0,
-      montoACuenta: double.tryParse(_abonoCtrl.text) ?? 0,
+      montoTotal: total,
+      montoACuenta: abono,
       metodoPago: _metodoPagoSeleccionado,
       fechaManual: _fechaVenta?.toIso8601String(),
       // Datos de fabricación
@@ -1349,55 +1380,105 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   }
 
   Widget _buildPacienteSearcher() {
-    return Consumer<PacientesProvider>(
-      builder: (context, prov, _) {
-        return Autocomplete<Paciente>(
-          displayStringForOption: (p) => "${p.nombre} ${p.apellidos}",
-          initialValue: TextEditingValue(text: _pacienteSearchCtrl.text),
-          optionsBuilder: (textValue) {
-            if (textValue.text.isEmpty) return const Iterable<Paciente>.empty();
-            return prov.pacientes.where((p) => 
-              p.nombre.toLowerCase().contains(textValue.text.toLowerCase()) || 
-              p.apellidos.toLowerCase().contains(textValue.text.toLowerCase()));
-          },
-          onSelected: (p) {
-            _pacienteId = p.id;
-            _pacienteSearchCtrl.text = "${p.nombre} ${p.apellidos}";
-          },
-          fieldViewBuilder: (context, ctrl, focus, onFieldSubmitted) {
-            return TextFormField(
-              controller: ctrl,
-              focusNode: focus,
-              decoration: InputDecoration(
-                labelText: 'Buscar Paciente *',
-                prefixIcon: const Icon(Icons.person_search_rounded),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                filled: true,
-                fillColor: AppColors.gray50,
-              ),
-              validator: (v) => _pacienteId == null ? 'Seleccione un paciente' : null,
-            );
-          },
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Checkbox(
+              value: _pacienteNuevoManual,
+              onChanged: (val) {
+                setState(() {
+                  _pacienteNuevoManual = val ?? false;
+                  if (_pacienteNuevoManual) {
+                    _pacienteId = null;
+                    _pacienteSearchCtrl.clear();
+                  } else {
+                    _pacienteManualCtrl.clear();
+                  }
+                });
+              },
+            ),
+            const Text('Paciente Nuevo (Ingreso Manual)', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        _pacienteNuevoManual ? 
+          TextFormField(
+            controller: _pacienteManualCtrl,
+            decoration: InputDecoration(
+              labelText: 'Nombre y Apellidos del Paciente *',
+              prefixIcon: const Icon(Icons.person_add_alt_1_rounded),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingrese el nombre del paciente' : null,
+          )
+        : Consumer<PacientesProvider>(
+            builder: (context, prov, _) {
+              return Autocomplete<Paciente>(
+                displayStringForOption: (p) => "${p.nombre} ${p.apellidos}",
+                initialValue: TextEditingValue(text: _pacienteSearchCtrl.text),
+                optionsBuilder: (textValue) {
+                  if (textValue.text.isEmpty) return const Iterable<Paciente>.empty();
+                  return prov.pacientes.where((p) => 
+                    p.nombre.toLowerCase().contains(textValue.text.toLowerCase()) || 
+                    p.apellidos.toLowerCase().contains(textValue.text.toLowerCase()));
+                },
+                onSelected: (p) {
+                  _pacienteId = p.id;
+                  _pacienteSearchCtrl.text = "${p.nombre} ${p.apellidos}";
+                },
+                fieldViewBuilder: (context, ctrl, focus, onFieldSubmitted) {
+                  if (ctrl.text != _pacienteSearchCtrl.text && _pacienteSearchCtrl.text.isNotEmpty) {
+                    ctrl.text = _pacienteSearchCtrl.text;
+                  }
+                  return TextFormField(
+                    controller: ctrl,
+                    focusNode: focus,
+                    decoration: InputDecoration(
+                      labelText: 'Buscar Paciente *',
+                      prefixIcon: const Icon(Icons.person_search_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: AppColors.gray50,
+                    ),
+                    validator: (v) => _pacienteId == null ? 'Seleccione un paciente' : null,
+                  );
+                },
+              );
+            },
+          ),
+      ],
     );
   }
 
   Widget _buildMetodosPagoRapido(bool isMobile) {
+    final list = [
+      _botonPago('EFECTIVO', Icons.payments_rounded, Colors.green),
+      _botonPago('YAPE / PLIN', Icons.qr_code_scanner_rounded, Colors.purple),
+      _botonPago('TARJETA', Icons.credit_card_rounded, Colors.blue),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("Método de Pago", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.gray700)),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _botonPago('EFECTIVO', Icons.payments_rounded, Colors.green),
-            _botonPago('YAPE / PLIN', Icons.qr_code_scanner_rounded, Colors.purple),
-            _botonPago('TARJETA', Icons.credit_card_rounded, Colors.blue),
-          ],
-        ),
+        isMobile
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: list.map((w) => Padding(padding: const EdgeInsets.only(right: 8), child: w)).toList(),
+                ),
+              )
+            : Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: list,
+              ),
       ],
     );
   }

@@ -53,9 +53,29 @@ public class VentaService {
             }
         }
 
-        // 1. Validar que existan paciente y vendedor
-        Paciente paciente = pacienteRepository.findById(dto.getPacienteId())
-                .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + dto.getPacienteId()));
+        // 1. Validar/Crear paciente y validar vendedor
+        Paciente paciente;
+        if (dto.getPacienteId() == null || dto.getPacienteId() <= 0) {
+            if (dto.getPacienteNombreManual() == null || dto.getPacienteNombreManual().trim().isEmpty()) {
+                throw new RuntimeException("Paciente ID no especificado y nombre manual vacío");
+            }
+            paciente = new Paciente();
+            String nombreCompleto = dto.getPacienteNombreManual().trim();
+            int primerEspacio = nombreCompleto.indexOf(' ');
+            if (primerEspacio > 0) {
+                paciente.setNombre(nombreCompleto.substring(0, primerEspacio));
+                paciente.setApellidos(nombreCompleto.substring(primerEspacio + 1));
+            } else {
+                paciente.setNombre(nombreCompleto);
+                paciente.setApellidos("-");
+            }
+            paciente.setTienda(dto.getTienda());
+            paciente.setEsDestacado(false);
+            paciente = pacienteRepository.save(paciente);
+        } else {
+            paciente = pacienteRepository.findById(dto.getPacienteId())
+                    .orElseThrow(() -> new RuntimeException("Paciente no encontrado: " + dto.getPacienteId()));
+        }
 
         Usuario vendedor = usuarioRepository.findById(dto.getVendedorId())
                 .orElseThrow(() -> new RuntimeException("Vendedor no encontrado: " + dto.getVendedorId()));
@@ -64,16 +84,24 @@ public class VentaService {
         String codigoBarras = "V-" + ahora.format(DateTimeFormatter.ofPattern("yyMMddHHmmss")) + "-" + (int)(Math.random() * 100);
 
         // 3. Crear la venta (control de dinero)
-        BigDecimal saldo = dto.getMontoTotal().subtract(dto.getMontoACuenta());
+        BigDecimal total = dto.getMontoTotal() != null ? dto.getMontoTotal() : BigDecimal.ZERO;
+        BigDecimal acuenta = dto.getMontoACuenta() != null ? dto.getMontoACuenta() : BigDecimal.ZERO;
+        com.optica.api.models.enums.TipoVenta tipoVenta = dto.getTipoVenta() != null ? dto.getTipoVenta() : com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO;
+
+        if (tipoVenta == com.optica.api.models.enums.TipoVenta.ORDEN_VENTA && acuenta.compareTo(BigDecimal.ZERO) == 0) {
+            acuenta = total;
+        }
+
+        BigDecimal saldo = total.subtract(acuenta);
 
         Venta venta = new Venta();
         venta.setCodigoBarras(codigoBarras);
         venta.setCliente(paciente);
         venta.setVendedor(vendedor);
-        venta.setTipoVenta(dto.getTipoVenta() != null ? dto.getTipoVenta() : com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO);
+        venta.setTipoVenta(tipoVenta);
         venta.setTienda(dto.getTienda());
-        venta.setMontoTotal(dto.getMontoTotal());
-        venta.setMontoACuenta(dto.getMontoACuenta());
+        venta.setMontoTotal(total);
+        venta.setMontoACuenta(acuenta);
         venta.setMontoSaldo(saldo);
         venta.setMetodoPago(dto.getMetodoPago());
         venta.setFecha(ahora);
@@ -81,7 +109,7 @@ public class VentaService {
         // Estado de pago automático
         if (saldo.compareTo(BigDecimal.ZERO) <= 0) {
             venta.setEstado(EstadoPago.PAGADO);
-        } else if (dto.getMontoACuenta().compareTo(BigDecimal.ZERO) > 0) {
+        } else if (acuenta.compareTo(BigDecimal.ZERO) > 0) {
             venta.setEstado(EstadoPago.PARCIAL);
         } else {
             venta.setEstado(EstadoPago.PENDIENTE);
@@ -163,7 +191,7 @@ public class VentaService {
             }
         }
 
-        // Crear orden de trabajo solo si es fabricación
+        // Crear orden de trabajo según tipo de venta (para que aparezca en el listado y sea imprimible/auditable)
         if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_TRABAJO) {
             String codigoOrden = "OT-" + ahora.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
             OrdenTrabajo orden = new OrdenTrabajo();
@@ -171,8 +199,8 @@ public class VentaService {
             orden.setCliente(paciente);
             orden.setVenta(ventaGuardada);
             orden.setTienda(dto.getTienda());
-            orden.setMontoTotal(dto.getMontoTotal());
-            orden.setMontoACuenta(dto.getMontoACuenta());
+            orden.setMontoTotal(total);
+            orden.setMontoACuenta(acuenta);
             orden.setMontoSaldo(saldo);
             orden.setEstado(EstadoTrabajo.PENDIENTE);
             orden.setFecha(ahora);
@@ -194,13 +222,49 @@ public class VentaService {
             orden.setObservaciones(dto.getObservaciones());
             orden.setMetodoPago(dto.getMetodoPago());
             ordenTrabajoRepository.save(orden);
+        } else if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_VENTA) {
+            String codigoOrden = "OV-" + ahora.format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+            
+            // Construir la descripción de los productos para guardarlo en tipoLuna
+            StringBuilder sb = new StringBuilder();
+            if (dto.getProductos() != null) {
+                for (NuevaVentaCompletaDTO.DetalleVentaAlmacenDTO itemDto : dto.getProductos()) {
+                    String descProd = "";
+                    if (itemDto.getAlmacenId() != null) {
+                        Almacen producto = almacenRepository.findById(itemDto.getAlmacenId()).orElse(null);
+                        descProd = (producto != null) ? producto.getNombre() : "Producto #" + itemDto.getAlmacenId();
+                    } else {
+                        descProd = itemDto.getNombreProductoManual();
+                    }
+                    if (sb.length() > 0) sb.append(", ");
+                    sb.append(itemDto.getCantidad()).append("x ").append(descProd);
+                }
+            } else {
+                sb.append("VENTA DE PRODUCTOS GENERAL");
+            }
+
+            OrdenTrabajo orden = new OrdenTrabajo();
+            orden.setNumeroOrden(codigoOrden);
+            orden.setCliente(paciente);
+            orden.setVenta(ventaGuardada);
+            orden.setTienda(dto.getTienda());
+            orden.setMontoTotal(total);
+            orden.setMontoACuenta(acuenta);
+            orden.setMontoSaldo(saldo);
+            orden.setEstado(EstadoTrabajo.ENTREGADO); // Ya se entregó porque es venta directa
+            orden.setFecha(ahora);
+            orden.setTipoLuna(sb.toString()); // Guardamos la lista de productos aquí para el ticket
+            orden.setObservaciones(dto.getObservaciones());
+            orden.setMetodoPago(dto.getMetodoPago());
+            ordenTrabajoRepository.save(orden);
         }
 
         // 6. Registrar ingreso en caja
-        if (dto.getMontoACuenta().compareTo(BigDecimal.ZERO) > 0) {
+        BigDecimal montoCaja = venta.getMontoACuenta();
+        if (montoCaja.compareTo(BigDecimal.ZERO) > 0) {
             MovimientoCaja ingreso = new MovimientoCaja();
             ingreso.setTipo(TipoMovimiento.ENTRADA);
-            ingreso.setMonto(dto.getMontoACuenta());
+            ingreso.setMonto(montoCaja);
             ingreso.setDescripcion("Venta (" + dto.getMetodoPago() + ") - Cód: " + codigoBarras);
             ingreso.setUsuario(vendedor);
             ingreso.setTienda(dto.getTienda());

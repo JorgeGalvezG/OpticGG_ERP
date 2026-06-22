@@ -18,6 +18,7 @@ public class NuevaVentaCompletaDTO {
     private String metodoPago;
     private TipoVenta tipoVenta;
     private String fechaManual;
+    private String pacienteNombreManual;
 
     // Datos para ORDEN_TRABAJO (Fabricación)
     private String graduacionOd;
