@@ -107,4 +107,7 @@ public class Venta {
 
     @Column(columnDefinition = "TEXT")
     private String observaciones;
+
+    @Column(name = "especialista", length = 100)
+    private String especialista;
 }

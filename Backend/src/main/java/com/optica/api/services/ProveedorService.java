@@ -20,6 +20,10 @@ public class ProveedorService {
         return proveedorRepository.findByTienda(tienda);
     }
 
+    public List<Proveedor> listarTodos() {
+        return proveedorRepository.findAll();
+    }
+
     public Proveedor guardarProveedor(Proveedor proveedor) {
         if (proveedor.getContactos() != null) {
             for (ProveedorContacto c : proveedor.getContactos()) {

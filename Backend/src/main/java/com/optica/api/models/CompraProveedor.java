@@ -56,4 +56,8 @@ public class CompraProveedor {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     @Column(name = "fecha_entrega")
     private LocalDateTime fechaEntrega;
+
+    @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("compra")
+    private java.util.List<CompraProveedorDetalle> detalles = new java.util.ArrayList<>();
 }

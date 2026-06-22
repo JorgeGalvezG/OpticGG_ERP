@@ -9,6 +9,7 @@ class AuthProvider with ChangeNotifier {
   String? _username;
   String? _rol;
   String? _tienda;
+  String? _tiendaSeleccionada;
   bool _isLoading = false;
 
   // Getters (para que la interfaz visual pueda leer estos datos)
@@ -18,6 +19,18 @@ class AuthProvider with ChangeNotifier {
   String? get username => _username;
   String? get rol => _rol;
   String? get tienda => _tienda;
+
+  String get tiendaSeleccionada {
+    if (_rol == 'ADMIN') {
+      return _tiendaSeleccionada ?? 'ALL';
+    }
+    return _tienda ?? 'C1';
+  }
+
+  void setTiendaSeleccionada(String value) {
+    _tiendaSeleccionada = value;
+    notifyListeners();
+  }
 
   // 1. REVISAR SI YA HAY SESIÓN GUARDADA
   Future<bool> checkLoginStatus() async {

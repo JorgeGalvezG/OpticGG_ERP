@@ -13,6 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @SpringBootApplication
 public class OpticgApiApplication {
 
+	@jakarta.annotation.PostConstruct
+	public void init() {
+		java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/Lima"));
+	}
+
 	public static void main(String[] args) {
 		SpringApplication.run(OpticgApiApplication.class, args);
 	}

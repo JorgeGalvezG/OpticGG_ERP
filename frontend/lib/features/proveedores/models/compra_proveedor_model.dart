@@ -52,12 +52,14 @@ class CompraProveedor {
 
 class CompraDetalle {
   final int id;
+  final int? almacenId;
   final String? productoNombre;
   final int cantidad;
   final double precioUnitario;
 
   CompraDetalle({
     required this.id,
+    this.almacenId,
     this.productoNombre,
     required this.cantidad,
     required this.precioUnitario,
@@ -66,6 +68,7 @@ class CompraDetalle {
   factory CompraDetalle.fromJson(Map<String, dynamic> json) {
     return CompraDetalle(
       id: json['id'],
+      almacenId: json['almacen'] != null ? json['almacen']['id'] : null,
       productoNombre: json['productoNombre'] ?? (json['almacen'] != null ? json['almacen']['nombre'] : 'Gasto Directo'),
       cantidad: json['cantidad'],
       precioUnitario: (json['precioUnitario'] as num).toDouble(),

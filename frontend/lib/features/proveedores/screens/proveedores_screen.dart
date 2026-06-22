@@ -32,6 +32,8 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
   @override
   Widget build(BuildContext context) {
     final dev = Provider.of<DeveloperProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
+    final isAdmin = auth.rol == 'ADMIN';
     final isMobile = MediaQuery.of(context).size.width < 800;
 
     return SingleChildScrollView(
@@ -57,7 +59,9 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                       ],
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => const _NuevoProveedorDialog()),
+                      onPressed: auth.rol == 'ADMIN' 
+                          ? () => showDialog(context: context, barrierDismissible: false, builder: (context) => const _NuevoProveedorDialog())
+                          : null,
                       icon: const Icon(Icons.domain_add_rounded, size: 18),
                       label: Text(isMobile ? 'Nuevo' : 'Nuevo Proveedor'),
                       style: ElevatedButton.styleFrom(backgroundColor: dev.isDevMode ? AppColors.nebulaPurple : AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
@@ -70,6 +74,9 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                   if (prov.isLoading) return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
                   if (prov.proveedores.isEmpty) return Center(child: Padding(padding: const EdgeInsets.all(40), child: Text('No hay proveedores registrados', style: TextStyle(color: dev.isDevMode ? Colors.white38 : AppColors.gray500))));
 
+                  final auth = Provider.of<AuthProvider>(context, listen: false);
+                  final isAdmin = auth.rol == 'ADMIN';
+
                   if (isMobile) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -78,7 +85,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: prov.proveedores.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) => _buildProveedorCard(prov.proveedores[index], dev.isDevMode, isMobile),
+                        itemBuilder: (context, index) => _buildProveedorCard(prov.proveedores[index], dev.isDevMode, isMobile, isAdmin),
                       ),
                     );
                   }
@@ -94,7 +101,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                       childAspectRatio: 1.3,
                     ),
                     itemCount: prov.proveedores.length,
-                    itemBuilder: (context, index) => _buildProveedorCard(prov.proveedores[index], dev.isDevMode, isMobile),
+                    itemBuilder: (context, index) => _buildProveedorCard(prov.proveedores[index], dev.isDevMode, isMobile, isAdmin),
                   );
                 },
               ),
@@ -106,7 +113,7 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
     );
   }
 
-  Widget _buildProveedorCard(Proveedor p, bool isDev, bool isMobile) {
+  Widget _buildProveedorCard(Proveedor p, bool isDev, bool isMobile, bool isAdmin) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -126,10 +133,11 @@ class _ProveedoresScreenState extends State<ProveedoresScreen> {
                   CircleAvatar(backgroundColor: isDev ? AppColors.nebulaPurple.withOpacity(0.2) : AppColors.primaryLight, child: Icon(Icons.apartment_rounded, color: isDev ? AppColors.starlight : AppColors.primary, size: 20)),
                   const SizedBox(width: 12),
                   Expanded(child: Text(p.nombreEmpresa, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDev ? Colors.white : AppColors.gray900), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  IconButton(
-                    icon: Icon(Icons.edit_rounded, size: 18, color: isDev ? AppColors.starlight : AppColors.primary),
-                    onPressed: () => showDialog(context: context, builder: (context) => _NuevoProveedorDialog(proveedor: p)),
-                  ),
+                  if (isAdmin)
+                    IconButton(
+                      icon: Icon(Icons.edit_rounded, size: 18, color: isDev ? AppColors.starlight : AppColors.primary),
+                      onPressed: () => showDialog(context: context, builder: (context) => _NuevoProveedorDialog(proveedor: p)),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -278,35 +286,94 @@ class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Descripción: ${c.descripcion}', style: const TextStyle(fontSize: 13)),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Sede: ${c.tienda}  •  Entrega: ${c.estadoEntrega}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.gray600)),
+                                      Text(c.fechaEntrega != null ? 'Recibido: ${c.fechaEntrega}' : 'Sin entregar', style: const TextStyle(fontSize: 12, color: AppColors.gray500)),
+                                    ],
+                                  ),
                                   const SizedBox(height: 8),
-                                  const Text('Productos Detallados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                  const SizedBox(height: 4),
-                                  if (c.detalles != null)
-                                    ...c.detalles!.map((d) => Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 2),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text('${d.cantidad}x ${d.productoNombre}', style: const TextStyle(fontSize: 12)),
-                                          Text('S/ ${(d.cantidad * d.precioUnitario).toStringAsFixed(2)}', style: const TextStyle(fontSize: 12)),
-                                        ],
-                                      ),
-                                    )),
-                                  const Divider(),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Pagado: S/ ${c.montoPagado.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.bold)),
+                                      Text('Total: S/ ${c.monto.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text('Descripción: ${c.descripcion}', style: const TextStyle(fontSize: 13)),
+                                  const SizedBox(height: 12),
+                                  const Text('Productos Detallados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary)),
+                                  const SizedBox(height: 6),
+                                  if (c.detalles != null && c.detalles!.isNotEmpty)
+                                    Table(
+                                      columnWidths: const {
+                                        0: FlexColumnWidth(3),
+                                        1: FlexColumnWidth(1),
+                                        2: FlexColumnWidth(1),
+                                        3: FlexColumnWidth(1),
+                                      },
+                                      children: [
+                                        const TableRow(
+                                          children: [
+                                            Text('Producto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text('Cant.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text('P. Unit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                            Text('Subtotal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                          ],
+                                        ),
+                                        ...c.detalles!.map((d) => TableRow(
+                                          children: [
+                                            Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text(d.productoNombre ?? 'Gasto Directo', style: const TextStyle(fontSize: 11))),
+                                            Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('${d.cantidad}', style: const TextStyle(fontSize: 11))),
+                                            Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('S/ ${d.precioUnitario.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11))),
+                                            Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('S/ ${(d.cantidad * d.precioUnitario).toStringAsFixed(2)}', style: const TextStyle(fontSize: 11))),
+                                          ],
+                                        )),
+                                      ],
+                                    )
+                                  else
+                                    const Text('No hay productos detallados registrados', style: TextStyle(fontSize: 12, color: AppColors.gray400, fontStyle: FontStyle.italic)),
+                                  const Divider(height: 24),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text('Saldo Pendiente: S/ ${c.montoSaldo.toStringAsFixed(2)}', style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold)),
-                                      if (c.estadoEntrega == 'SOLICITADO')
-                                        ElevatedButton(
-                                          onPressed: () async {
-                                            final exito = await prov.registrarEntrega(c.id);
-                                            if (exito) prov.fetchHistorialCompras(widget.proveedor.id!);
-                                          },
-                                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0)),
-                                          child: const Text('Marcar Llegada', style: TextStyle(fontSize: 10)),
-                                        ),
+                                      Row(
+                                        children: [
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              showDialog(
+                                                context: context,
+                                                barrierDismissible: false,
+                                                builder: (context) => _CompraDetalladaDialog(
+                                                  proveedor: widget.proveedor,
+                                                  compraRepetida: c,
+                                                ),
+                                              );
+                                            },
+                                            icon: const Icon(Icons.repeat_rounded, size: 12),
+                                            label: const Text('Repetir Compra', style: TextStyle(fontSize: 10)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.primary,
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          if (c.estadoEntrega == 'SOLICITADO')
+                                            ElevatedButton(
+                                              onPressed: () async {
+                                                final exito = await prov.registrarEntrega(c.id);
+                                                if (exito) prov.fetchHistorialCompras(widget.proveedor.id!);
+                                              },
+                                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                              child: const Text('Marcar Llegada', style: TextStyle(fontSize: 10)),
+                                            ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -334,7 +401,8 @@ class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
 
 class _CompraDetalladaDialog extends StatefulWidget {
   final Proveedor proveedor;
-  const _CompraDetalladaDialog({required this.proveedor});
+  final CompraProveedor? compraRepetida;
+  const _CompraDetalladaDialog({required this.proveedor, this.compraRepetida});
 
   @override
   State<_CompraDetalladaDialog> createState() => _CompraDetalladaDialogState();
@@ -345,6 +413,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
   final _formKey = GlobalKey<FormState>();
   final _tituloController = TextEditingController(text: 'Compra de Lentes');
   final _montoPagadoController = TextEditingController(text: '0');
+  String? _selectedTienda;
   
   final List<Map<String, dynamic>> _itemsAlmacen = [];
   final List<Map<String, dynamic>> _itemsDirectos = [];
@@ -359,8 +428,31 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(auth.tienda ?? 'C1');
+      _selectedTienda = widget.compraRepetida?.tienda ?? (auth.tiendaSeleccionada == 'ALL' ? 'C1' : auth.tiendaSeleccionada);
+      Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(_selectedTienda!);
     });
+
+    if (widget.compraRepetida != null && widget.compraRepetida!.detalles != null) {
+      _tituloController.text = 'Repetir: ${widget.compraRepetida!.titulo ?? "Compra #${widget.compraRepetida!.id}"}';
+      for (var d in widget.compraRepetida!.detalles!) {
+        if (d.almacenId != null) {
+          _itemsAlmacen.add({
+            'almacenId': d.almacenId,
+            'nombre': d.productoNombre ?? 'Producto',
+            'cantidad': d.cantidad,
+            'precioUnitario': d.precioUnitario,
+          });
+        } else {
+          _itemsDirectos.add({
+            'almacenId': null,
+            'nombre': d.productoNombre ?? 'Gasto Directo',
+            'cantidad': d.cantidad,
+            'precioUnitario': d.precioUnitario,
+          });
+        }
+      }
+      _recalcularTotal();
+    }
   }
 
   @override
@@ -407,6 +499,24 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
                 decoration: const InputDecoration(labelText: 'Título de la Compra', border: OutlineInputBorder()),
                 validator: (v) => v!.isEmpty ? 'Requerido' : null,
               ),
+              if (Provider.of<AuthProvider>(context, listen: false).rol == 'ADMIN') ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  decoration: const InputDecoration(labelText: 'Tienda / Sede *', prefixIcon: Icon(Icons.store_rounded), border: OutlineInputBorder()),
+                  value: _selectedTienda,
+                  items: const [
+                    DropdownMenuItem(value: 'C1', child: Text('Sede C1')),
+                    DropdownMenuItem(value: 'C2', child: Text('Sede C2')),
+                    DropdownMenuItem(value: 'C3', child: Text('Sede C3')),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedTienda = v;
+                    });
+                    Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(v!);
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               TabBar(
                 controller: _tabController,
@@ -566,7 +676,7 @@ class _CompraDetalladaDialogState extends State<_CompraDetalladaDialog> with Sin
       'montoTotal': _totalCompra,
       'montoPagado': double.tryParse(_montoPagadoController.text) ?? 0,
       'descripcion': 'Compra detallada: ${_itemsAlmacen.length} stock, ${_itemsDirectos.length} directos',
-      'tienda': auth.tienda ?? 'C1',
+      'tienda': _selectedTienda ?? auth.tienda ?? 'C1',
       'items': allItems.map((i) => {
         'almacenId': i['almacenId'],
         'cantidad': i['cantidad'],
@@ -593,6 +703,7 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
   final _formKey = GlobalKey<FormState>();
   final _empresaController = TextEditingController();
   final _rucController = TextEditingController();
+  String? _selectedTienda;
   
   List<ProveedorContacto> _contactos = [];
 
@@ -618,6 +729,8 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = auth.rol == 'ADMIN';
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
@@ -642,6 +755,19 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
                   decoration: const InputDecoration(labelText: 'Nombre de la Empresa *', prefixIcon: Icon(Icons.business_rounded), border: OutlineInputBorder()), 
                   validator: (v) => v!.isEmpty ? 'Requerido' : null
                 ),
+                if (isAdmin) ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'Tienda / Sede *', prefixIcon: Icon(Icons.store_rounded), border: OutlineInputBorder()),
+                    value: _selectedTienda,
+                    items: const [
+                      DropdownMenuItem(value: 'C1', child: Text('Sede C1')),
+                      DropdownMenuItem(value: 'C2', child: Text('Sede C2')),
+                      DropdownMenuItem(value: 'C3', child: Text('Sede C3')),
+                    ],
+                    onChanged: (v) => setState(() => _selectedTienda = v),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _rucController, 
@@ -721,7 +847,7 @@ class _NuevoProveedorDialogState extends State<_NuevoProveedorDialog> {
         id: widget.proveedor?.id,
         nombreEmpresa: _empresaController.text.trim(), 
         ruc: _rucController.text.trim(), 
-        tienda: auth.tienda ?? 'C1',
+        tienda: _selectedTienda ?? auth.tienda ?? 'C1',
         contactos: _contactos.where((c) => c.nombre.isNotEmpty).toList(),
       );
 

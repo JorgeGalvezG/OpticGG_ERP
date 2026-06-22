@@ -48,6 +48,10 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
   }
 
   void _showProductoDialog(BuildContext context, {Almacen? producto}) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = auth.rol == 'ADMIN';
+    String selectedTienda = producto?.tienda ?? (auth.tiendaSeleccionada == 'ALL' ? 'C1' : auth.tiendaSeleccionada);
+
     final formKey = GlobalKey<FormState>();
     final nombreCtrl = TextEditingController(text: producto?.nombre);
     final codigoCtrl = TextEditingController(text: producto?.codigoBarras);
@@ -185,6 +189,20 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(labelText: 'Precio Venta S/ (Sugerido)', prefixIcon: Icon(Icons.sell_rounded)),
                     ),
+                    if (isAdmin) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(labelText: 'Tienda / Sede *', prefixIcon: Icon(Icons.store_rounded), border: OutlineInputBorder()),
+                        value: selectedTienda,
+                        items: const [
+                          DropdownMenuItem(value: 'C1', child: Text('Sede C1')),
+                          DropdownMenuItem(value: 'C2', child: Text('Sede C2')),
+                          DropdownMenuItem(value: 'C3', child: Text('Sede C3')),
+                        ],
+                        onChanged: (v) => setDialogState(() => selectedTienda = v!),
+                        validator: (v) => v == null ? 'Seleccione' : null,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -196,7 +214,6 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                final auth = Provider.of<AuthProvider>(context, listen: false);
                 final prov = Provider.of<AlmacenProvider>(context, listen: false);
                 final data = {
                   'nombre': nombreCtrl.text,
@@ -207,7 +224,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                   'precioCompra': double.tryParse(precioCompraCtrl.text) ?? 0,
                   'precioVenta': double.tryParse(precioVentaCtrl.text) ?? 0,
                   'fotoUrl': fotoUrlCtrl.text,
-                  'tienda': auth.tienda ?? 'C1',
+                  'tienda': selectedTienda,
                 };
                 bool exito;
                 if (producto == null) {
@@ -217,7 +234,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                 }
                 if (exito) {
                   Navigator.pop(context);
-                  prov.fetchProductos(auth.tienda ?? 'C1');
+                  prov.fetchProductos(auth.tiendaSeleccionada);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(producto == null ? 'Producto guardado' : 'Producto actualizado'), backgroundColor: AppColors.success));
                 }
               },
@@ -231,6 +248,7 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     final almacenProv = Provider.of<AlmacenProvider>(context);
     final productosFiltrados = almacenProv.productos.where((p) {
       return p.nombre.toLowerCase().contains(_filter.toLowerCase()) ||
@@ -254,17 +272,18 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                   Text('Gestión de productos, monturas y stock', style: TextStyle(fontSize: 14, color: AppColors.gray500)),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: () => _showProductoDialog(context),
-                icon: const Icon(Icons.add_shopping_cart_rounded),
-                label: const Text('Nuevo Producto'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              if (auth.rol == 'ADMIN')
+                ElevatedButton.icon(
+                  onPressed: () => _showProductoDialog(context),
+                  icon: const Icon(Icons.add_shopping_cart_rounded),
+                  label: const Text('Nuevo Producto'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -327,6 +346,9 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final isAdmin = auth.rol == 'ADMIN';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -347,19 +369,20 @@ class _ProductCard extends StatelessWidget {
                     image: DecorationImage(image: _getImageProvider(producto.fotoUrl), fit: BoxFit.cover),
                   ),
                 ),
-                Positioned(
-                  top: 8, right: 8,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white.withOpacity(0.8),
-                    child: IconButton(
-                      icon: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
-                      onPressed: () {
-                        final state = context.findAncestorStateOfType<_AlmacenScreenState>();
-                        state?._showProductoDialog(context, producto: producto);
-                      },
+                if (isAdmin)
+                  Positioned(
+                    top: 8, right: 8,
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white.withOpacity(0.8),
+                      child: IconButton(
+                        icon: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
+                        onPressed: () {
+                          final state = context.findAncestorStateOfType<_AlmacenScreenState>();
+                          state?._showProductoDialog(context, producto: producto);
+                        },
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

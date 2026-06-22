@@ -32,7 +32,8 @@ class AlmacenProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.get('/almacen/tienda/$tienda');
+      final String url = (tienda == 'ALL') ? '/almacen' : '/almacen/tienda/$tienda';
+      final response = await ApiService.get(url);
       if (response != null && response is List) {
         _productos = response.map((item) => Almacen.fromJson(item as Map<String, dynamic>)).toList();
       }

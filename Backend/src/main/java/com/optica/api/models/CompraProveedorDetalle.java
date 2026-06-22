@@ -16,11 +16,16 @@ public class CompraProveedorDetalle {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "compra_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"detalles", "hibernateLazyInitializer", "handler"})
     private CompraProveedor compra;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "almacen_id", nullable = false)
+    @JoinColumn(name = "almacen_id", nullable = true)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Almacen almacen;
+
+    @Column(name = "producto_nombre")
+    private String productoNombre;
 
     @Column(nullable = false)
     private Integer cantidad;

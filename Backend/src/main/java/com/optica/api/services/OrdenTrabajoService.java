@@ -23,9 +23,17 @@ public class OrdenTrabajoService {
         return ordenRepository.findByTiendaAndEstado(tienda, estado, PageRequest.of(page, size));
     }
 
+    public Page<OrdenTrabajo> listarTodasPorEstado(EstadoTrabajo estado, int page, int size) {
+        return ordenRepository.findByEstado(estado, PageRequest.of(page, size));
+    }
+
     // Para el Tablero Kanban
     public List<OrdenTrabajo> obtenerTodasPorTienda(Tienda tienda) {
         return ordenRepository.findByTienda(tienda);
+    }
+
+    public List<OrdenTrabajo> obtenerTodas() {
+        return ordenRepository.findAll();
     }
 
     @Transactional

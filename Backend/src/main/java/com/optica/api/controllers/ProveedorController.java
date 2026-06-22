@@ -18,9 +18,12 @@ public class ProveedorController {
     private ProveedorService proveedorService;
 
     // GET: /api/proveedores/tienda/C1
-    @GetMapping("/tienda/{tienda}")
-    public ResponseEntity<List<Proveedor>> listarProveedores(@PathVariable Tienda tienda) {
-        return ResponseEntity.ok(proveedorService.listarPorTienda(tienda));
+    @GetMapping("/tienda/{tiendaStr}")
+    public ResponseEntity<List<Proveedor>> listarProveedores(@PathVariable String tiendaStr) {
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(proveedorService.listarTodos());
+        }
+        return ResponseEntity.ok(proveedorService.listarPorTienda(Tienda.valueOf(tiendaStr.toUpperCase())));
     }
 
     // POST: /api/proveedores

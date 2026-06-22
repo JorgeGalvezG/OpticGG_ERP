@@ -64,4 +64,16 @@ public class PacienteService {
     public List<Paciente> listarVipPorTienda(Tienda tienda) {
         return pacienteRepository.findByTiendaAndEsDestacadoTrue(tienda);
     }
+
+    public Page<Paciente> listarTodos(int page, int size) {
+        return pacienteRepository.findAll(PageRequest.of(page, size));
+    }
+
+    public Page<Paciente> buscarTodos(String termino, int page, int size) {
+        return pacienteRepository.buscarPorTerminoGlobal(termino, PageRequest.of(page, size));
+    }
+
+    public List<Paciente> listarTodosVip() {
+        return pacienteRepository.findByEsDestacadoTrue();
+    }
 }

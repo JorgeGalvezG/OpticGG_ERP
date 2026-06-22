@@ -37,6 +37,7 @@ public class NuevaVentaCompletaDTO {
     private BigDecimal precioMontura;
     private Boolean esMonturaCliente;
     private String observaciones;
+    private String especialista;
 
     // Datos para ORDEN_VENTA (Productos de Almacén)
     private List<DetalleVentaAlmacenDTO> productos;

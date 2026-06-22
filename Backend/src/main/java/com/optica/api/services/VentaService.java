@@ -139,6 +139,7 @@ public class VentaService {
             historial.setMontura(dto.getMontura());
             historial.setEsMonturaCliente(dto.getEsMonturaCliente());
             historial.setObservaciones(dto.getObservaciones());
+            historial.setEspecialista(dto.getEspecialista());
             historialClinicoRepository.save(historial);
 
             venta.setGraduacionOd(dto.getGraduacionOd());
@@ -157,6 +158,7 @@ public class VentaService {
             venta.setPrecioMontura(dto.getPrecioMontura());
             venta.setEsMonturaCliente(dto.getEsMonturaCliente());
             venta.setObservaciones(dto.getObservaciones());
+            venta.setEspecialista(dto.getEspecialista());
         }
 
         Venta ventaGuardada = ventaRepository.save(venta);
@@ -220,6 +222,7 @@ public class VentaService {
             orden.setPrecioMontura(dto.getPrecioMontura());
             orden.setEsMonturaCliente(dto.getEsMonturaCliente());
             orden.setObservaciones(dto.getObservaciones());
+            orden.setEspecialista(dto.getEspecialista());
             orden.setMetodoPago(dto.getMetodoPago());
             ordenTrabajoRepository.save(orden);
         } else if (venta.getTipoVenta() == com.optica.api.models.enums.TipoVenta.ORDEN_VENTA) {

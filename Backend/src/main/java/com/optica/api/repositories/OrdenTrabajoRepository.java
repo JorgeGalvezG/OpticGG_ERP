@@ -12,8 +12,9 @@ import java.util.List; // Importante
 @Repository
 public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long> {
 
-    // 1. Para la Vista de Lista
     Page<OrdenTrabajo> findByTiendaAndEstado(Tienda tienda, EstadoTrabajo estado, Pageable pageable);
+
+    Page<OrdenTrabajo> findByEstado(EstadoTrabajo estado, Pageable pageable);
 
     // 2.Para la Vista de Tablero Kanban (Trae todo de un golpe)
     List<OrdenTrabajo> findByTienda(Tienda tienda);

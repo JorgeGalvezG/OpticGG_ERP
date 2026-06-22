@@ -18,6 +18,8 @@ public interface MovimientoCajaRepository extends JpaRepository<MovimientoCaja, 
     // ── LISTADO GENERAL ──────────────────────────────────────────────────────
     List<MovimientoCaja> findByTiendaOrderByFechaDesc(Tienda tienda);
 
+    List<MovimientoCaja> findAllByOrderByFechaDesc();
+
     // ── HOY (por tienda) ─────────────────────────────────────────────────────
     @Query("SELECT COALESCE(SUM(m.monto), 0) FROM MovimientoCaja m " +
             "WHERE m.tienda = :tienda AND m.tipo = :tipo " +

@@ -22,6 +22,10 @@ public class MovimientoCajaService {
         return cajaRepository.findByTiendaOrderByFechaDesc(tienda);
     }
 
+    public List<MovimientoCaja> obtenerTodos() {
+        return cajaRepository.findAllByOrderByFechaDesc();
+    }
+
 
     // 2. Registrar un gasto o ingreso manual
     public MovimientoCaja registrarMovimientoManual(NuevoMovimientoDTO dto) {

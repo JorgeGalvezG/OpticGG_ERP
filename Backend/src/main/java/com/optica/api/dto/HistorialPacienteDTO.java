@@ -33,5 +33,6 @@ public class HistorialPacienteDTO {
     private String montura;
     private Boolean esMonturaCliente;
     private String observaciones;
+    private String especialista;
     private String fechaConsulta;
 }

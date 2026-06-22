@@ -31,6 +31,7 @@ class NuevaVentaDTO {
   final double? precioMontura;
 
   final String? observaciones;
+  final String? especialista;
 
   // Datos para ORDEN_VENTA (Productos)
   final List<DetalleVentaAlmacenDTO>? productos;
@@ -61,6 +62,7 @@ class NuevaVentaDTO {
     this.montura,
     this.precioMontura,
     this.observaciones,
+    this.especialista,
     this.productos,
   });
 
@@ -95,6 +97,7 @@ class NuevaVentaDTO {
         'montura': montura ?? '',
         'precioMontura': precioMontura ?? 0.0,
         'observaciones': observaciones ?? '',
+        'especialista': especialista ?? '',
       });
     } else {
       map['productos'] = productos?.map((p) => p.toJson()).toList();

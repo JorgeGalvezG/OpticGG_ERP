@@ -22,8 +22,8 @@ class _CajaScreenState extends State<CajaScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final tienda = Provider.of<AuthProvider>(context, listen: false).tienda ?? 'C1';
-      Provider.of<CajaProvider>(context, listen: false).fetchMovimientos(tienda);
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      Provider.of<CajaProvider>(context, listen: false).fetchMovimientos(auth.tiendaSeleccionada);
     });
   }
 
@@ -254,6 +254,7 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
   String _tipoSeleccionado = 'ENTRADA';
   final _montoController = TextEditingController();
   final _descripcionController = TextEditingController();
+  String? _selectedTienda;
 
   @override
   void dispose() {
@@ -266,6 +267,8 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    _selectedTienda ??= (auth.tiendaSeleccionada == 'ALL' ? 'C1' : auth.tiendaSeleccionada);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -321,6 +324,25 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    if (auth.rol == 'ADMIN') ...[
+                      const Text('Sede *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.danger)),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        value: _selectedTienda,
+                        items: const [
+                          DropdownMenuItem(value: 'C1', child: Text('Sede C1')),
+                          DropdownMenuItem(value: 'C2', child: Text('Sede C2')),
+                          DropdownMenuItem(value: 'C3', child: Text('Sede C3')),
+                        ],
+                        onChanged: (v) => setState(() => _selectedTienda = v),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     const Text('Monto S/ *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.danger)),
                     const SizedBox(height: 6),
                     TextFormField(
@@ -356,14 +378,12 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        final auth = Provider.of<AuthProvider>(context, listen: false);
-
                         final dto = NuevoMovimientoDTO(
                           tipo: _tipoSeleccionado,
                           monto: double.tryParse(_montoController.text.trim()) ?? 0.0,
                           descripcion: _descripcionController.text.trim(),
                           usuarioId: 1, 
-                          tienda: auth.tienda ?? 'C1',
+                          tienda: _selectedTienda ?? auth.tienda ?? 'C1',
                         );
 
                         final exito = await Provider.of<CajaProvider>(context, listen: false).registrarMovimiento(dto);
@@ -371,6 +391,8 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
 
                         if (exito) {
                           Navigator.pop(context);
+                          // Re-fetch using current selected filter to ensure consistency
+                          Provider.of<CajaProvider>(context, listen: false).fetchMovimientos(auth.tiendaSeleccionada);
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Movimiento registrado'), backgroundColor: AppColors.success));
                         }
                       }

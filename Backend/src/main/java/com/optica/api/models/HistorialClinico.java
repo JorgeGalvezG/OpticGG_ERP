@@ -54,4 +54,7 @@ public class HistorialClinico {
 
     @Column(name = "lente_id")
     private Long lenteId;
+
+    @Column(name = "especialista", length = 100)
+    private String especialista;
 }

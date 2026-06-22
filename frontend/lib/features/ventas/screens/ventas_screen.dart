@@ -31,7 +31,7 @@ class _VentasScreenState extends State<VentasScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      Provider.of<OrdenesProvider>(context, listen: false).fetchOrdenesTablero(auth.tienda ?? 'C1');
+      Provider.of<OrdenesProvider>(context, listen: false).fetchOrdenesTablero(auth.tiendaSeleccionada);
     });
   }
 
@@ -302,14 +302,15 @@ class _VentasScreenState extends State<VentasScreen> {
                     onPressed: () async {
                       final configProv = Provider.of<ConfigProvider>(context, listen: false);
                       final auth = Provider.of<AuthProvider>(context, listen: false);
+                      final targetTienda = auth.tiendaSeleccionada == 'ALL' ? (auth.tienda ?? 'C1') : auth.tiendaSeleccionada;
                       
                       if (configProv.config == null) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                          content: Text('⚠️ Sede $targetTienda: Datos no cargados. Conectando...'),
                           backgroundColor: Colors.orange,
                           duration: const Duration(seconds: 2),
                         ));
-                        await configProv.cargarConfig(auth.tienda ?? 'C1');
+                        await configProv.cargarConfig(targetTienda);
                       }
 
                       final config = configProv.config;
@@ -338,9 +339,25 @@ class _VentasScreenState extends State<VentasScreen> {
                   IconButton(
                     icon: const Icon(Icons.share_rounded, size: 20, color: AppColors.primary),
                     onPressed: () async {
-                      final config = Provider.of<ConfigProvider>(context, listen: false).config;
+                      final configProv = Provider.of<ConfigProvider>(context, listen: false);
+                      final auth = Provider.of<AuthProvider>(context, listen: false);
+                      final targetTienda = auth.tiendaSeleccionada == 'ALL' ? (auth.tienda ?? 'C1') : auth.tiendaSeleccionada;
+                      
+                      if (configProv.config == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('⚠️ Sede $targetTienda: Datos no cargados. Conectando...'),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 2),
+                        ));
+                        await configProv.cargarConfig(targetTienda);
+                      }
+                      
+                      final config = configProv.config;
                       if (config == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('⚠️ Configuración de tienda no encontrada. Cargando...'), backgroundColor: Colors.orange));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('❌ Error: No se pudo conectar con el servidor para obtener datos de la óptica.'),
+                          backgroundColor: AppColors.danger,
+                        ));
                         return;
                       }
                       try {
@@ -413,19 +430,21 @@ class _VentasScreenState extends State<VentasScreen> {
                   ),
                 ),
               _buildStatusActions(o),
-              const SizedBox(width: 8),              IconButton(
+              const SizedBox(width: 8),
+              IconButton(
                 icon: const Icon(Icons.print_rounded, color: AppColors.gray400),
                 onPressed: () async {
                   final configProv = Provider.of<ConfigProvider>(context, listen: false);
                   final auth = Provider.of<AuthProvider>(context, listen: false);
+                  final targetTienda = auth.tiendaSeleccionada == 'ALL' ? (auth.tienda ?? 'C1') : auth.tiendaSeleccionada;
                   
                   if (configProv.config == null) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                      content: Text('⚠️ Sede $targetTienda: Datos no cargados. Conectando...'),
                       backgroundColor: Colors.orange,
                       duration: const Duration(seconds: 2),
                     ));
-                    await configProv.cargarConfig(auth.tienda ?? 'C1');
+                    await configProv.cargarConfig(targetTienda);
                   }
 
                   final config = configProv.config;
@@ -457,14 +476,15 @@ class _VentasScreenState extends State<VentasScreen> {
                 onPressed: () async {
                   final configProv = Provider.of<ConfigProvider>(context, listen: false);
                   final auth = Provider.of<AuthProvider>(context, listen: false);
+                  final targetTienda = auth.tiendaSeleccionada == 'ALL' ? (auth.tienda ?? 'C1') : auth.tiendaSeleccionada;
                   
                   if (configProv.config == null) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('⚠️ Sede ${auth.tienda ?? "?"}: Datos no cargados. Conectando...'),
+                      content: Text('⚠️ Sede $targetTienda: Datos no cargados. Conectando...'),
                       backgroundColor: Colors.orange,
                       duration: const Duration(seconds: 2),
                     ));
-                    await configProv.cargarConfig(auth.tienda ?? 'C1');
+                    await configProv.cargarConfig(targetTienda);
                   }
 
                   final config = configProv.config;
@@ -489,7 +509,8 @@ class _VentasScreenState extends State<VentasScreen> {
                   }
                 },
                 tooltip: 'Enviar por WhatsApp',
-              ),            ],
+              ),
+            ],
           ),
     );
   }
@@ -541,7 +562,7 @@ class _VentasScreenState extends State<VentasScreen> {
     return ElevatedButton.icon(
       onPressed: () async {
         final auth = Provider.of<AuthProvider>(context, listen: false);
-        await Provider.of<OrdenesProvider>(context, listen: false).actualizarEstadoOrden(o.id, nextStatus, auth.tienda ?? 'C1');
+        await Provider.of<OrdenesProvider>(context, listen: false).actualizarEstadoOrden(o.id, nextStatus, auth.tiendaSeleccionada);
       },
       icon: Icon(icon, size: 14),
       label: Text(label, style: const TextStyle(fontSize: 11)),
@@ -742,7 +763,7 @@ class _VentasScreenState extends State<VentasScreen> {
                 if (exito) {
                   if (context.mounted) {
                     Navigator.pop(context);
-                    Provider.of<OrdenesProvider>(context, listen: false).fetchOrdenesTablero(auth.tienda ?? 'C1');
+                    Provider.of<OrdenesProvider>(context, listen: false).fetchOrdenesTablero(auth.tiendaSeleccionada);
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pago registrado con éxito'), backgroundColor: AppColors.success));
                   }
                 } else {
@@ -791,6 +812,9 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   DateTime? _fechaVenta;
   bool _pacienteNuevoManual = false;
 
+  String? _selectedTienda;
+  final _especialistaCtrl = TextEditingController();
+
   // Productos seleccionados (para ORDEN_VENTA)
   final List<DetalleVentaAlmacenDTO> _productosSeleccionados = [];
 
@@ -820,6 +844,12 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   final _abonoCtrl = TextEditingController();
   String _saldo = "0.00";
 
+  void _cargarDatosPorTienda(String tienda) {
+    Provider.of<UsuariosProvider>(context, listen: false).fetchActivosPorTienda(tienda);
+    Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(tienda);
+    Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(tienda);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -838,10 +868,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      Provider.of<UsuariosProvider>(context, listen: false).fetchActivosPorTienda(auth.tienda ?? 'C1');
-      Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(auth.tienda ?? 'C1');
-      // Precargar productos para el buscador
-      Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(auth.tienda ?? 'C1');
+      _selectedTienda = (auth.tiendaSeleccionada == 'ALL' ? 'C1' : auth.tiendaSeleccionada);
+      _cargarDatosPorTienda(_selectedTienda!);
     });
   }
 
@@ -851,6 +879,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     _abonoCtrl.dispose();
     _pacienteSearchCtrl.dispose();
     _pacienteManualCtrl.dispose();
+    _especialistaCtrl.dispose();
     _odEsf.dispose();
     _odCil.dispose();
     _odEje.dispose();
@@ -1008,7 +1037,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       pacienteId: _pacienteNuevoManual ? null : _pacienteId,
       pacienteNombreManual: _pacienteNuevoManual ? _pacienteManualCtrl.text.trim() : null,
       vendedorId: _vendedorId ?? 1,
-      tienda: auth.tienda ?? 'C1',
+      tienda: _selectedTienda ?? auth.tienda ?? 'C1',
       tipoVenta: _tipoVenta,
       montoTotal: total,
       montoACuenta: abono,
@@ -1031,6 +1060,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       montura: _tipoVenta == 'ORDEN_TRABAJO' ? (_monturaPropia ? "PROPIA" : _monturaCtrl.text) : null,
       precioMontura: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioMonturaCtrl.text) ?? 0) : null,
       observaciones: _obsCtrl.text,
+      especialista: _tipoVenta == 'ORDEN_TRABAJO' ? _especialistaCtrl.text.trim() : null,
       // Productos de almacén
       productos: _tipoVenta == 'ORDEN_VENTA' ? _productosSeleccionados : null,
     );
@@ -1041,7 +1071,7 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       if (exito) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Venta Guardada"), backgroundColor: AppColors.success));
-        ordenesProv.fetchOrdenesTablero(auth.tienda ?? 'C1');
+        ordenesProv.fetchOrdenesTablero(auth.tiendaSeleccionada);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: ${ventasProv.errorMessage}"), backgroundColor: AppColors.danger));
       }
@@ -1050,6 +1080,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    _selectedTienda ??= (auth.tiendaSeleccionada == 'ALL' ? 'C1' : auth.tiendaSeleccionada);
     final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Dialog(
@@ -1096,6 +1128,41 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _section('1. Información del Cliente'),
+                      if (auth.rol == 'ADMIN') ...[
+                        Row(
+                          children: [
+                            const Text('Sede de Venta: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.gray700)),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(color: AppColors.gray100, borderRadius: BorderRadius.circular(8)),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _selectedTienda,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700),
+                                  items: const [
+                                    DropdownMenuItem(value: 'C1', child: Text('Sede C1')),
+                                    DropdownMenuItem(value: 'C2', child: Text('Sede C2')),
+                                    DropdownMenuItem(value: 'C3', child: Text('Sede C3')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _selectedTienda = val;
+                                        _vendedorId = null;
+                                        _pacienteId = null;
+                                        _pacienteSearchCtrl.clear();
+                                        _cargarDatosPorTienda(val);
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       _row(isMobile, [
                         _buildPacienteSearcher(),
                         _vendedorDropdown(),
@@ -1145,6 +1212,8 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                           _field('Adición (ADD)', null, _addCtrl, hint: '+2.25'),
                           _field('D.I.P.', null, _dipCtrl, hint: '64/62'),
                         ]),
+                        const SizedBox(height: 12),
+                        _field('Especialista (Quien midió al paciente) *', Icons.badge_outlined, _especialistaCtrl, req: true),
                         const SizedBox(height: 24),
                         _section('3. Detalles del Producto'),
                         _checkRow('Ingresar nombre de montura manualmente', _monturaManual, (v) => setState(() { 
@@ -1427,8 +1496,10 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                     p.apellidos.toLowerCase().contains(textValue.text.toLowerCase()));
                 },
                 onSelected: (p) {
-                  _pacienteId = p.id;
-                  _pacienteSearchCtrl.text = "${p.nombre} ${p.apellidos}";
+                  setState(() {
+                    _pacienteId = p.id;
+                    _pacienteSearchCtrl.text = "${p.nombre} ${p.apellidos}";
+                  });
                 },
                 fieldViewBuilder: (context, ctrl, focus, onFieldSubmitted) {
                   if (ctrl.text != _pacienteSearchCtrl.text && _pacienteSearchCtrl.text.isNotEmpty) {

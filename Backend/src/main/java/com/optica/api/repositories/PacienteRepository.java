@@ -38,4 +38,16 @@ public interface PacienteRepository extends JpaRepository<Paciente, Long> {
             "WHERE MONTH(p.fechaNacimiento) = MONTH(CURRENT_DATE) " +
             "AND DAY(p.fechaNacimiento) = DAY(CURRENT_DATE)")
     long contarCumpleanerosHoyGlobal();
+
+    // Buscar a nivel global (todas las tiendas)
+    @Query("SELECT p FROM Paciente p WHERE " +
+            "LOWER(p.nombre) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+            "LOWER(p.apellidos) LIKE LOWER(CONCAT('%', :termino, '%')) OR " +
+            "p.telefono LIKE CONCAT('%', :termino, '%')")
+    Page<Paciente> buscarPorTerminoGlobal(
+            @Param("termino") String termino,
+            Pageable pageable);
+
+    // Listar todos los VIP globalmente
+    List<Paciente> findByEsDestacadoTrue();
 }

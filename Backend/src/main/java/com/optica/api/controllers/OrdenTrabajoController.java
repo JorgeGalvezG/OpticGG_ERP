@@ -20,19 +20,25 @@ public class OrdenTrabajoController {
     private OrdenTrabajoService ordenService;
 
     // GET /api/ordenes/tienda/C1/tablero (Todo de golpe para el Kanban)
-    @GetMapping("/tienda/{tienda}/tablero")
-    public ResponseEntity<List<OrdenTrabajo>> obtenerTablero(@PathVariable Tienda tienda) {
-        return ResponseEntity.ok(ordenService.obtenerTodasPorTienda(tienda));
+    @GetMapping("/tienda/{tiendaStr}/tablero")
+    public ResponseEntity<List<OrdenTrabajo>> obtenerTablero(@PathVariable String tiendaStr) {
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(ordenService.obtenerTodas());
+        }
+        return ResponseEntity.ok(ordenService.obtenerTodasPorTienda(Tienda.valueOf(tiendaStr.toUpperCase())));
     }
 
     // GET /api/ordenes/tienda/C1?estado=PENDIENTE&page=0&size=10 (Paginado para la Lista)
-    @GetMapping("/tienda/{tienda}")
+    @GetMapping("/tienda/{tiendaStr}")
     public ResponseEntity<Page<OrdenTrabajo>> listarOrdenes(
-            @PathVariable Tienda tienda,
+            @PathVariable String tiendaStr,
             @RequestParam EstadoTrabajo estado,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ordenService.listarPorTiendaYEstado(tienda, estado, page, size));
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(ordenService.listarTodasPorEstado(estado, page, size));
+        }
+        return ResponseEntity.ok(ordenService.listarPorTiendaYEstado(Tienda.valueOf(tiendaStr.toUpperCase()), estado, page, size));
     }
 
     // PUT /api/ordenes/5/estado

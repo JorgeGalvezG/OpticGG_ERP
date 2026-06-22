@@ -18,8 +18,12 @@ public class MovimientoCajaController {
     @Autowired private MovimientoCajaService cajaService;
 
     // GET: /api/caja/tienda/C1
-    @GetMapping("/tienda/{tienda}")
-    public ResponseEntity<List<MovimientoCaja>> obtenerMovimientos(@PathVariable Tienda tienda) {
+    @GetMapping("/tienda/{tiendaStr}")
+    public ResponseEntity<List<MovimientoCaja>> obtenerMovimientos(@PathVariable String tiendaStr) {
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(cajaService.obtenerTodos());
+        }
+        Tienda tienda = Tienda.valueOf(tiendaStr.toUpperCase());
         return ResponseEntity.ok(cajaService.obtenerPorTienda(tienda));
     }
 

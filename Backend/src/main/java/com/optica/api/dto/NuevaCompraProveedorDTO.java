@@ -21,5 +21,6 @@ public class NuevaCompraProveedorDTO {
         private Long almacenId;
         private Integer cantidad;
         private BigDecimal precioUnitario;
+        private String productoNombre;
     }
 }

@@ -15,6 +15,12 @@ import '../../almacen/screens/categorias_screen.dart';
 import '../../vip/screens/vip_screen.dart';
 import '../../usuarios/screens/usuarios_screen.dart';
 import '../screens/reportes_screen.dart';
+import '../../almacen/providers/almacen_provider.dart';
+import '../../caja/providers/caja_provider.dart';
+import '../../pacientes/providers/pacientes_provider.dart';
+import '../../proveedores/providers/proveedores_provider.dart';
+import '../../ventas/providers/ordenes_provider.dart';
+import '../providers/dashboard_provider.dart';
 
 class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
@@ -99,6 +105,10 @@ class _MainLayoutState extends State<MainLayout> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          _buildTiendaSelector(auth, context),
+          const SizedBox(width: 8),
+        ],
       ),
       drawer: _buildDrawer(auth, dev),
       body: _screens[_selectedIndex],
@@ -108,7 +118,7 @@ class _MainLayoutState extends State<MainLayout> {
           if (index == 4) {
             _scaffoldKey.currentState?.openDrawer();
           } else {
-            setState(() => _selectedIndex = index);
+            _selectScreen(index);
           }
         },
         type: BottomNavigationBarType.fixed,
@@ -142,39 +152,39 @@ class _MainLayoutState extends State<MainLayout> {
             leading: const Icon(Icons.shopping_bag_rounded),
             title: const Text('Ventas / Órdenes'),
             selected: _selectedIndex == 4,
-            onTap: () { setState(() => _selectedIndex = 4); Navigator.pop(context); },
+            onTap: () { Navigator.pop(context); _selectScreen(4); },
           ),
           ListTile(
             leading: const Icon(Icons.local_shipping_rounded),
             title: const Text('Proveedores'),
             selected: _selectedIndex == 5,
-            onTap: () { setState(() => _selectedIndex = 5); Navigator.pop(context); },
+            onTap: () { Navigator.pop(context); _selectScreen(5); },
           ),
           if (auth.rol == 'ADMIN') ...[
             ListTile(
               leading: const Icon(Icons.badge_rounded),
               title: const Text('Gestión de Personal'),
               selected: _selectedIndex == 7,
-              onTap: () { setState(() => _selectedIndex = 7); Navigator.pop(context); },
+              onTap: () { Navigator.pop(context); _selectScreen(7); },
             ),
             ListTile(
               leading: const Icon(Icons.category_rounded),
               title: const Text('Categorías'),
               selected: _selectedIndex == 8,
-              onTap: () { setState(() => _selectedIndex = 8); Navigator.pop(context); },
+              onTap: () { Navigator.pop(context); _selectScreen(8); },
             ),
             ListTile(
               leading: const Icon(Icons.analytics_rounded),
               title: const Text('Historial (Reportes)'),
               selected: _selectedIndex == 9,
-              onTap: () { setState(() => _selectedIndex = 9); Navigator.pop(context); },
+              onTap: () { Navigator.pop(context); _selectScreen(9); },
             ),
           ],
           ListTile(
             leading: const Icon(Icons.star_rounded, color: Colors.orange),
             title: const Text('Clientes VIP'),
             selected: _selectedIndex == 6,
-            onTap: () { setState(() => _selectedIndex = 6); Navigator.pop(context); },
+            onTap: () { Navigator.pop(context); _selectScreen(6); },
           ),
           if (dev.isDevMode)
             ListTile(
@@ -258,11 +268,7 @@ class _MainLayoutState extends State<MainLayout> {
                     ],
                   ),
                 ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: AppColors.gray100, borderRadius: BorderRadius.circular(8)),
-                child: Text('Sucursal: ${auth.tienda ?? "C1"}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700)),
-              ),
+              _buildTiendaSelector(auth, context),
               const SizedBox(width: 16),
               IconButton(icon: const Icon(Icons.notifications_none_rounded, color: AppColors.gray500), onPressed: () {}),
             ],
@@ -349,7 +355,69 @@ class _MainLayoutState extends State<MainLayout> {
       selectedTileColor: Colors.white10,
       leading: Icon(icon, color: isSelected ? Colors.white : Colors.white60),
       title: Text(title, style: TextStyle(color: isSelected ? Colors.white : Colors.white60, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () => _selectScreen(index),
+    );
+  }
+
+  void _selectScreen(int index) {
+    setState(() => _selectedIndex = index);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    _refreshDataForCurrentScreen(auth.tiendaSeleccionada);
+  }
+
+  void _refreshDataForCurrentScreen(String tienda) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_selectedIndex == 0) {
+        Provider.of<DashboardProvider>(context, listen: false).fetchResumen(tienda);
+      } else if (_selectedIndex == 1) {
+        Provider.of<CajaProvider>(context, listen: false).fetchMovimientos(tienda);
+      } else if (_selectedIndex == 2) {
+        Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(tienda);
+      } else if (_selectedIndex == 3) {
+        Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(tienda);
+      } else if (_selectedIndex == 4) {
+        Provider.of<OrdenesProvider>(context, listen: false).fetchOrdenesTablero(tienda);
+      } else if (_selectedIndex == 5) {
+        Provider.of<ProveedoresProvider>(context, listen: false).fetchProveedores(tienda);
+      }
+    });
+  }
+
+  Widget _buildTiendaSelector(AuthProvider auth, BuildContext context) {
+    if (auth.rol != 'ADMIN') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(color: AppColors.gray100, borderRadius: BorderRadius.circular(8)),
+        child: Text('Sucursal: ${auth.tienda ?? "C1"}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700)),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.gray100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: auth.tiendaSeleccionada,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.gray500, size: 18),
+          dropdownColor: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          items: const [
+            DropdownMenuItem(value: 'ALL', child: Text('Ver Todas')),
+            DropdownMenuItem(value: 'C1', child: Text('Sede C1')),
+            DropdownMenuItem(value: 'C2', child: Text('Sede C2')),
+            DropdownMenuItem(value: 'C3', child: Text('Sede C3')),
+          ],
+          onChanged: (val) {
+            if (val != null) {
+              auth.setTiendaSeleccionada(val);
+              _refreshDataForCurrentScreen(val);
+            }
+          },
+        ),
+      ),
     );
   }
 }

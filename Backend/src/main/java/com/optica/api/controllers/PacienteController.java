@@ -23,21 +23,27 @@ public class PacienteController {
     @Autowired
     private PacienteHistorialService historialService;
 
-    @GetMapping("/tienda/{tienda}")
+    @GetMapping("/tienda/{tiendaStr}")
     public ResponseEntity<Page<Paciente>> listarPacientes(
-            @PathVariable Tienda tienda,
+            @PathVariable String tiendaStr,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(pacienteService.listarPacientesPorTienda(tienda, page, size));
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(pacienteService.listarTodos(page, size));
+        }
+        return ResponseEntity.ok(pacienteService.listarPacientesPorTienda(Tienda.valueOf(tiendaStr.toUpperCase()), page, size));
     }
 
     @GetMapping("/buscar")
     public ResponseEntity<Page<Paciente>> buscar(
-            @RequestParam Tienda tienda,
+            @RequestParam String tienda,
             @RequestParam String termino,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(pacienteService.buscarPacientesPorTienda(termino,tienda, page, size));
+        if (tienda.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(pacienteService.buscarTodos(termino, page, size));
+        }
+        return ResponseEntity.ok(pacienteService.buscarPacientesPorTienda(termino, Tienda.valueOf(tienda.toUpperCase()), page, size));
     }
 
     // POS /api/pacientes
@@ -53,9 +59,12 @@ public class PacienteController {
         return ResponseEntity.ok(pacienteService.actualizarPaciente(id, paciente));
     }
     // GET: /api/pacientes/tienda/C1/vip
-    @GetMapping("/tienda/{tienda}/vip")
-    public ResponseEntity<List<Paciente>> listarVip(@PathVariable Tienda tienda) {
-        return ResponseEntity.ok(pacienteService.listarVipPorTienda(tienda));
+    @GetMapping("/tienda/{tiendaStr}/vip")
+    public ResponseEntity<List<Paciente>> listarVip(@PathVariable String tiendaStr) {
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return ResponseEntity.ok(pacienteService.listarTodosVip());
+        }
+        return ResponseEntity.ok(pacienteService.listarVipPorTienda(Tienda.valueOf(tiendaStr.toUpperCase())));
     }
 
     @GetMapping("/{id}/historial")

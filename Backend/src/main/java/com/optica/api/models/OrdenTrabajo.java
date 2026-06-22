@@ -104,4 +104,7 @@ public class OrdenTrabajo {
 
     @Column(name = "metodo_pago", length = 50)
     private String metodoPago;
+
+    @Column(name = "especialista", length = 100)
+    private String especialista;
 }

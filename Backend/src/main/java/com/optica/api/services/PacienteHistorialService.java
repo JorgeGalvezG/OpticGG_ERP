@@ -76,6 +76,7 @@ public class PacienteHistorialService {
                 .montura(h.getMontura())
                 .esMonturaCliente(h.getEsMonturaCliente())
                 .observaciones(h.getObservaciones())
+                .especialista(h.getEspecialista())
         );
 
         ultimaConsulta.ifPresent(c -> builder
