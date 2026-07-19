@@ -57,4 +57,44 @@ public class HistorialClinico {
 
     @Column(name = "especialista", length = 100)
     private String especialista;
+
+    // --- CAMPOS DE COMPRA EXTRA ---
+    @Column(name = "tiene_compra_extra")
+    private Boolean tieneCompraExtra = false;
+
+    @Column(name = "graduacion_od_extra", length = 255)
+    private String graduacionOdExtra;
+
+    @Column(name = "av_od_extra", length = 50)
+    private String avOdExtra;
+
+    @Column(name = "graduacion_oi_extra", length = 255)
+    private String graduacionOiExtra;
+
+    @Column(name = "av_oi_extra", length = 50)
+    private String avOiExtra;
+
+    @Column(name = "adicion_extra", length = 50)
+    private String adicionExtra;
+
+    @Column(name = "dip_extra", length = 50)
+    private String dipExtra;
+
+    @Column(name = "tipo_luna_extra", length = 100)
+    private String tipoLunaExtra;
+
+    @Column(name = "es_luna_cliente_extra")
+    private Boolean esLunaClienteExtra = false;
+
+    @Column(name = "montura_extra", length = 100)
+    private String monturaExtra;
+
+    @Column(name = "es_montura_cliente_extra")
+    private Boolean esMonturaClienteExtra = false;
+
+    @Column(name = "observaciones_extra", columnDefinition = "TEXT")
+    private String observacionesExtra;
+
+    @Column(name = "especialista_extra", length = 100)
+    private String especialistaExtra;
 }

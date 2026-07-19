@@ -110,4 +110,59 @@ public class Venta {
 
     @Column(name = "especialista", length = 100)
     private String especialista;
+
+    // --- CAMPOS DE COMPRA EXTRA ---
+    @Column(name = "tiene_compra_extra")
+    private Boolean tieneCompraExtra = false;
+
+    @Column(name = "graduacion_od_extra")
+    private String graduacionOdExtra;
+
+    @Column(name = "av_od_extra")
+    private String avOdExtra;
+
+    @Column(name = "graduacion_oi_extra")
+    private String graduacionOiExtra;
+
+    @Column(name = "av_oi_extra")
+    private String avOiExtra;
+
+    @Column(name = "adicion_extra")
+    private String adicionExtra;
+
+    @Column(name = "dip_extra")
+    private String dipExtra;
+
+    @Column(name = "tipo_luna_extra")
+    private String tipoLunaExtra;
+
+    @Column(name = "tipo_luna_od_extra")
+    private String tipoLunaOdExtra;
+
+    @Column(name = "precio_luna_od_extra", precision = 10, scale = 2)
+    private BigDecimal precioLunaOdExtra = BigDecimal.ZERO;
+
+    @Column(name = "tipo_luna_oi_extra")
+    private String tipoLunaOiExtra;
+
+    @Column(name = "precio_luna_oi_extra", precision = 10, scale = 2)
+    private BigDecimal precioLunaOiExtra = BigDecimal.ZERO;
+
+    @Column(name = "es_luna_cliente_extra")
+    private Boolean esLunaClienteExtra = false;
+
+    @Column(name = "montura_extra")
+    private String monturaExtra;
+
+    @Column(name = "precio_montura_extra", precision = 10, scale = 2)
+    private BigDecimal precioMonturaExtra = BigDecimal.ZERO;
+
+    @Column(name = "es_montura_cliente_extra")
+    private Boolean esMonturaClienteExtra = false;
+
+    @Column(name = "observaciones_extra", columnDefinition = "TEXT")
+    private String observacionesExtra;
+
+    @Column(name = "especialista_extra", length = 100)
+    private String especialistaExtra;
 }

@@ -29,6 +29,10 @@ public class MovimientoCajaService {
 
     // 2. Registrar un gasto o ingreso manual
     public MovimientoCaja registrarMovimientoManual(NuevoMovimientoDTO dto) {
+        if (dto.getMonto() == null || dto.getMonto().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("El monto del movimiento debe ser mayor a cero");
+        }
+
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 

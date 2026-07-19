@@ -39,6 +39,26 @@ public class NuevaVentaCompletaDTO {
     private String observaciones;
     private String especialista;
 
+    // Datos para Compra Extra (Segunda montura/cristales)
+    private Boolean tieneCompraExtra;
+    private String graduacionOdExtra;
+    private String avOdExtra;
+    private String graduacionOiExtra;
+    private String avOiExtra;
+    private String adicionExtra;
+    private String dipExtra;
+    private String tipoLunaExtra;
+    private String tipoLunaOdExtra;
+    private BigDecimal precioLunaOdExtra;
+    private String tipoLunaOiExtra;
+    private BigDecimal precioLunaOiExtra;
+    private Boolean esLunaClienteExtra;
+    private String monturaExtra;
+    private BigDecimal precioMonturaExtra;
+    private Boolean esMonturaClienteExtra;
+    private String observacionesExtra;
+    private String especialistaExtra;
+
     // Datos para ORDEN_VENTA (Productos de Almacén)
     private List<DetalleVentaAlmacenDTO> productos;
 

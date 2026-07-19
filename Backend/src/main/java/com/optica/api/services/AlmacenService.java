@@ -6,6 +6,7 @@ import com.optica.api.repositories.AlmacenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,13 +32,27 @@ public class AlmacenService {
         return almacenRepository.findByCodigoBarras(codigo);
     }
 
+    private void validarProducto(Almacen producto) {
+        if (producto.getStock() == null || producto.getStock() < 0) {
+            throw new RuntimeException("El stock no puede ser negativo");
+        }
+        if (producto.getPrecioCompra() != null && producto.getPrecioCompra().compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("El precio de compra no puede ser negativo");
+        }
+        if (producto.getPrecioVenta() == null || producto.getPrecioVenta().compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("El precio de venta no puede ser negativo");
+        }
+    }
+
     @Transactional
     public Almacen guardar(Almacen producto) {
+        validarProducto(producto);
         return almacenRepository.save(producto);
     }
 
     @Transactional
     public Almacen actualizar(Long id, Almacen data) {
+        validarProducto(data);
         Almacen producto = almacenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
         
@@ -57,6 +72,9 @@ public class AlmacenService {
     public void actualizarStock(Long id, Integer cantidad) {
         Almacen producto = almacenRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
+        if (producto.getStock() + cantidad < 0) {
+            throw new RuntimeException("Stock insuficiente: la operación resultaría en un stock negativo (" + (producto.getStock() + cantidad) + ") para el producto " + producto.getNombre());
+        }
         producto.setStock(producto.getStock() + cantidad);
         almacenRepository.save(producto);
     }

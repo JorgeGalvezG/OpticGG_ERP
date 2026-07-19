@@ -45,6 +45,16 @@ public class CompraProveedorService {
 
     @Transactional
     public CompraProveedor registrarNuevaCompra(com.optica.api.dto.NuevaCompraProveedorDTO dto) {
+        if (dto.getMontoTotal() == null || dto.getMontoTotal().compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("El monto total de la compra no puede ser negativo");
+        }
+        if (dto.getMontoPagado() == null || dto.getMontoPagado().compareTo(BigDecimal.ZERO) < 0) {
+            throw new RuntimeException("El monto pagado no puede ser negativo");
+        }
+        if (dto.getMontoPagado().compareTo(dto.getMontoTotal()) > 0) {
+            throw new RuntimeException("El monto pagado no puede ser mayor que el monto total de la compra");
+        }
+
         Proveedor proveedor = proveedorRepository.findById(dto.getProveedorId())
                 .orElseThrow(() -> new RuntimeException("Proveedor no encontrado: " + dto.getProveedorId()));
 
@@ -72,6 +82,13 @@ public class CompraProveedorService {
         // Guardar detalles
         if (dto.getItems() != null) {
             for (com.optica.api.dto.NuevaCompraProveedorDTO.DetalleCompraDTO itemDto : dto.getItems()) {
+                if (itemDto.getCantidad() == null || itemDto.getCantidad() <= 0) {
+                    throw new RuntimeException("La cantidad de cada producto debe ser mayor a cero");
+                }
+                if (itemDto.getPrecioUnitario() == null || itemDto.getPrecioUnitario().compareTo(BigDecimal.ZERO) < 0) {
+                    throw new RuntimeException("El precio unitario de cada producto no puede ser negativo");
+                }
+
                 CompraProveedorDetalle detalle = new CompraProveedorDetalle();
                 detalle.setCompra(compraGuardada);
                 
@@ -126,8 +143,17 @@ public class CompraProveedorService {
 
     @Transactional
     public CompraProveedor registrarAbono(Long compraId, java.math.BigDecimal monto) {
+        if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("El monto del abono debe ser mayor a cero");
+        }
+
         CompraProveedor compra = compraRepository.findById(compraId)
                 .orElseThrow(() -> new RuntimeException("Compra no encontrada: " + compraId));
+
+        BigDecimal saldoActual = compra.getMonto().subtract(compra.getMontoPagado());
+        if (monto.compareTo(saldoActual) > 0) {
+            throw new RuntimeException("El monto del abono (S/ " + monto + ") no puede superar el saldo pendiente (S/ " + saldoActual + ")");
+        }
 
         compra.setMontoPagado(compra.getMontoPagado().add(monto));
         
