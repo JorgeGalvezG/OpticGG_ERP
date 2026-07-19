@@ -33,6 +33,26 @@ class NuevaVentaDTO {
   final String? observaciones;
   final String? especialista;
 
+  // Compra Extra fields
+  final bool? tieneCompraExtra;
+  final String? graduacionOdExtra;
+  final String? avOdExtra;
+  final String? graduacionOiExtra;
+  final String? avOiExtra;
+  final String? adicionExtra;
+  final String? dipExtra;
+  final bool? esLunaClienteExtra;
+  final String? tipoLunaExtra;
+  final String? tipoLunaOdExtra;
+  final double? precioLunaOdExtra;
+  final String? tipoLunaOiExtra;
+  final double? precioLunaOiExtra;
+  final bool? esMonturaClienteExtra;
+  final String? monturaExtra;
+  final double? precioMonturaExtra;
+  final String? observacionesExtra;
+  final String? especialistaExtra;
+
   // Datos para ORDEN_VENTA (Productos)
   final List<DetalleVentaAlmacenDTO>? productos;
 
@@ -63,6 +83,24 @@ class NuevaVentaDTO {
     this.precioMontura,
     this.observaciones,
     this.especialista,
+    this.tieneCompraExtra,
+    this.graduacionOdExtra,
+    this.avOdExtra,
+    this.graduacionOiExtra,
+    this.avOiExtra,
+    this.adicionExtra,
+    this.dipExtra,
+    this.esLunaClienteExtra,
+    this.tipoLunaExtra,
+    this.tipoLunaOdExtra,
+    this.precioLunaOdExtra,
+    this.tipoLunaOiExtra,
+    this.precioLunaOiExtra,
+    this.esMonturaClienteExtra,
+    this.monturaExtra,
+    this.precioMonturaExtra,
+    this.observacionesExtra,
+    this.especialistaExtra,
     this.productos,
   });
 
@@ -98,6 +136,24 @@ class NuevaVentaDTO {
         'precioMontura': precioMontura ?? 0.0,
         'observaciones': observaciones ?? '',
         'especialista': especialista ?? '',
+        'tieneCompraExtra': tieneCompraExtra ?? false,
+        'graduacionOdExtra': graduacionOdExtra ?? '',
+        'avOdExtra': avOdExtra ?? '',
+        'graduacionOiExtra': graduacionOiExtra ?? '',
+        'avOiExtra': avOiExtra ?? '',
+        'adicionExtra': adicionExtra ?? '',
+        'dipExtra': dipExtra ?? '',
+        'esLunaClienteExtra': esLunaClienteExtra ?? false,
+        'tipoLunaExtra': tipoLunaExtra ?? '',
+        'tipoLunaOdExtra': tipoLunaOdExtra ?? '',
+        'precioLunaOdExtra': precioLunaOdExtra ?? 0.0,
+        'tipoLunaOiExtra': tipoLunaOiExtra ?? '',
+        'precioLunaOiExtra': precioLunaOiExtra ?? 0.0,
+        'esMonturaClienteExtra': esMonturaClienteExtra ?? false,
+        'monturaExtra': monturaExtra ?? '',
+        'precioMonturaExtra': precioMonturaExtra ?? 0.0,
+        'observacionesExtra': observacionesExtra ?? '',
+        'especialistaExtra': especialistaExtra ?? '',
       });
     } else {
       map['productos'] = productos?.map((p) => p.toJson()).toList();

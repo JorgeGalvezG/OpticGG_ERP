@@ -362,8 +362,8 @@ class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                             ),
                                           ),
-                                          const SizedBox(width: 8),
-                                          if (c.estadoEntrega == 'SOLICITADO')
+                                          if (c.estadoEntrega == 'SOLICITADO') ...[
+                                            const SizedBox(width: 8),
                                             ElevatedButton(
                                               onPressed: () async {
                                                 final exito = await prov.registrarEntrega(c.id);
@@ -372,6 +372,15 @@ class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
                                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
                                               child: const Text('Marcar Llegada', style: TextStyle(fontSize: 10)),
                                             ),
+                                          ],
+                                          if (c.montoSaldo > 0) ...[
+                                            const SizedBox(width: 8),
+                                            ElevatedButton(
+                                              onPressed: () => _showAbonoDialog(context, c, prov),
+                                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning, foregroundColor: Colors.black87, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                              child: const Text('Abonar', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ],
@@ -389,6 +398,79 @@ class _HistorialComprasDialogState extends State<_HistorialComprasDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAbonoDialog(BuildContext context, CompraProveedor compra, ProveedoresProvider prov) {
+    final formKey = GlobalKey<FormState>();
+    final abonoCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Registrar Abono', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Saldo Pendiente: S/ ${compra.montoSaldo.toStringAsFixed(2)}', 
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.danger)),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: abonoCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Monto del Abono S/',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.payment_rounded),
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Requerido';
+                  final n = double.tryParse(v);
+                  if (n == null) return 'Monto inválido';
+                  if (n <= 0) return 'Debe ser mayor a 0';
+                  if (n > compra.montoSaldo) return 'No puede superar el saldo';
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              final monto = double.parse(abonoCtrl.text);
+              final exito = await prov.registrarAbono(compra.id, monto);
+              if (context.mounted) {
+                Navigator.pop(context);
+                if (exito) {
+                  prov.fetchHistorialCompras(widget.proveedor.id!);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Abono registrado con éxito'), backgroundColor: AppColors.success),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error al registrar abono: ${prov.errorMessage}'), backgroundColor: AppColors.danger),
+                  );
+                }
+              }
+            },
+            child: const Text('Registrar'),
+          ),
+        ],
       ),
     );
   }

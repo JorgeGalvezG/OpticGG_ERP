@@ -36,7 +36,7 @@ class CompraProveedor {
       titulo: json['titulo'],
       monto: (json['monto'] as num).toDouble(),
       montoPagado: (json['montoPagado'] as num? ?? 0).toDouble(),
-      montoSaldo: (json['montoSaldo'] as num? ?? 0).toDouble(),
+      montoSaldo: (json['monto'] as num).toDouble() - (json['montoPagado'] as num? ?? 0).toDouble(),
       estadoPago: json['estadoPago'] ?? 'PENDIENTE',
       estadoEntrega: json['estadoEntrega'] ?? 'SOLICITADO',
       fechaPedido: json['fechaPedido'] ?? '',

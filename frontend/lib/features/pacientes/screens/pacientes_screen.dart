@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -1218,13 +1220,20 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
   }
 
   Widget _buildCardHistorial(OrdenTrabajo o) {
+    final bool esVentaGeneral = o.numeroOrden.startsWith('OV-');
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.gray200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gray200, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1233,8 +1242,8 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.gray50,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              color: AppColors.gray50.withOpacity(0.5),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1242,8 +1251,22 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ORDEN #${o.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: AppColors.primary)),
-                    Text('Fecha: ${o.fecha.length >= 10 ? o.fecha.substring(0, 10) : o.fecha}', style: const TextStyle(fontSize: 11, color: AppColors.gray500)),
+                    Text(
+                      'ORDEN #${o.numeroOrden}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        color: AppColors.primary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'Fecha: ${o.fecha.length >= 10 ? o.fecha.substring(0, 10) : o.fecha}',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppColors.gray500,
+                      ),
+                    ),
                   ],
                 ),
                 _statusBadge(o.estado),
@@ -1255,58 +1278,264 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // SECCIÓN CLÍNICA (RECETA)
-                const Row(
-                  children: [
-                    Icon(Icons.visibility_rounded, size: 16, color: AppColors.gray400),
-                    SizedBox(width: 8),
-                    Text('HISTORIAL CLÍNICO / RECETA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.gray700, letterSpacing: 0.5)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _clinicalInfo('OJO DERECHO (OD)', o.graduacionOd ?? 'Plano')),
-                    Container(width: 1, height: 30, color: AppColors.gray100, margin: const EdgeInsets.symmetric(horizontal: 16)),
-                    Expanded(child: _clinicalInfo('OJO IZQUIERDO (OI)', o.graduacionOi ?? 'Plano')),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _clinicalInfo('ADICIÓN (ADD)', o.adicion ?? '---')),
-                    Container(width: 1, height: 30, color: AppColors.gray100, margin: const EdgeInsets.symmetric(horizontal: 16)),
-                    Expanded(child: _clinicalInfo('D.I.P.', o.dip ?? '---')),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Divider(height: 1, color: AppColors.gray100),
-                ),
-                // SECCIÓN COMERCIAL (PRODUCTOS)
-                const Row(
-                  children: [
-                    Icon(Icons.shopping_bag_rounded, size: 16, color: AppColors.gray400),
-                    SizedBox(width: 8),
-                    Text('DETALLES DE LA COMPRA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: AppColors.gray700, letterSpacing: 0.5)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _productRow('MONTURA', o.montura ?? 'No registrada', o.esMonturaCliente == true),
-                const SizedBox(height: 8),
-                _productRow('LUNAS / CRISTALES', o.tipoLuna ?? 'No registrados', o.esLunaCliente == true),
-                if (o.observaciones != null && o.observaciones!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: _productRow('OBSERVACIONES', o.observaciones!, false),
+                if (!esVentaGeneral) ...[
+                  // SECCIÓN CLÍNICA (RECETA)
+                  Row(
+                    children: [
+                      const Icon(Icons.visibility_rounded, size: 16, color: AppColors.gray400),
+                      const SizedBox(width: 8),
+                      Text(
+                        'HISTORIAL CLÍNICO / RECETA',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.gray700,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
+                  Table(
+                    border: TableBorder.all(color: AppColors.gray200.withOpacity(0.8), width: 1, borderRadius: BorderRadius.circular(8)),
+                    columnWidths: const {
+                      0: FlexColumnWidth(2.5),
+                      1: FlexColumnWidth(5),
+                      2: FlexColumnWidth(2.5),
+                    },
+                    children: [
+                      TableRow(
+                        decoration: BoxDecoration(color: AppColors.gray50.withOpacity(0.5)),
+                        children: [
+                          Padding(padding: const EdgeInsets.all(6), child: Text('Ojo', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.gray600))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text('Medida / Graduación', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.gray600))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text('A.V.', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.gray600))),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          Padding(padding: const EdgeInsets.all(6), child: Text('OD (Derecho)', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.graduacionOd ?? 'Plano', style: GoogleFonts.inter(fontSize: 10))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.avOd ?? '---', style: GoogleFonts.inter(fontSize: 10))),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          Padding(padding: const EdgeInsets.all(6), child: Text('OI (Izquierdo)', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.graduacionOi ?? 'Plano', style: GoogleFonts.inter(fontSize: 10))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.avOi ?? '---', style: GoogleFonts.inter(fontSize: 10))),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.gray50.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.gray200.withOpacity(0.8)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.inter(color: Colors.black87, fontSize: 10),
+                              children: [
+                                TextSpan(text: 'Adición (ADD): ', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                                TextSpan(text: o.adicion ?? '---'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(width: 1, height: 12, color: AppColors.gray300, margin: const EdgeInsets.symmetric(horizontal: 8)),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.inter(color: Colors.black87, fontSize: 10),
+                              children: [
+                                TextSpan(text: 'D.I.P.: ', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                                TextSpan(text: o.dip ?? '---'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1, color: AppColors.gray100),
+                  ),
+                ],
+                // SECCIÓN COMERCIAL (PRODUCTOS)
+                Row(
+                  children: [
+                    const Icon(Icons.shopping_bag_rounded, size: 16, color: AppColors.gray400),
+                    const SizedBox(width: 8),
+                    Text(
+                      'DETALLES DE LA COMPRA',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray50.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.gray200.withOpacity(0.8)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (esVentaGeneral)
+                        _productRow('PRODUCTOS', o.tipoLuna ?? 'No registrados', false)
+                      else ...[
+                        _productRow('MONTURA', o.montura ?? 'No registrada', o.esMonturaCliente == true),
+                        const Divider(height: 8, color: AppColors.gray100),
+                        _productRow('LUNAS / CRISTALES', o.tipoLuna ?? 'No registrados', o.esLunaCliente == true),
+                      ],
+                      if (o.observaciones != null && o.observaciones!.isNotEmpty) ...[
+                        const Divider(height: 8, color: AppColors.gray100),
+                        _productRow('OBSERVACIONES', o.observaciones!, false),
+                      ],
+                    ],
+                  ),
+                ),
+                if (o.tieneCompraExtra == true) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1, color: AppColors.gray100),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.add_shopping_cart_rounded, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'COMPRA EXTRA - SEGUNDOS LENTES',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Table(
+                    border: TableBorder.all(color: AppColors.gray200.withOpacity(0.8), width: 1, borderRadius: BorderRadius.circular(8)),
+                    columnWidths: const {
+                      0: FlexColumnWidth(2.5),
+                      1: FlexColumnWidth(5),
+                      2: FlexColumnWidth(2.5),
+                    },
+                    children: [
+                      TableRow(
+                        decoration: BoxDecoration(color: AppColors.gray50.withOpacity(0.5)),
+                        children: [
+                          Padding(padding: const EdgeInsets.all(6), child: Text('Ojo', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.gray600))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text('Medida / Graduación', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.gray600))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text('A.V.', style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.gray600))),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          Padding(padding: const EdgeInsets.all(6), child: Text('OD (Derecho)', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.graduacionOdExtra ?? 'Plano', style: GoogleFonts.inter(fontSize: 10))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.avOdExtra ?? '---', style: GoogleFonts.inter(fontSize: 10))),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          Padding(padding: const EdgeInsets.all(6), child: Text('OI (Izquierdo)', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.graduacionOiExtra ?? 'Plano', style: GoogleFonts.inter(fontSize: 10))),
+                          Padding(padding: const EdgeInsets.all(6), child: Text(o.avOiExtra ?? '---', style: GoogleFonts.inter(fontSize: 10))),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.gray50.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.gray200.withOpacity(0.8)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.inter(color: Colors.black87, fontSize: 10),
+                              children: [
+                                TextSpan(text: 'Adición (ADD) Extra: ', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                                TextSpan(text: o.adicionExtra ?? '---'),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(width: 1, height: 12, color: AppColors.gray300, margin: const EdgeInsets.symmetric(horizontal: 8)),
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: GoogleFonts.inter(color: Colors.black87, fontSize: 10),
+                              children: [
+                                TextSpan(text: 'D.I.P. Extra: ', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                                TextSpan(text: o.dipExtra ?? '---'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.gray50.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.gray200.withOpacity(0.8)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _productRow('MONTURA EXTRA', o.monturaExtra ?? 'No registrada', o.esMonturaClienteExtra == true),
+                        const Divider(height: 8, color: AppColors.gray100),
+                        _productRow('LUNAS EXTRA', o.tipoLunaExtra ?? 'No registradas', o.esLunaClienteExtra == true),
+                        if (o.observacionesExtra != null && o.observacionesExtra!.isNotEmpty) ...[
+                          const Divider(height: 8, color: AppColors.gray100),
+                          _productRow('OBSERVACIONES EXTRA', o.observacionesExtra!, false),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 // TOTAL
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text('TOTAL INVERTIDO: ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
-                    Text('S/ ${o.montoTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.gray900)),
+                    Text('TOTAL INVERTIDO: ', style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray500)),
+                    Text(
+                      'S/ ${o.montoTotal.toStringAsFixed(2)}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.gray900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -1321,26 +1550,65 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.gray400)),
+        Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 8, fontWeight: FontWeight.w600, color: AppColors.gray400)),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.gray800)),
+        Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.gray800)),
       ],
     );
   }
 
   Widget _productRow(String label, String value, bool isClient) {
-    return Row(
-      children: [
-        Text('$label: ', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gray600)),
-        Text(value, style: const TextStyle(fontSize: 11, color: AppColors.gray800)),
-        if (isClient)
-          Container(
-            margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(4)),
-            child: const Text('PROPIO', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.primary)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130, // Ancho fijo para alinear los valores verticalmente (tipo impreso)
+            child: Text(
+              label, 
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11, 
+                fontWeight: FontWeight.bold, 
+                color: AppColors.gray500,
+              ),
+            ),
           ),
-      ],
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    value, 
+                    style: GoogleFonts.inter(
+                      fontSize: 11, 
+                      color: AppColors.gray800,
+                    ),
+                  ),
+                ),
+                if (isClient)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withOpacity(0.5), 
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'PROPIO', 
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 8, 
+                        fontWeight: FontWeight.bold, 
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1351,7 +1619,7 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: c.withOpacity(0.2))),
-      child: Text(status, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: c)),
+      child: Text(status, style: GoogleFonts.plusJakartaSans(fontSize: 9, fontWeight: FontWeight.w600, color: c)),
     );
   }
 
@@ -1361,8 +1629,8 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          Text(value, style: const TextStyle(fontSize: 13)),
+          Text('$label: ', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13)),
+          Text(value, style: GoogleFonts.inter(fontSize: 13)),
         ],
       ),
     );

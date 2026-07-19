@@ -23,7 +23,7 @@ class ApiService {
     return '$base$path';
   }
 
-  // --- FUNCIÓN PRIVADA PARA OBTENER EL TOKEN ---
+  // FUNCIÓN PRIVADA PARA OBTENER EL TOKEN
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
@@ -32,6 +32,23 @@ class ApiService {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
+  }
+
+  // PARSEAR MENSAJE DE ERROR DEL BACKEND
+  static String _parseErrorMessage(http.Response response, String defaultMsg) {
+    try {
+      final decoded = json.decode(utf8.decode(response.bodyBytes));
+      if (decoded is Map && decoded.containsKey('message')) {
+        return decoded['message'].toString();
+      }
+    } catch (_) {
+      try {
+        if (response.body.isNotEmpty) {
+          return response.body;
+        }
+      } catch (_) {}
+    }
+    return '$defaultMsg (Código: ${response.statusCode})';
   }
 
   // 1. Petición GET con Token
@@ -57,9 +74,12 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       } else {
-        throw Exception('Error del servidor: ${response.statusCode}');
+        throw Exception(_parseErrorMessage(response, 'Error del servidor'));
       }
     } catch (e) {
+      if (e is Exception && !e.toString().contains('Error de conexión:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
@@ -89,9 +109,12 @@ class ApiService {
       } else if (response.statusCode == 403) {
         throw Exception('Error 403: No tienes permisos o el token expiró.');
       } else {
-        throw Exception('Error al guardar: ${response.statusCode}');
+        throw Exception(_parseErrorMessage(response, 'Error al guardar'));
       }
     } catch (e) {
+      if (e is Exception && !e.toString().contains('Error de conexión:')) {
+        rethrow;
+      }
       throw Exception('Error de conexión: $e');
     }
   }
@@ -119,9 +142,12 @@ class ApiService {
       if (response.statusCode == 200) {
         return json.decode(utf8.decode(response.bodyBytes));
       } else {
-        throw Exception('Error al actualizar: ${response.statusCode}');
+        throw Exception(_parseErrorMessage(response, 'Error al actualizar'));
       }
     } catch (e) {
+      if (e is Exception && !e.toString().contains('Error de conexión:')) {
+        rethrow;
+      }
       print('❌ ERROR HTTP PUT ($endpoint): $e');
       throw Exception('Error de conexión');
     }
@@ -149,9 +175,12 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       } else {
-        throw Exception('Error al eliminar: ${response.statusCode}');
+        throw Exception(_parseErrorMessage(response, 'Error al eliminar'));
       }
     } catch (e) {
+      if (e is Exception && !e.toString().contains('Error de conexión:')) {
+        rethrow;
+      }
       print('❌ ERROR HTTP DELETE ($endpoint): $e');
       throw Exception('Error de conexión');
     }
@@ -185,9 +214,12 @@ class ApiService {
       } else if (response.statusCode == 403) {
         throw Exception('Error 403: No tienes permisos.');
       } else {
-        throw Exception('Error al modificar: ${response.statusCode}');
+        throw Exception(_parseErrorMessage(response, 'Error al modificar'));
       }
     } catch (e) {
+      if (e is Exception && !e.toString().contains('Error de conexión:')) {
+        rethrow;
+      }
       print('❌ ERROR HTTP PATCH ($endpoint): $e');
       throw Exception('Error de conexión: $e');
     }

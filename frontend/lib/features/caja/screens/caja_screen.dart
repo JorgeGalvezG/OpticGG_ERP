@@ -32,76 +32,76 @@ class _CajaScreenState extends State<CajaScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // CABECERA
-          Padding(
-            padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Caja y Movimientos', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
-                    if (!isMobile) const SizedBox(height: 4),
-                    if (!isMobile) const Text('Control de ingresos y salidas de dinero', style: TextStyle(fontSize: 14, color: AppColors.gray500)),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => const _NuevoMovimientoDialog()),
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: const Text('Nuevo Registro'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
-                )
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // CABECERA
+        Padding(
+          padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Caja y Movimientos', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.gray900)),
+                  if (!isMobile) const SizedBox(height: 4),
+                  if (!isMobile) const Text('Control de ingresos y salidas de dinero', style: TextStyle(fontSize: 14, color: AppColors.gray500)),
+                ],
+              ),
+              ElevatedButton.icon(
+                onPressed: () => showDialog(context: context, barrierDismissible: false, builder: (context) => const _NuevoMovimientoDialog()),
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: const Text('Nuevo Registro'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0),
+              )
+            ],
           ),
+        ),
 
-          // BUSCADOR Y FILTROS
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Buscar por descripción...',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    ),
-                    onChanged: (v) => setState(() => _filtroTexto = v),
+        // BUSCADOR Y FILTROS
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por descripción...',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
+                  onChanged: (v) => setState(() => _filtroTexto = v),
                 ),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
-                    if (picked != null) setState(() => _rangoFechas = picked);
-                  },
-                  icon: const Icon(Icons.date_range_rounded),
-                  label: Text(_rangoFechas == null ? 'Filtrar Fecha' : 'Filtrado'),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDateRangePicker(context: context, firstDate: DateTime(2020), lastDate: DateTime.now().add(const Duration(days: 1)));
+                  if (picked != null) setState(() => _rangoFechas = picked);
+                },
+                icon: const Icon(Icons.date_range_rounded),
+                label: Text(_rangoFechas == null ? 'Filtrar Fecha' : 'Filtrado'),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                if (_rangoFechas != null)
-                  IconButton(icon: const Icon(Icons.clear_rounded, color: AppColors.danger), onPressed: () => setState(() => _rangoFechas = null)),
-              ],
-            ),
+              ),
+              if (_rangoFechas != null)
+                IconButton(icon: const Icon(Icons.clear_rounded, color: AppColors.danger), onPressed: () => setState(() => _rangoFechas = null)),
+            ],
           ),
+        ),
 
-          // CONTENIDO CONECTADO AL PROVIDER
-          Consumer<CajaProvider>(
+        // CONTENIDO CONECTADO AL PROVIDER
+        Expanded(
+          child: Consumer<CajaProvider>(
             builder: (context, cajaProv, child) {
               final dev = Provider.of<DeveloperProvider>(context);
 
@@ -165,36 +165,37 @@ class _CajaScreenState extends State<CajaScreen> {
                       const SizedBox(height: 12),
 
                       // 2. LISTA DE MOVIMIENTOS
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 24.0).copyWith(bottom: 24.0),
-                        decoration: BoxDecoration(
-                          color: dev.isDevMode ? Colors.white.withOpacity(0.05) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: dev.isDevMode ? Colors.white10 : AppColors.gray200)
-                        ),
-                        child: movimientosFiltrados.isEmpty
-                            ? Center(child: Padding(padding: const EdgeInsets.all(40), child: Text('No hay movimientos que coincidan con los filtros', style: TextStyle(color: dev.isDevMode ? Colors.white38 : AppColors.gray500))))
-                            : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: movimientosFiltrados.length,
-                          separatorBuilder: (context, index) => Divider(height: 1, color: dev.isDevMode ? Colors.white10 : AppColors.gray100),
-                          itemBuilder: (context, index) {
-                            final mov = movimientosFiltrados[index];
-                            final isIngreso = mov.tipo == 'ENTRADA';
-                            final color = isIngreso ? AppColors.success : (dev.isDevMode ? AppColors.nebulaPink : AppColors.danger);
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 24.0).copyWith(bottom: 24.0),
+                          decoration: BoxDecoration(
+                            color: dev.isDevMode ? Colors.white.withOpacity(0.05) : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: dev.isDevMode ? Colors.white10 : AppColors.gray200)
+                          ),
+                          child: movimientosFiltrados.isEmpty
+                              ? Center(child: Padding(padding: const EdgeInsets.all(40), child: Text('No hay movimientos que coincidan con los filtros', style: TextStyle(color: dev.isDevMode ? Colors.white38 : AppColors.gray500))))
+                              : ListView.separated(
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: movimientosFiltrados.length,
+                            separatorBuilder: (context, index) => Divider(height: 1, color: dev.isDevMode ? Colors.white10 : AppColors.gray100),
+                            itemBuilder: (context, index) {
+                              final mov = movimientosFiltrados[index];
+                              final isIngreso = mov.tipo == 'ENTRADA';
+                              final color = isIngreso ? AppColors.success : (dev.isDevMode ? AppColors.nebulaPink : AppColors.danger);
 
-                            return Material(
-                              color: Colors.transparent,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                                leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(isIngreso ? Icons.add_rounded : Icons.remove_rounded, color: color)),
-                                title: Text(mov.descripcion, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: dev.isDevMode ? Colors.white : AppColors.gray900)),
-                                subtitle: Text('${mov.fecha.length >= 10 ? mov.fecha.substring(0, 10) : mov.fecha}  •  Usuario: ${mov.usuarioNombre}', style: TextStyle(fontSize: 12, color: dev.isDevMode ? Colors.white38 : AppColors.gray500)),
-                                trailing: Text('${isIngreso ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
-                              ),
-                            );
-                          },
+                              return Material(
+                                color: Colors.transparent,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                                  leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(isIngreso ? Icons.add_rounded : Icons.remove_rounded, color: color)),
+                                  title: Text(mov.descripcion, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: dev.isDevMode ? Colors.white : AppColors.gray900)),
+                                  subtitle: Text('${mov.fecha.length >= 10 ? mov.fecha.substring(0, 10) : mov.fecha}  •  Usuario: ${mov.usuarioNombre}', style: TextStyle(fontSize: 12, color: dev.isDevMode ? Colors.white38 : AppColors.gray500)),
+                                  trailing: Text('${isIngreso ? '+' : '-'} S/ ${mov.monto.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],
@@ -203,8 +204,8 @@ class _CajaScreenState extends State<CajaScreen> {
               );
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -356,7 +357,13 @@ class _NuevoMovimientoDialogState extends State<_NuevoMovimientoDialog> {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Requerido';
+                        final n = double.tryParse(v);
+                        if (n == null) return 'Inválido';
+                        if (n <= 0) return 'Debe ser mayor a 0';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                     const Text('Descripción o Motivo *', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.danger)),

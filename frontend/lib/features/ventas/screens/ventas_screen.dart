@@ -812,6 +812,18 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   DateTime? _fechaVenta;
   bool _pacienteNuevoManual = false;
 
+  // Single-eye selections
+  bool _soloOD = false;
+  bool _soloOI = false;
+  bool _soloODExtra = false;
+  bool _soloOIExtra = false;
+
+  // Compra Extra state variables
+  bool _tieneCompraExtra = false;
+  bool _monturaPropiaExtra = false;
+  bool _monturaManualExtra = false;
+  bool _lunasPropiasExtra = false;
+
   String? _selectedTienda;
   final _especialistaCtrl = TextEditingController();
 
@@ -840,6 +852,28 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   final _tipoLunaOiCtrl = TextEditingController();
   final _precioLunaOiCtrl = TextEditingController(text: '0.00');
   final _obsCtrl = TextEditingController();
+
+  // Compra Extra Controladores
+  final _odEsfExtra = TextEditingController();
+  final _odCilExtra = TextEditingController();
+  final _odEjeExtra = TextEditingController();
+  final _odAvExtra = TextEditingController();
+  final _oiEsfExtra = TextEditingController();
+  final _oiCilExtra = TextEditingController();
+  final _oiEjeExtra = TextEditingController();
+  final _oiAvExtra = TextEditingController();
+  final _addCtrlExtra = TextEditingController();
+  final _dipCtrlExtra = TextEditingController();
+  final _monturaCtrlExtra = TextEditingController();
+  final _precioMonturaCtrlExtra = TextEditingController(text: '0.00');
+  final _lunaCtrlExtra = TextEditingController();
+  final _tipoLunaOdCtrlExtra = TextEditingController();
+  final _precioLunaOdCtrlExtra = TextEditingController(text: '0.00');
+  final _tipoLunaOiCtrlExtra = TextEditingController();
+  final _precioLunaOiCtrlExtra = TextEditingController(text: '0.00');
+  final _obsCtrlExtra = TextEditingController();
+  final _especialistaCtrlExtra = TextEditingController();
+
   final _totalCtrl = TextEditingController();
   final _abonoCtrl = TextEditingController();
   String _saldo = "0.00";
@@ -860,6 +894,10 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     _precioMonturaCtrl.addListener(_recalcularTotalFabricacion);
     _precioLunaOdCtrl.addListener(_recalcularTotalFabricacion);
     _precioLunaOiCtrl.addListener(_recalcularTotalFabricacion);
+
+    _precioMonturaCtrlExtra.addListener(_recalcularTotalFabricacion);
+    _precioLunaOdCtrlExtra.addListener(_recalcularTotalFabricacion);
+    _precioLunaOiCtrlExtra.addListener(_recalcularTotalFabricacion);
     
     if (widget.pacienteIdPrecargado != null) {
       _pacienteId = widget.pacienteIdPrecargado;
@@ -891,8 +929,34 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     _addCtrl.dispose();
     _dipCtrl.dispose();
     _monturaCtrl.dispose();
+    _precioMonturaCtrl.dispose();
     _lunaCtrl.dispose();
+    _tipoLunaOdCtrl.dispose();
+    _precioLunaOdCtrl.dispose();
+    _tipoLunaOiCtrl.dispose();
+    _precioLunaOiCtrl.dispose();
     _obsCtrl.dispose();
+
+    _odEsfExtra.dispose();
+    _odCilExtra.dispose();
+    _odEjeExtra.dispose();
+    _odAvExtra.dispose();
+    _oiEsfExtra.dispose();
+    _oiCilExtra.dispose();
+    _oiEjeExtra.dispose();
+    _oiAvExtra.dispose();
+    _addCtrlExtra.dispose();
+    _dipCtrlExtra.dispose();
+    _monturaCtrlExtra.dispose();
+    _precioMonturaCtrlExtra.dispose();
+    _lunaCtrlExtra.dispose();
+    _tipoLunaOdCtrlExtra.dispose();
+    _precioLunaOdCtrlExtra.dispose();
+    _tipoLunaOiCtrlExtra.dispose();
+    _precioLunaOiCtrlExtra.dispose();
+    _obsCtrlExtra.dispose();
+    _especialistaCtrlExtra.dispose();
+
     super.dispose();
   }
 
@@ -957,7 +1021,16 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       double pM = double.tryParse(_precioMonturaCtrl.text) ?? 0;
       double pLod = double.tryParse(_precioLunaOdCtrl.text) ?? 0;
       double pLoi = double.tryParse(_precioLunaOiCtrl.text) ?? 0;
-      _totalCtrl.text = (pM + pLod + pLoi).toStringAsFixed(2);
+      
+      double extraTotal = 0.0;
+      if (_tieneCompraExtra) {
+        double pMExtra = double.tryParse(_precioMonturaCtrlExtra.text) ?? 0;
+        double pLodExtra = double.tryParse(_precioLunaOdCtrlExtra.text) ?? 0;
+        double pLoiExtra = double.tryParse(_precioLunaOiCtrlExtra.text) ?? 0;
+        extraTotal = pMExtra + pLodExtra + pLoiExtra;
+      }
+      
+      _totalCtrl.text = (pM + pLod + pLoi + extraTotal).toStringAsFixed(2);
     }
   }
 
@@ -1052,15 +1125,36 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       dip: _tipoVenta == 'ORDEN_TRABAJO' ? _dipCtrl.text : null,
       esLunaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _lunasPropias : null,
       tipoLuna: _tipoVenta == 'ORDEN_TRABAJO' ? (_lunasPropias ? "PROPIA" : _lunaCtrl.text) : null,
-      tipoLunaOd: _tipoVenta == 'ORDEN_TRABAJO' ? _tipoLunaOdCtrl.text : null,
-      precioLunaOd: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioLunaOdCtrl.text) ?? 0) : null,
-      tipoLunaOi: _tipoVenta == 'ORDEN_TRABAJO' ? _tipoLunaOiCtrl.text : null,
-      precioLunaOi: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioLunaOiCtrl.text) ?? 0) : null,
+      tipoLunaOd: _tipoVenta == 'ORDEN_TRABAJO' && !_soloOI ? _tipoLunaOdCtrl.text : null,
+      precioLunaOd: _tipoVenta == 'ORDEN_TRABAJO' && !_soloOI ? (double.tryParse(_precioLunaOdCtrl.text) ?? 0) : 0.0,
+      tipoLunaOi: _tipoVenta == 'ORDEN_TRABAJO' && !_soloOD ? _tipoLunaOiCtrl.text : null,
+      precioLunaOi: _tipoVenta == 'ORDEN_TRABAJO' && !_soloOD ? (double.tryParse(_precioLunaOiCtrl.text) ?? 0) : 0.0,
       esMonturaCliente: _tipoVenta == 'ORDEN_TRABAJO' ? _monturaPropia : null,
       montura: _tipoVenta == 'ORDEN_TRABAJO' ? (_monturaPropia ? "PROPIA" : _monturaCtrl.text) : null,
       precioMontura: _tipoVenta == 'ORDEN_TRABAJO' ? (double.tryParse(_precioMonturaCtrl.text) ?? 0) : null,
       observaciones: _obsCtrl.text,
       especialista: _tipoVenta == 'ORDEN_TRABAJO' ? _especialistaCtrl.text.trim() : null,
+
+      // Compra Extra fields (Se copian las mismas medidas clínicas y especialista del primer par)
+      tieneCompraExtra: _tipoVenta == 'ORDEN_TRABAJO' ? _tieneCompraExtra : null,
+      graduacionOdExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _armarMedida(_odEsf.text, _odCil.text, _odEje.text) : null,
+      avOdExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _odAv.text : null,
+      graduacionOiExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _armarMedida(_oiEsf.text, _oiCil.text, _oiEje.text) : null,
+      avOiExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _oiAv.text : null,
+      adicionExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _addCtrl.text : null,
+      dipExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _dipCtrl.text : null,
+      esLunaClienteExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _lunasPropiasExtra : null,
+      tipoLunaExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? (_lunasPropiasExtra ? "PROPIA" : _lunaCtrlExtra.text) : null,
+      tipoLunaOdExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra && !_soloOIExtra ? _tipoLunaOdCtrlExtra.text : null,
+      precioLunaOdExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra && !_soloOIExtra ? (double.tryParse(_precioLunaOdCtrlExtra.text) ?? 0) : 0.0,
+      tipoLunaOiExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra && !_soloODExtra ? _tipoLunaOiCtrlExtra.text : null,
+      precioLunaOiExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra && !_soloODExtra ? (double.tryParse(_precioLunaOiCtrlExtra.text) ?? 0) : 0.0,
+      esMonturaClienteExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _monturaPropiaExtra : null,
+      monturaExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? (_monturaPropiaExtra ? "PROPIA" : _monturaCtrlExtra.text) : null,
+      precioMonturaExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? (double.tryParse(_precioMonturaCtrlExtra.text) ?? 0) : null,
+      observacionesExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _obsCtrlExtra.text : null,
+      especialistaExtra: _tipoVenta == 'ORDEN_TRABAJO' && _tieneCompraExtra ? _especialistaCtrl.text.trim() : null,
+
       // Productos de almacén
       productos: _tipoVenta == 'ORDEN_VENTA' ? _productosSeleccionados : null,
     );
@@ -1163,6 +1257,26 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                         ),
                         const SizedBox(height: 12),
                       ],
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _pacienteNuevoManual,
+                            onChanged: (val) {
+                              setState(() {
+                                _pacienteNuevoManual = val ?? false;
+                                if (_pacienteNuevoManual) {
+                                  _pacienteId = null;
+                                  _pacienteSearchCtrl.clear();
+                                } else {
+                                  _pacienteManualCtrl.clear();
+                                }
+                              });
+                            },
+                          ),
+                          const Text('Paciente Nuevo (Ingreso Manual)', style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
                       _row(isMobile, [
                         _buildPacienteSearcher(),
                         _vendedorDropdown(),
@@ -1206,6 +1320,29 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                               ),
                           ],
                         ),
+                        // Ojo Derecho/Izquierdo filters (Determina la venta de lunas, no limita la graduación)
+                        Row(
+                          children: [
+                            _checkRow('Solo Ojo Derecho (OD)', _soloOD, (v) => setState(() {
+                              _soloOD = v!;
+                              if (_soloOD) {
+                                _soloOI = false;
+                                _tipoLunaOiCtrl.clear(); _precioLunaOiCtrl.text = '0.00';
+                              }
+                              _recalcularTotalFabricacion();
+                            })),
+                            const SizedBox(width: 16),
+                            _checkRow('Solo Ojo Izquierdo (OI)', _soloOI, (v) => setState(() {
+                              _soloOI = v!;
+                              if (_soloOI) {
+                                _soloOD = false;
+                                _tipoLunaOdCtrl.clear(); _precioLunaOdCtrl.text = '0.00';
+                              }
+                              _recalcularTotalFabricacion();
+                            })),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         _buildDataTable(),
                         const SizedBox(height: 16),
                         _row(isMobile, [
@@ -1240,18 +1377,106 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                         if (!_lunasPropias) ...[
                           const Text("Detalle de Cristales", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 8),
-                          _row(isMobile, [
-                            _field('Tipo Luna O.D.', Icons.remove_red_eye, _tipoLunaOdCtrl, hint: 'Resina UV'),
-                            _field('Precio O.D. S/', Icons.sell, _precioLunaOdCtrl, num: true),
-                          ]),
-                          const SizedBox(height: 8),
-                          _row(isMobile, [
-                            _field('Tipo Luna O.I.', Icons.remove_red_eye, _tipoLunaOiCtrl, hint: 'Resina UV'),
-                            _field('Precio O.I. S/', Icons.sell, _precioLunaOiCtrl, num: true),
-                          ]),
+                          if (!_soloOI)
+                            _row(isMobile, [
+                              _field('Tipo Luna O.D.', Icons.remove_red_eye, _tipoLunaOdCtrl, hint: 'Resina UV'),
+                              _field('Precio O.D. S/', Icons.sell, _precioLunaOdCtrl, num: true),
+                            ]),
+                          if (!_soloOI && !_soloOD) const SizedBox(height: 8),
+                          if (!_soloOD)
+                            _row(isMobile, [
+                              _field('Tipo Luna O.I.', Icons.remove_red_eye, _tipoLunaOiCtrl, hint: 'Resina UV'),
+                              _field('Precio O.I. S/', Icons.sell, _precioLunaOiCtrl, num: true),
+                            ]),
                         ],
                         const SizedBox(height: 12),
                         _field('Tipo de Cristales (General/Comentario)', Icons.remove_red_eye, _lunaCtrl, readOnly: _lunasPropias),
+
+                        // Compra Extra block
+                        const Divider(height: 32),
+                        _checkRow('Registrar Compra Extra (Segundos Lentes)', _tieneCompraExtra, (v) => setState(() {
+                          _tieneCompraExtra = v!;
+                          _recalcularTotalFabricacion();
+                        })),
+                        if (_tieneCompraExtra) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.primaryLight.withOpacity(0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('COMPRA EXTRA - DETALLE DE SEGUNDOS LENTES', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary)),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    _checkRow('Solo Ojo Derecho (OD)', _soloODExtra, (v) => setState(() {
+                                      _soloODExtra = v!;
+                                      if (_soloODExtra) {
+                                        _soloOIExtra = false;
+                                        _tipoLunaOiCtrlExtra.clear(); _precioLunaOiCtrlExtra.text = '0.00';
+                                      }
+                                      _recalcularTotalFabricacion();
+                                    })),
+                                    const SizedBox(width: 16),
+                                    _checkRow('Solo Ojo Izquierdo (OI)', _soloOIExtra, (v) => setState(() {
+                                      _soloOIExtra = v!;
+                                      if (_soloOIExtra) {
+                                        _soloODExtra = false;
+                                        _tipoLunaOdCtrlExtra.clear(); _precioLunaOdCtrlExtra.text = '0.00';
+                                      }
+                                      _recalcularTotalFabricacion();
+                                    })),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                const Text('Detalles de Montura Extra', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                _checkRow('Ingresar montura manual para compra extra', _monturaManualExtra, (v) => setState(() { 
+                                  _monturaManualExtra = v!; 
+                                  if (_monturaManualExtra) _monturaPropiaExtra = false;
+                                })),
+                                _checkRow('Montura propia del cliente (Compra extra)', _monturaPropiaExtra, (v) => setState(() { 
+                                  _monturaPropiaExtra = v!;
+                                  if (_monturaPropiaExtra) _monturaManualExtra = false;
+                                })),
+                                if (!_monturaManualExtra && !_monturaPropiaExtra)
+                                  _buildBuscadorMonturaAlmacenExtra(),
+                                if (_monturaManualExtra)
+                                  _field('Marca/Modelo de Montura Extra', Icons.wallpaper_rounded, _monturaCtrlExtra),
+                                if (!_monturaPropiaExtra)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12.0),
+                                    child: _field('Precio Montura Extra S/', Icons.sell_rounded, _precioMonturaCtrlExtra, num: true),
+                                  ),
+                                const Divider(height: 24),
+                                _checkRow('Lunas propias (Compra extra)', _lunasPropiasExtra, (v) => setState(() => _lunasPropiasExtra = v!)),
+                                if (!_lunasPropiasExtra) ...[
+                                  const Text("Detalle de Cristales Extra", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 8),
+                                  if (!_soloOIExtra)
+                                    _row(isMobile, [
+                                      _field('Tipo Luna O.D. Extra', Icons.remove_red_eye, _tipoLunaOdCtrlExtra, hint: 'Resina UV'),
+                                      _field('Precio O.D. Extra S/', Icons.sell, _precioLunaOdCtrlExtra, num: true),
+                                    ]),
+                                  if (!_soloOIExtra && !_soloODExtra) const SizedBox(height: 8),
+                                  if (!_soloODExtra)
+                                    _row(isMobile, [
+                                      _field('Tipo Luna O.I. Extra', Icons.remove_red_eye, _tipoLunaOiCtrlExtra, hint: 'Resina UV'),
+                                      _field('Precio O.I. Extra S/', Icons.sell, _precioLunaOiCtrlExtra, num: true),
+                                    ]),
+                                ],
+                                const SizedBox(height: 12),
+                                _field('Tipo de Cristales Extra (General)', Icons.remove_red_eye, _lunaCtrlExtra, readOnly: _lunasPropiasExtra),
+                                const SizedBox(height: 12),
+                                _field('Observaciones Compra Extra', Icons.comment, _obsCtrlExtra, maxLines: 2),
+                              ],
+                            ),
+                          ),
+                        ],
                       ] else ...[
                         _section('2. Productos de Almacén'),
                         Row(
@@ -1449,80 +1674,55 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   }
 
   Widget _buildPacienteSearcher() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Checkbox(
-              value: _pacienteNuevoManual,
-              onChanged: (val) {
-                setState(() {
-                  _pacienteNuevoManual = val ?? false;
-                  if (_pacienteNuevoManual) {
-                    _pacienteId = null;
-                    _pacienteSearchCtrl.clear();
-                  } else {
-                    _pacienteManualCtrl.clear();
-                  }
-                });
-              },
-            ),
-            const Text('Paciente Nuevo (Ingreso Manual)', style: TextStyle(fontSize: 12)),
-          ],
+    return _pacienteNuevoManual ? 
+      TextFormField(
+        controller: _pacienteManualCtrl,
+        decoration: InputDecoration(
+          labelText: 'Nombre y Apellidos del Paciente *',
+          prefixIcon: const Icon(Icons.person_add_alt_1_rounded),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          filled: true,
+          fillColor: Colors.white,
         ),
-        const SizedBox(height: 4),
-        _pacienteNuevoManual ? 
-          TextFormField(
-            controller: _pacienteManualCtrl,
-            decoration: InputDecoration(
-              labelText: 'Nombre y Apellidos del Paciente *',
-              prefixIcon: const Icon(Icons.person_add_alt_1_rounded),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingrese el nombre del paciente' : null,
-          )
-        : Consumer<PacientesProvider>(
-            builder: (context, prov, _) {
-              return Autocomplete<Paciente>(
-                displayStringForOption: (p) => "${p.nombre} ${p.apellidos}",
-                initialValue: TextEditingValue(text: _pacienteSearchCtrl.text),
-                optionsBuilder: (textValue) {
-                  if (textValue.text.isEmpty) return const Iterable<Paciente>.empty();
-                  return prov.pacientes.where((p) => 
-                    p.nombre.toLowerCase().contains(textValue.text.toLowerCase()) || 
-                    p.apellidos.toLowerCase().contains(textValue.text.toLowerCase()));
-                },
-                onSelected: (p) {
-                  setState(() {
-                    _pacienteId = p.id;
-                    _pacienteSearchCtrl.text = "${p.nombre} ${p.apellidos}";
-                  });
-                },
-                fieldViewBuilder: (context, ctrl, focus, onFieldSubmitted) {
-                  if (ctrl.text != _pacienteSearchCtrl.text && _pacienteSearchCtrl.text.isNotEmpty) {
-                    ctrl.text = _pacienteSearchCtrl.text;
-                  }
-                  return TextFormField(
-                    controller: ctrl,
-                    focusNode: focus,
-                    decoration: InputDecoration(
-                      labelText: 'Buscar Paciente *',
-                      prefixIcon: const Icon(Icons.person_search_rounded),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      filled: true,
-                      fillColor: AppColors.gray50,
-                    ),
-                    validator: (v) => _pacienteId == null ? 'Seleccione un paciente' : null,
-                  );
-                },
+        validator: (v) => (v == null || v.trim().isEmpty) ? 'Ingrese el nombre del paciente' : null,
+      )
+    : Consumer<PacientesProvider>(
+        builder: (context, prov, _) {
+          return Autocomplete<Paciente>(
+            displayStringForOption: (p) => "${p.nombre} ${p.apellidos}",
+            initialValue: TextEditingValue(text: _pacienteSearchCtrl.text),
+            optionsBuilder: (textValue) {
+              if (textValue.text.isEmpty) return const Iterable<Paciente>.empty();
+              return prov.pacientes.where((p) => 
+                p.nombre.toLowerCase().contains(textValue.text.toLowerCase()) || 
+                p.apellidos.toLowerCase().contains(textValue.text.toLowerCase()));
+            },
+            onSelected: (p) {
+              setState(() {
+                _pacienteId = p.id;
+                _pacienteSearchCtrl.text = "${p.nombre} ${p.apellidos}";
+              });
+            },
+            fieldViewBuilder: (context, ctrl, focus, onFieldSubmitted) {
+              if (ctrl.text != _pacienteSearchCtrl.text && _pacienteSearchCtrl.text.isNotEmpty) {
+                ctrl.text = _pacienteSearchCtrl.text;
+              }
+              return TextFormField(
+                controller: ctrl,
+                focusNode: focus,
+                decoration: InputDecoration(
+                  labelText: 'Buscar Paciente *',
+                  prefixIcon: const Icon(Icons.person_search_rounded),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: AppColors.gray50,
+                ),
+                validator: (v) => _pacienteId == null ? 'Seleccione un paciente' : null,
               );
             },
-          ),
-      ],
-    );
+          );
+        },
+      );
   }
 
   Widget _buildMetodosPagoRapido(bool isMobile) {
@@ -1588,7 +1788,17 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
       maxLines: maxLines,
       keyboardType: num ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       decoration: InputDecoration(labelText: l, prefixIcon: i != null ? Icon(i, size: 20) : null, hintText: hint, filled: true, fillColor: readOnly ? AppColors.gray100 : Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      validator: req ? (v) => (v == null || v.isEmpty) ? 'Requerido' : null : null,
+      validator: (v) {
+        if (req && (v == null || v.isEmpty)) {
+          return 'Requerido';
+        }
+        if (num && v != null && v.isNotEmpty) {
+          final val = double.tryParse(v);
+          if (val == null) return 'Inválido';
+          if (val < 0) return 'No negativo';
+        }
+        return null;
+      },
     );
   }
 
@@ -1614,19 +1824,22 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         child: DataTable(
           headingRowColor: MaterialStateProperty.all(AppColors.primaryLight.withOpacity(0.3)),
           columns: const [DataColumn(label: Text('Ojo')), DataColumn(label: Text('ESF')), DataColumn(label: Text('CIL')), DataColumn(label: Text('EJE')), DataColumn(label: Text('A.V.'))],
-          rows: [_rowMedida('O.D.', _odEsf, _odCil, _odEje, _odAv), _rowMedida('O.I.', _oiEsf, _oiCil, _oiEje, _oiAv)],
+          rows: [
+            _rowMedida('O.D.', _odEsf, _odCil, _odEje, _odAv), 
+            _rowMedida('O.I.', _oiEsf, _oiCil, _oiEje, _oiAv)
+          ],
         ),
       ),
     );
   }
 
-  DataRow _rowMedida(String ojo, TextEditingController e, TextEditingController c, TextEditingController j, TextEditingController av) {
+  DataRow _rowMedida(String ojo, TextEditingController e, TextEditingController c, TextEditingController j, TextEditingController av, {bool readOnly = false}) {
     return DataRow(cells: [
-      DataCell(Text(ojo, style: const TextStyle(fontWeight: FontWeight.bold))), 
-      DataCell(TextField(controller: e, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0.00'))), 
-      DataCell(TextField(controller: c, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0.00'))), 
-      DataCell(TextField(controller: j, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '0'))),
-      DataCell(TextField(controller: av, textAlign: TextAlign.center, decoration: const InputDecoration(hintText: '20/20'))),
+      DataCell(Text(ojo, style: TextStyle(fontWeight: FontWeight.bold, color: readOnly ? Colors.grey : Colors.black))), 
+      DataCell(TextField(controller: e, readOnly: readOnly, textAlign: TextAlign.center, decoration: InputDecoration(hintText: '0.00', enabled: !readOnly))), 
+      DataCell(TextField(controller: c, readOnly: readOnly, textAlign: TextAlign.center, decoration: InputDecoration(hintText: '0.00', enabled: !readOnly))), 
+      DataCell(TextField(controller: j, readOnly: readOnly, textAlign: TextAlign.center, decoration: InputDecoration(hintText: '0', enabled: !readOnly))),
+      DataCell(TextField(controller: av, readOnly: readOnly, textAlign: TextAlign.center, decoration: InputDecoration(hintText: '20/20', enabled: !readOnly))),
     ]);
   }
 
@@ -1657,6 +1870,23 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
           });
         },
         fieldViewBuilder: (ctx, ctrl, focus, onFieldSubmitted) => TextFormField(controller: ctrl, focusNode: focus, decoration: const InputDecoration(labelText: 'Buscar Montura en Stock', prefixIcon: Icon(Icons.search), border: OutlineInputBorder())),
+      ),
+    );
+  }
+
+  Widget _buildBuscadorMonturaAlmacenExtra() {
+    return Consumer<AlmacenProvider>(
+      builder: (context, prov, _) => Autocomplete<Almacen>(
+        displayStringForOption: (p) => p.nombre,
+        optionsBuilder: (text) => text.text.isEmpty ? const Iterable.empty() : prov.productos.where((p) => (p.categoriaNombre?.toLowerCase().contains('montura') ?? false) && (p.nombre.toLowerCase().contains(text.text.toLowerCase()) || p.codigoBarras.contains(text.text))),
+        onSelected: (p) {
+          setState(() {
+            _monturaCtrlExtra.text = p.nombre;
+            _precioMonturaCtrlExtra.text = p.precioVenta.toStringAsFixed(2);
+            _recalcularTotalFabricacion();
+          });
+        },
+        fieldViewBuilder: (ctx, ctrl, focus, onFieldSubmitted) => TextFormField(controller: ctrl, focusNode: focus, decoration: const InputDecoration(labelText: 'Buscar Montura Extra en Stock', prefixIcon: Icon(Icons.search), border: OutlineInputBorder())),
       ),
     );
   }

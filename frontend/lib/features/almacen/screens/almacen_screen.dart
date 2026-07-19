@@ -170,6 +170,13 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                             controller: stockCtrl,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(labelText: 'Stock Inicial', prefixIcon: Icon(Icons.inventory_rounded)),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Requerido';
+                              final n = int.tryParse(v);
+                              if (n == null) return 'Inválido';
+                              if (n < 0) return 'No negativo';
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -178,7 +185,13 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                             controller: precioCompraCtrl,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             decoration: const InputDecoration(labelText: 'Precio Compra S/', prefixIcon: Icon(Icons.shopping_cart_rounded)),
-                            validator: (v) => v!.isEmpty ? 'Requerido' : null,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Requerido';
+                              final n = double.tryParse(v);
+                              if (n == null) return 'Inválido';
+                              if (n < 0) return 'No negativo';
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -188,6 +201,13 @@ class _AlmacenScreenState extends State<AlmacenScreen> {
                       controller: precioVentaCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(labelText: 'Precio Venta S/ (Sugerido)', prefixIcon: Icon(Icons.sell_rounded)),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Requerido';
+                        final n = double.tryParse(v);
+                        if (n == null) return 'Inválido';
+                        if (n < 0) return 'No negativo';
+                        return null;
+                      },
                     ),
                     if (isAdmin) ...[
                       const SizedBox(height: 12),
