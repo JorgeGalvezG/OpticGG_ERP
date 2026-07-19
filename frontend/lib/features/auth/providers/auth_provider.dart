@@ -33,6 +33,28 @@ class AuthProvider with ChangeNotifier {
   }
 
   // 1. REVISAR SI YA HAY SESIÓN GUARDADA
+  bool isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return true;
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final resp = utf8.decode(base64Url.decode(normalized));
+      final map = json.decode(resp);
+
+      if (map is Map && map.containsKey('exp')) {
+        final exp = map['exp'] as int;
+        final expiryDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+        return DateTime.now().isAfter(expiryDate);
+      }
+    } catch (e) {
+      debugPrint("Error decoding token expiration: $e");
+      return true;
+    }
+    return true;
+  }
+
   Future<bool> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -40,19 +62,23 @@ class AuthProvider with ChangeNotifier {
     final token = prefs.getString('jwt_token');
 
     if (token != null && token.isNotEmpty) {
+      if (isTokenExpired(token)) {
+        await logout();
+        return false; // El token expiró, forzar login
+      }
       _token = token;
       _username = prefs.getString('username');
       _rol = prefs.getString('rol');
       _tienda = prefs.getString('tienda');
 
       notifyListeners();
-      return true; // Sí encontró la sesión
+      return true; // Sí encontró la sesión y es válida
     }
     return false; // No hay sesión, debe ir al login
   }
 
   // 2. FUNCIÓN DE LOGIN
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String username, String password, {bool rememberMe = false}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -60,7 +86,11 @@ class AuthProvider with ChangeNotifier {
       final response = await http.post(
         Uri.parse(ApiConstants.loginEndpoint),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'username': username, 'password': password}),
+        body: json.encode({
+          'username': username,
+          'password': password,
+          'rememberMe': rememberMe,
+        }),
       );
 
       if (response.statusCode == 200) {

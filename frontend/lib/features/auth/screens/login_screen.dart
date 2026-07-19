@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    final success = await auth.login(user, pass);
+    final success = await auth.login(user, pass, rememberMe: _rememberMe);
 
     if (!mounted) return;
 
