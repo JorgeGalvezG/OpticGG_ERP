@@ -28,4 +28,6 @@ public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long
     List<OrdenTrabajo> findByClienteIdOrderByFechaDesc(Long clienteId);
 
     java.util.Optional<OrdenTrabajo> findByNumeroOrden(String numeroOrden);
+
+    java.util.Optional<OrdenTrabajo> findFirstByNumeroOrdenStartingWithOrderByNumeroOrdenDesc(String prefix);
 }
