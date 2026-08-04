@@ -22,6 +22,7 @@ class HistorialPacienteDTO {
   final String? montura;
   final bool? esMonturaCliente;
   final String? observaciones;
+  final String? especialista;
   final String? fechaConsulta;
 
   HistorialPacienteDTO({
@@ -44,6 +45,7 @@ class HistorialPacienteDTO {
     this.montura,
     this.esMonturaCliente,
     this.observaciones,
+    this.especialista,
     this.fechaConsulta,
   });
 
@@ -68,6 +70,7 @@ class HistorialPacienteDTO {
       montura: json['montura'],
       esMonturaCliente: json['esMonturaCliente'],
       observaciones: json['observaciones'],
+      especialista: json['especialista'],
       fechaConsulta: json['fechaConsulta'],
     );
   }

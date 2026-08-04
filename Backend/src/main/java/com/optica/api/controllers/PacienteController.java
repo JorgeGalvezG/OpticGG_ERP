@@ -2,6 +2,7 @@ package com.optica.api.controllers;
 
 import com.optica.api.dto.HistorialPacienteDTO;
 import com.optica.api.dto.PacienteReactivarDTO;
+import com.optica.api.dto.PacienteConMedidaDTO;
 import com.optica.api.models.Paciente;
 import com.optica.api.models.enums.Tienda;
 import com.optica.api.services.PacienteHistorialService;
@@ -48,17 +49,17 @@ public class PacienteController {
         return ResponseEntity.ok(pacienteService.buscarPacientesPorTienda(termino, Tienda.valueOf(tienda.toUpperCase()), page, size));
     }
 
-    // POS /api/pacientes
+    // POST /api/pacientes
     @PostMapping
-    public ResponseEntity<Paciente> crearPaciente(@RequestBody Paciente paciente) {
-        return ResponseEntity.ok(pacienteService.guardarPaciente(paciente));
+    public ResponseEntity<Paciente> crearPaciente(@RequestBody PacienteConMedidaDTO dto) {
+        return ResponseEntity.ok(pacienteService.guardarPacienteConMedida(dto));
     }
     // PUT /api/pacientes/
     @PutMapping("/{id}")
     public ResponseEntity<Paciente> actualizarPaciente(
             @PathVariable Long id,
-            @RequestBody Paciente paciente) {
-        return ResponseEntity.ok(pacienteService.actualizarPaciente(id, paciente));
+            @RequestBody PacienteConMedidaDTO dto) {
+        return ResponseEntity.ok(pacienteService.actualizarPacienteConMedida(id, dto));
     }
     // GET: /api/pacientes/tienda/C1/vip
     @GetMapping("/tienda/{tiendaStr}/vip")

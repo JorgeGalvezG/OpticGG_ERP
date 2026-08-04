@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../pacientes/models/paciente_model.dart';
+import '../../pacientes/screens/pacientes_screen.dart';
 import '../../pacientes/providers/pacientes_provider.dart';
 import '../models/nueva_venta_dto.dart';
 import '../models/orden_trabajo_model.dart';
@@ -931,6 +932,28 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
     Provider.of<AlmacenProvider>(context, listen: false).fetchProductos(tienda);
   }
 
+  void _registrarNuevoPaciente(BuildContext context) async {
+    final Paciente? nuevoPaciente = await showDialog<Paciente>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const NuevoPacienteDialog(),
+    );
+
+    if (nuevoPaciente != null) {
+      setState(() {
+        _pacienteId = nuevoPaciente.id;
+        _pacienteSearchCtrl.text = "${nuevoPaciente.nombre} ${nuevoPaciente.apellidos}";
+        _pacienteNuevoManual = false; // Desactivar ingreso manual para autoselección
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Paciente ${nuevoPaciente.nombre} registrado y seleccionado'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1727,6 +1750,11 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
         decoration: InputDecoration(
           labelText: 'Nombre y Apellidos del Paciente *',
           prefixIcon: const Icon(Icons.person_add_alt_1_rounded),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.person_add_rounded, color: AppColors.primary),
+            tooltip: 'Registrar Paciente Oficial',
+            onPressed: () => _registrarNuevoPaciente(context),
+          ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: Colors.white,
@@ -1760,6 +1788,11 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
                 decoration: InputDecoration(
                   labelText: 'Buscar Paciente *',
                   prefixIcon: const Icon(Icons.person_search_rounded),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.person_add_rounded, color: AppColors.primary),
+                    tooltip: 'Registrar Paciente',
+                    onPressed: () => _registrarNuevoPaciente(context),
+                  ),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   filled: true,
                   fillColor: AppColors.gray50,
@@ -1829,23 +1862,41 @@ class _NuevaVentaDialogState extends State<NuevaVentaDialog> {
   Widget _row(bool m, List<Widget> c) => m ? Column(children: c.map((w) => Padding(padding: const EdgeInsets.only(bottom: 12), child: w)).toList()) : Row(children: c.map((w) => Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: w))).toList());
 
   Widget _field(String l, IconData? i, TextEditingController c, {bool req = false, bool num = false, bool readOnly = false, String? hint, int maxLines = 1}) {
-    return TextFormField(
-      controller: c,
-      readOnly: readOnly,
-      maxLines: maxLines,
-      keyboardType: num ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-      decoration: InputDecoration(labelText: l, prefixIcon: i != null ? Icon(i, size: 20) : null, hintText: hint, filled: true, fillColor: readOnly ? AppColors.gray100 : Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      validator: (v) {
-        if (req && (v == null || v.isEmpty)) {
-          return 'Requerido';
+    return Focus(
+      onFocusChange: (hasFocus) {
+        if (num) {
+          if (hasFocus) {
+            if (c.text == '0.00' || c.text == '0') {
+              c.clear();
+            }
+          } else {
+            if (c.text.trim().isEmpty || double.tryParse(c.text.trim()) == null) {
+              c.text = '0.00';
+            }
+            _calc();
+            _recalcularTotalFabricacion();
+            _recalcularTotalDesdeProductos();
+          }
         }
-        if (num && v != null && v.isNotEmpty) {
-          final val = double.tryParse(v);
-          if (val == null) return 'Inválido';
-          if (val < 0) return 'No negativo';
-        }
-        return null;
       },
+      child: TextFormField(
+        controller: c,
+        readOnly: readOnly,
+        maxLines: maxLines,
+        keyboardType: num ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+        decoration: InputDecoration(labelText: l, prefixIcon: i != null ? Icon(i, size: 20) : null, hintText: hint, filled: true, fillColor: readOnly ? AppColors.gray100 : Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+        validator: (v) {
+          if (req && (v == null || v.isEmpty)) {
+            return 'Requerido';
+          }
+          if (num && v != null && v.isNotEmpty) {
+            final val = double.tryParse(v);
+            if (val == null) return 'Inválido';
+            if (val < 0) return 'No negativo';
+          }
+          return null;
+        },
+      ),
     );
   }
 

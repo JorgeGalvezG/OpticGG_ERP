@@ -9,6 +9,8 @@ import '../../ventas/models/orden_trabajo_model.dart';
 import '../../ventas/providers/ordenes_provider.dart';
 import '../models/paciente_model.dart';
 import '../models/paciente_reactivar_model.dart';
+import '../models/paciente_con_medida_dto.dart';
+import '../models/historial_paciente_dto.dart';
 import '../providers/pacientes_provider.dart';
 import '../../ventas/screens/ventas_screen.dart';
 
@@ -226,7 +228,7 @@ class _PacientesScreenState extends State<PacientesScreen> {
       onPressed: () => showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const _NuevoPacienteDialog(),
+        builder: (context) => const NuevoPacienteDialog(),
       ),
       icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
       label: Text(isMobile ? 'Nuevo' : 'Nuevo Paciente'),
@@ -623,14 +625,14 @@ Widget _buildVipToggle({required bool value, required Function(bool) onChanged})
 // =========================================================
 // FORMULARIO: Registrar Nuevo Paciente
 // =========================================================
-class _NuevoPacienteDialog extends StatefulWidget {
-  const _NuevoPacienteDialog();
+class NuevoPacienteDialog extends StatefulWidget {
+  const NuevoPacienteDialog({super.key});
 
   @override
-  State<_NuevoPacienteDialog> createState() => _NuevoPacienteDialogState();
+  State<NuevoPacienteDialog> createState() => NuevoPacienteDialogState();
 }
 
-class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
+class NuevoPacienteDialogState extends State<NuevoPacienteDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _apellidosController = TextEditingController();
@@ -639,6 +641,18 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
   final _edadController = TextEditingController();
   final _fechaNacController = TextEditingController();
   bool _esVip = false;
+
+  // Nuevos controladores clínicos
+  final _gradOdController = TextEditingController();
+  final _avOdController = TextEditingController();
+  final _gradOiController = TextEditingController();
+  final _avOiController = TextEditingController();
+  final _adicionController = TextEditingController();
+  final _dipController = TextEditingController();
+  final _tipoLunaController = TextEditingController();
+  final _monturaController = TextEditingController();
+  final _observacionesController = TextEditingController();
+  final _especialistaController = TextEditingController();
 
   @override
   void initState() {
@@ -675,6 +689,18 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
     _telefonoController.dispose();
     _edadController.dispose();
     _fechaNacController.dispose();
+    
+    // Disponer controladores clínicos
+    _gradOdController.dispose();
+    _avOdController.dispose();
+    _gradOiController.dispose();
+    _avOiController.dispose();
+    _adicionController.dispose();
+    _dipController.dispose();
+    _tipoLunaController.dispose();
+    _monturaController.dispose();
+    _observacionesController.dispose();
+    _especialistaController.dispose();
     super.dispose();
   }
 
@@ -778,6 +804,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                         value: _esVip,
                         onChanged: (val) => setState(() => _esVip = val),
                       ),
+                      _buildClinicalSection(isMobile),
                     ],
                   ),
                 ),
@@ -815,7 +842,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                             context,
                             listen: false,
                           );
-                          final nuevo = Paciente(
+                          final nuevo = PacienteConMedidaDTO(
                             nombre: _nombreController.text.trim(),
                             apellidos: _apellidosController.text.trim(),
                             dni: _dniController.text.trim().isEmpty ? null : _dniController.text.trim(),
@@ -829,14 +856,25 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
                                 : _fechaNacController.text.trim(),
                             tienda: auth.tienda ?? 'C1',
                             esDestacado: _esVip,
+                            graduacionOd: _gradOdController.text.trim().isEmpty ? null : _gradOdController.text.trim(),
+                            avOd: _avOdController.text.trim().isEmpty ? null : _avOdController.text.trim(),
+                            graduacionOi: _gradOiController.text.trim().isEmpty ? null : _gradOiController.text.trim(),
+                            avOi: _avOiController.text.trim().isEmpty ? null : _avOiController.text.trim(),
+                            adicion: _adicionController.text.trim().isEmpty ? null : _adicionController.text.trim(),
+                            dip: _dipController.text.trim().isEmpty ? null : _dipController.text.trim(),
+                            tipoLuna: _tipoLunaController.text.trim().isEmpty ? null : _tipoLunaController.text.trim(),
+                            montura: _monturaController.text.trim().isEmpty ? null : _monturaController.text.trim(),
+                            observaciones: _observacionesController.text.trim().isEmpty ? null : _observacionesController.text.trim(),
+                            especialista: _especialistaController.text.trim().isEmpty ? null : _especialistaController.text.trim(),
+                            vendedorId: null, // El backend buscará un usuario si es nulo
                           );
                           final exito = await Provider.of<PacientesProvider>(
                             context,
                             listen: false,
                           ).crearPaciente(nuevo);
                           if (!context.mounted) return;
-                          if (exito) {
-                            Navigator.pop(context);
+                          if (exito != null) {
+                            Navigator.pop(context, exito);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Paciente registrado'),
@@ -868,6 +906,7 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
     bool isNumber = false,
     bool required = false,
     String? hint,
+    int maxLines = 1,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -883,7 +922,8 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: isNumber ? TextInputType.number : (maxLines > 1 ? TextInputType.multiline : TextInputType.text),
+          maxLines: maxLines,
           validator: required
               ? (v) => (v == null || v.isEmpty) ? 'Requerido' : null
               : null,
@@ -899,6 +939,113 @@ class _NuevoPacienteDialogState extends State<_NuevoPacienteDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildClinicalSection(bool isMobile, {String? fechaActualizacion}) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: ExpansionTile(
+        title: Row(
+          children: [
+            const Icon(Icons.remove_red_eye_rounded, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Información Clínica (Medida)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.gray800),
+            ),
+          ],
+        ),
+        subtitle: Text(
+          fechaActualizacion != null 
+              ? 'Última actualización: $fechaActualizacion' 
+              : 'Sin recetas previas registradas',
+          style: const TextStyle(fontSize: 11, color: AppColors.gray500),
+        ),
+        childrenPadding: const EdgeInsets.all(16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Graduación OD',
+              Icons.remove_red_eye_outlined,
+              controller: _gradOdController,
+              hint: 'Ej: ESF -1.50 CIL -0.75 x 180',
+            ),
+            _buildTextField(
+              'AV OD',
+              null,
+              controller: _avOdController,
+              hint: 'Ej: 20/20',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Graduación OI',
+              Icons.remove_red_eye_outlined,
+              controller: _gradOiController,
+              hint: 'Ej: ESF -1.25 CIL -1.00 x 175',
+            ),
+            _buildTextField(
+              'AV OI',
+              null,
+              controller: _avOiController,
+              hint: 'Ej: 20/25',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Adición',
+              Icons.add_circle_outline_rounded,
+              controller: _adicionController,
+              hint: 'Ej: +2.00',
+            ),
+            _buildTextField(
+              'D.I.P.',
+              Icons.straighten_rounded,
+              controller: _dipController,
+              hint: 'Ej: 64/62',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Tipo de Luna',
+              Icons.science_outlined,
+              controller: _tipoLunaController,
+              hint: 'Ej: Resina Antireflex',
+            ),
+            _buildTextField(
+              'Montura',
+              Icons.style_rounded,
+              controller: _monturaController,
+              hint: 'Ej: Metal Semiaire',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildTextField(
+            'Especialista / Optómetra',
+            Icons.person_pin_rounded,
+            controller: _especialistaController,
+            hint: 'Ej: Dr. Fernando Cubas',
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            'Observaciones Clínicas',
+            Icons.edit_note_rounded,
+            controller: _observacionesController,
+            hint: 'Ej: Presenta cansancio visual...',
+            maxLines: 2,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -925,6 +1072,21 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
   late TextEditingController _fechaNacController;
   late bool _esVip;
 
+  // Nuevos controladores clínicos
+  late TextEditingController _gradOdController;
+  late TextEditingController _avOdController;
+  late TextEditingController _gradOiController;
+  late TextEditingController _avOiController;
+  late TextEditingController _adicionController;
+  late TextEditingController _dipController;
+  late TextEditingController _tipoLunaController;
+  late TextEditingController _monturaController;
+  late TextEditingController _observacionesController;
+  late TextEditingController _especialistaController;
+
+  HistorialPacienteDTO? _ultimoHistorial;
+  bool _cargandoHistorial = false;
+
   @override
   void initState() {
     super.initState();
@@ -944,8 +1106,50 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
     );
     _esVip = widget.paciente.esDestacado;
 
+    _gradOdController = TextEditingController();
+    _avOdController = TextEditingController();
+    _gradOiController = TextEditingController();
+    _avOiController = TextEditingController();
+    _adicionController = TextEditingController();
+    _dipController = TextEditingController();
+    _tipoLunaController = TextEditingController();
+    _monturaController = TextEditingController();
+    _observacionesController = TextEditingController();
+    _especialistaController = TextEditingController();
+
     // Listener para calcular edad automáticamente
     _fechaNacController.addListener(_calcularEdad);
+
+    // Cargar última receta
+    _cargarUltimaReceta();
+  }
+
+  void _cargarUltimaReceta() async {
+    setState(() => _cargandoHistorial = true);
+    try {
+      final provider = Provider.of<PacientesProvider>(context, listen: false);
+      final historial = await provider.fetchHistorialResumen(widget.paciente.id!);
+      if (historial != null && mounted) {
+        setState(() {
+          _ultimoHistorial = historial;
+          _gradOdController.text = historial.graduacionOd ?? '';
+          _avOdController.text = historial.avOd ?? '';
+          _gradOiController.text = historial.graduacionOi ?? '';
+          _avOiController.text = historial.avOi ?? '';
+          _adicionController.text = historial.adicion ?? '';
+          _dipController.text = historial.dip ?? '';
+          _tipoLunaController.text = historial.tipoLuna ?? '';
+          _monturaController.text = historial.montura ?? '';
+          _observacionesController.text = historial.observaciones ?? '';
+          _especialistaController.text = historial.especialista ?? '';
+        });
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() => _cargandoHistorial = false);
+      }
+    }
   }
 
   void _calcularEdad() {
@@ -976,6 +1180,18 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
     _telefonoController.dispose();
     _edadController.dispose();
     _fechaNacController.dispose();
+    
+    // Disponer controladores clínicos
+    _gradOdController.dispose();
+    _avOdController.dispose();
+    _gradOiController.dispose();
+    _avOiController.dispose();
+    _adicionController.dispose();
+    _dipController.dispose();
+    _tipoLunaController.dispose();
+    _monturaController.dispose();
+    _observacionesController.dispose();
+    _especialistaController.dispose();
     super.dispose();
   }
 
@@ -1078,6 +1294,13 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                         value: _esVip,
                         onChanged: (val) => setState(() => _esVip = val),
                       ),
+                      if (_cargandoHistorial)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else
+                        _buildClinicalSection(isMobile, fechaActualizacion: _ultimoHistorial?.fechaConsulta),
                     ],
                   ),
                 ),
@@ -1111,7 +1334,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                       ),
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          final actualizado = Paciente(
+                          final actualizado = PacienteConMedidaDTO(
                             id: widget.paciente.id,
                             nombre: _nombreController.text.trim(),
                             apellidos: _apellidosController.text.trim(),
@@ -1126,6 +1349,17 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
                                 : _fechaNacController.text.trim(),
                             tienda: widget.paciente.tienda,
                             esDestacado: _esVip,
+                            graduacionOd: _gradOdController.text.trim().isEmpty ? null : _gradOdController.text.trim(),
+                            avOd: _avOdController.text.trim().isEmpty ? null : _avOdController.text.trim(),
+                            graduacionOi: _gradOiController.text.trim().isEmpty ? null : _gradOiController.text.trim(),
+                            avOi: _avOiController.text.trim().isEmpty ? null : _avOiController.text.trim(),
+                            adicion: _adicionController.text.trim().isEmpty ? null : _adicionController.text.trim(),
+                            dip: _dipController.text.trim().isEmpty ? null : _dipController.text.trim(),
+                            tipoLuna: _tipoLunaController.text.trim().isEmpty ? null : _tipoLunaController.text.trim(),
+                            montura: _monturaController.text.trim().isEmpty ? null : _monturaController.text.trim(),
+                            observaciones: _observacionesController.text.trim().isEmpty ? null : _observacionesController.text.trim(),
+                            especialista: _especialistaController.text.trim().isEmpty ? null : _especialistaController.text.trim(),
+                            vendedorId: null,
                           );
                           final exito = await Provider.of<PacientesProvider>(
                             context,
@@ -1165,6 +1399,7 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
     bool isNumber = false,
     bool required = false,
     String? hint,
+    int maxLines = 1,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1180,7 +1415,8 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: isNumber ? TextInputType.number : (maxLines > 1 ? TextInputType.multiline : TextInputType.text),
+          maxLines: maxLines,
           validator: required
               ? (v) => (v == null || v.isEmpty) ? 'Requerido' : null
               : null,
@@ -1196,6 +1432,113 @@ class _EditarPacienteDialogState extends State<_EditarPacienteDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildClinicalSection(bool isMobile, {String? fechaActualizacion}) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color: AppColors.gray50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gray200),
+      ),
+      child: ExpansionTile(
+        title: Row(
+          children: [
+            const Icon(Icons.remove_red_eye_rounded, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Información Clínicas (Medida)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.gray800),
+            ),
+          ],
+        ),
+        subtitle: Text(
+          fechaActualizacion != null 
+              ? 'Última actualización: $fechaActualizacion' 
+              : 'Sin recetas previas registradas',
+          style: const TextStyle(fontSize: 11, color: AppColors.gray500),
+        ),
+        childrenPadding: const EdgeInsets.all(16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Graduación OD',
+              Icons.remove_red_eye_outlined,
+              controller: _gradOdController,
+              hint: 'Ej: ESF -1.50 CIL -0.75 x 180',
+            ),
+            _buildTextField(
+              'AV OD',
+              null,
+              controller: _avOdController,
+              hint: 'Ej: 20/20',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Graduación OI',
+              Icons.remove_red_eye_outlined,
+              controller: _gradOiController,
+              hint: 'Ej: ESF -1.25 CIL -1.00 x 175',
+            ),
+            _buildTextField(
+              'AV OI',
+              null,
+              controller: _avOiController,
+              hint: 'Ej: 20/25',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Adición',
+              Icons.add_circle_outline_rounded,
+              controller: _adicionController,
+              hint: 'Ej: +2.00',
+            ),
+            _buildTextField(
+              'D.I.P.',
+              Icons.straighten_rounded,
+              controller: _dipController,
+              hint: 'Ej: 64/62',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildFormRow(isMobile, [
+            _buildTextField(
+              'Tipo de Luna',
+              Icons.science_outlined,
+              controller: _tipoLunaController,
+              hint: 'Ej: Resina Antireflex',
+            ),
+            _buildTextField(
+              'Montura',
+              Icons.style_rounded,
+              controller: _monturaController,
+              hint: 'Ej: Metal Semiaire',
+            ),
+          ]),
+          const SizedBox(height: 12),
+          _buildTextField(
+            'Especialista / Optómetra',
+            Icons.person_pin_rounded,
+            controller: _especialistaController,
+            hint: 'Ej: Dr. Fernando Cubas',
+          ),
+          const SizedBox(height: 12),
+          _buildTextField(
+            'Observaciones Clínicas',
+            Icons.edit_note_rounded,
+            controller: _observacionesController,
+            hint: 'Ej: Presenta cansancio visual...',
+            maxLines: 2,
+          ),
+        ],
+      ),
     );
   }
 }

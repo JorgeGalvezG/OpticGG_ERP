@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/paciente_model.dart';
 import '../models/paciente_reactivar_model.dart';
+import '../models/paciente_con_medida_dto.dart';
 import '../models/historial_paciente_dto.dart';
 import '../../../core/network/api_service.dart';
 
@@ -68,23 +69,22 @@ class PacientesProvider with ChangeNotifier {
   }
 
   // 4. Crear Paciente Nuevo
-  Future<bool> crearPaciente(Paciente nuevo) async {
+  Future<Paciente?> crearPaciente(PacienteConMedidaDTO nuevo) async {
     _isLoading = true; notifyListeners();
     try {
-      await ApiService.post('/pacientes', nuevo.toJson());
+      final response = await ApiService.post('/pacientes', nuevo.toJson());
       await fetchPacientes(nuevo.tienda); // Recarga la lista para que aparezca al instante
-      return true;
+      return Paciente.fromJson(response);
     } catch (e) {
       _errorMessage = e.toString();
       _isLoading = false; notifyListeners();
-      return false;
+      return null;
     }
   }
   // 5. Actualizar Paciente Existente
-  Future<bool> actualizarPaciente(Paciente paciente) async {
+  Future<bool> actualizarPaciente(PacienteConMedidaDTO paciente) async {
     _isLoading = true; notifyListeners();
     try {
-      // Usamos el ID del paciente en la URL (Ej: /pacientes/5)
       await ApiService.put('/pacientes/${paciente.id}', paciente.toJson());
       await fetchPacientes(paciente.tienda); // Recarga la lista
       return true;
