@@ -40,4 +40,7 @@ public class DashboardResumenDTO {
 
     // ── MÉTODOS DE PAGO (Mensual) ────────────────────────────────────────────
     private Map<String, BigDecimal> metodosPagoMes;
+
+    // ── META MENSUAL ─────────────────────────────────────────────────────────
+    private BigDecimal metaMensual;
 }

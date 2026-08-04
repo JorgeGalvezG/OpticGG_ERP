@@ -27,6 +27,7 @@ class DashboardResumen {
   final Map<String, double> ventasVendedores15Dias;
   final Map<String, double> ventasVendedores30Dias;
   final Map<String, double> metodosPagoMes;
+  final double metaMensual;
 
   DashboardResumen({
     required this.totalesPorMetodo,
@@ -44,6 +45,7 @@ class DashboardResumen {
     required this.ventasVendedores15Dias,
     required this.ventasVendedores30Dias,
     required this.metodosPagoMes,
+    required this.metaMensual,
   });
 
   factory DashboardResumen.fromJson(Map<String, dynamic> json) {
@@ -70,6 +72,7 @@ class DashboardResumen {
       ventasVendedores15Dias: _toDoubleMap(json['ventasVendedores15Dias']),
       ventasVendedores30Dias: _toDoubleMap(json['ventasVendedores30Dias']),
       metodosPagoMes:         _toDoubleMap(json['metodosPagoMes']),
+      metaMensual:            (json['metaMensual'] as num?)?.toDouble() ?? 15000.0,
     );
   }
 }

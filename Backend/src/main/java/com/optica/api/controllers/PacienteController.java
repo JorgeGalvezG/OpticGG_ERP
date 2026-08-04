@@ -1,6 +1,7 @@
 package com.optica.api.controllers;
 
 import com.optica.api.dto.HistorialPacienteDTO;
+import com.optica.api.dto.PacienteReactivarDTO;
 import com.optica.api.models.Paciente;
 import com.optica.api.models.enums.Tienda;
 import com.optica.api.services.PacienteHistorialService;
@@ -31,6 +32,7 @@ public class PacienteController {
         if (tiendaStr.equalsIgnoreCase("ALL")) {
             return ResponseEntity.ok(pacienteService.listarTodos(page, size));
         }
+
         return ResponseEntity.ok(pacienteService.listarPacientesPorTienda(Tienda.valueOf(tiendaStr.toUpperCase()), page, size));
     }
 
@@ -70,5 +72,10 @@ public class PacienteController {
     @GetMapping("/{id}/historial")
     public ResponseEntity<HistorialPacienteDTO> obtenerHistorial(@PathVariable Long id) {
         return ResponseEntity.ok(historialService.obtenerHistorial(id));
+    }
+
+    @GetMapping("/tienda/{tiendaStr}/reactivar")
+    public ResponseEntity<List<PacienteReactivarDTO>> obtenerPacientesPorReactivar(@PathVariable String tiendaStr) {
+        return ResponseEntity.ok(pacienteService.listarPacientesPorReactivar(tiendaStr));
     }
 }

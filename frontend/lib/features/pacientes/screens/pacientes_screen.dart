@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import '../../ventas/models/orden_trabajo_model.dart';
 import '../../ventas/providers/ordenes_provider.dart';
 import '../models/paciente_model.dart';
+import '../models/paciente_reactivar_model.dart';
 import '../providers/pacientes_provider.dart';
 import '../../ventas/screens/ventas_screen.dart';
 
@@ -18,6 +20,8 @@ class PacientesScreen extends StatefulWidget {
 }
 
 class _PacientesScreenState extends State<PacientesScreen> {
+  String _selectedTab = "TODOS";
+
   @override
   void initState() {
     super.initState();
@@ -93,29 +97,68 @@ class _PacientesScreenState extends State<PacientesScreen> {
                   ),
           ),
 
-          // 2. BUSCADOR Y FILTROS
+          // 1.5 CHOICE CHIPS - SELECTOR DE VISTA
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: isMobile
-                ? Column(
-                    children: [
-                      _buildBuscador(tiendaActual),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: _buildBotonFecha(context),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(flex: 3, child: _buildBuscador(tiendaActual)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildBotonFecha(context)),
-                    ],
-                  ),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: const Text('Todos los Pacientes', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  selected: _selectedTab == "TODOS",
+                  selectedColor: AppColors.primary,
+                  backgroundColor: Colors.white,
+                  labelStyle: TextStyle(color: _selectedTab == "TODOS" ? Colors.white : AppColors.gray600),
+                  onSelected: (val) {
+                    if (val) {
+                      setState(() => _selectedTab = "TODOS");
+                      Provider.of<PacientesProvider>(context, listen: false).fetchPacientes(tiendaActual);
+                    }
+                  },
+                ),
+                const SizedBox(width: 12),
+                ChoiceChip(
+                  label: const Text('Por Reactivar (>12 meses inactivos)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  selected: _selectedTab == "REACTIVAR",
+                  selectedColor: AppColors.primary,
+                  backgroundColor: Colors.white,
+                  labelStyle: TextStyle(color: _selectedTab == "REACTIVAR" ? Colors.white : AppColors.gray600),
+                  onSelected: (val) {
+                    if (val) {
+                      setState(() => _selectedTab = "REACTIVAR");
+                      Provider.of<PacientesProvider>(context, listen: false).fetchPacientesPorReactivar(tiendaActual);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+
+          // 2. BUSCADOR Y FILTROS (Solo visible para la vista de Todos)
+          if (_selectedTab == "TODOS") ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: isMobile
+                  ? Column(
+                      children: [
+                        _buildBuscador(tiendaActual),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: _buildBotonFecha(context),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(flex: 3, child: _buildBuscador(tiendaActual)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildBotonFecha(context)),
+                      ],
+                    ),
+            ),
+            const SizedBox(height: 24),
+          ],
 
           // 3. LISTA CONECTADA
           Consumer<PacientesProvider>(
@@ -129,6 +172,29 @@ class _PacientesScreenState extends State<PacientesScreen> {
                     style: const TextStyle(color: AppColors.danger),
                   )),
                 );
+
+              if (_selectedTab == "REACTIVAR") {
+                if (provider.pacientesPorReactivar.isEmpty)
+                  return const Center(
+                    child: Padding(padding: EdgeInsets.all(40), child: Text(
+                      'No hay pacientes por reactivar hoy.',
+                      style: TextStyle(color: AppColors.gray500),
+                    )),
+                  );
+
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(bottom: 40),
+                  itemCount: provider.pacientesPorReactivar.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => _PatientReactivarRow(
+                    paciente: provider.pacientesPorReactivar[index],
+                    isMobile: isMobile,
+                  ),
+                );
+              }
+
               if (provider.pacientes.isEmpty)
                 return const Center(
                   child: Padding(padding: EdgeInsets.all(40), child: Text(
@@ -1634,5 +1700,229 @@ class _PacienteHistorialDialogState extends State<_PacienteHistorialDialog> {
         ],
       ),
     );
+  }
+}
+
+class _PatientReactivarRow extends StatelessWidget {
+  final PacienteReactivar paciente;
+  final bool isMobile;
+
+  const _PatientReactivarRow({required this.paciente, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final String phone = paciente.telefono ?? 'No registrado';
+    
+    String formatearFecha(String fechaRaw) {
+      if (fechaRaw.isEmpty) return '---';
+      try {
+        final date = DateTime.parse(fechaRaw).toLocal();
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      } catch (e) {
+        return fechaRaw.length >= 10 ? fechaRaw.substring(0, 10).replaceAll('-', '/') : fechaRaw;
+      }
+    }
+    
+    final String fechaFormateada = formatearFecha(paciente.fechaUltimaConsulta);
+
+    int diasInactivo = 0;
+    try {
+      final date = DateTime.parse(paciente.fechaUltimaConsulta);
+      diasInactivo = DateTime.now().difference(date).inDays;
+    } catch (_) {}
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.gray200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      child: Text(
+                        paciente.nombre[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${paciente.nombre} ${paciente.apellidos}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            'Sede: ${paciente.tienda}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.gray500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Última Consulta:',
+                          style: TextStyle(fontSize: 11, color: AppColors.gray400),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          fechaFormateada,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Tiempo Inactivo:',
+                          style: TextStyle(fontSize: 11, color: AppColors.gray400),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$diasInactivo días',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.danger),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: phone == 'No registrado' ? null : () => _enviarMensajeReactivacion(context),
+                    icon: const Icon(Icons.send_rounded, size: 16),
+                    label: const Text('Reactivar por WhatsApp', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Text(
+                    paciente.nombre[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${paciente.nombre} ${paciente.apellidos}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Celular: $phone  •  Sede: ${paciente.tienda}',
+                        style: const TextStyle(color: AppColors.gray500, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Última Consulta:',
+                        style: TextStyle(fontSize: 11, color: AppColors.gray400),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$fechaFormateada ($diasInactivo días inactivo)',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.gray700),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: phone == 'No registrado' ? null : () => _enviarMensajeReactivacion(context),
+                  icon: const Icon(Icons.send_rounded, size: 16),
+                  label: const Text('Reactivar por WhatsApp', style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  void _enviarMensajeReactivacion(BuildContext context) async {
+    if (paciente.telefono == null) return;
+    final String cleanPhone = paciente.telefono!.replaceAll(RegExp(r'\D'), '');
+    String number = cleanPhone;
+    if (cleanPhone.length == 9 && cleanPhone.startsWith('9')) {
+      number = '51$cleanPhone';
+    }
+
+    final String mensaje = "Estimado/a ${paciente.nombre} ${paciente.apellidos}, le saludamos de Óptica Cubas. "
+        "Revisando nuestros registros, notamos que ha transcurrido más de un año desde su último control visual. "
+        "Le invitamos a agendar su examen preventivo anual en nuestra sede para seguir cuidando de su salud visual. "
+        "¿Le gustaría reservar una cita para esta semana?";
+
+    final Uri url = Uri.parse("https://wa.me/$number?text=${Uri.encodeComponent(mensaje)}");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir WhatsApp. Verifique el número de teléfono.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
   }
 }

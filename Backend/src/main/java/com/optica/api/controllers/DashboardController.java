@@ -8,6 +8,8 @@ import com.optica.api.repositories.MovimientoCajaRepository;
 import com.optica.api.repositories.VentaRepository;
 import com.optica.api.repositories.PacienteRepository;
 import com.optica.api.repositories.OrdenTrabajoRepository;
+import com.optica.api.repositories.ConfigTiendaRepository;
+import com.optica.api.models.ConfigTienda;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,7 @@ public class DashboardController {
     @Autowired private PacienteRepository pacienteRepository;
     @Autowired private OrdenTrabajoRepository ordenTrabajoRepository;
     @Autowired private MovimientoCajaRepository cajaRepository;
+    @Autowired private ConfigTiendaRepository configTiendaRepository;
 
     // =========================================================================
     // GET /api/dashboard/resumen/{tienda}
@@ -137,6 +140,20 @@ public class DashboardController {
             egresosMes       = cajaRepository.sumarPorTiendaYTipoQuincena(tiendaEnum, TipoMovimiento.SALIDA, hace30Dias);
         }
 
+        BigDecimal metaMensual = BigDecimal.ZERO;
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            for (ConfigTienda c : configTiendaRepository.findAll()) {
+                if (c.getMetaMensual() != null) {
+                    metaMensual = metaMensual.add(c.getMetaMensual());
+                }
+            }
+        } else {
+            Tienda tiendaEnum = parseTienda(tiendaStr);
+            metaMensual = configTiendaRepository.findById(tiendaEnum)
+                    .map(ConfigTienda::getMetaMensual)
+                    .orElse(BigDecimal.valueOf(15000));
+        }
+
         return DashboardResumenDTO.builder()
                 .totalesPorMetodo(totalesPorMetodo)
                 .metodosPagoMes(metodosPagoMes)
@@ -153,6 +170,7 @@ public class DashboardController {
                 .egresosQuincena(egresosQuincena)
                 .ingresosMes(ingresosMes)
                 .egresosMes(egresosMes)
+                .metaMensual(metaMensual)
                 .build();
     }
 

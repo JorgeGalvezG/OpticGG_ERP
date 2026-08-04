@@ -87,6 +87,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _SectionTitle('RESUMEN DE OPERACIONES', isDev: dev.isDevMode),
                   const SizedBox(height: 16),
                   _MainStatsGrid(resumen: resumen, isMobile: isMobile, isDev: dev.isDevMode),
+                  const SizedBox(height: 24),
+                  _MetaVentasWidget(resumen: resumen, tienda: _tiendaSeleccionada, isDev: dev.isDevMode),
                   const SizedBox(height: 48),
 
                   // ── LAYOUT DE CONTENIDO (MÁS VERTICAL) ─────────────────
@@ -702,5 +704,82 @@ class _ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(child: Text('Error: $mensaje', style: const TextStyle(color: Colors.red)));
+  }
+}
+
+class _MetaVentasWidget extends StatelessWidget {
+  final DashboardResumen resumen;
+  final String tienda;
+  final bool isDev;
+
+  const _MetaVentasWidget({
+    required this.resumen,
+    required this.tienda,
+    this.isDev = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double meta = resumen.metaMensual;
+    final double ventasMes = resumen.ingresosMes;
+    final double pct = meta > 0 ? (ventasMes / meta) : 0.0;
+    final String pctStr = (pct * 100).toStringAsFixed(1);
+
+    final bg = isDev ? Colors.white.withOpacity(0.05) : Colors.white;
+    final border = isDev ? Colors.white.withOpacity(0.1) : AppColors.gray200;
+    final titleColor = isDev ? AppColors.starlight.withOpacity(0.5) : AppColors.gray500;
+    final valueColor = isDev ? Colors.white : AppColors.gray900;
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: border),
+        boxShadow: isDev ? [] : [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                tienda == 'ALL' ? 'META MENSUAL CONSOLIDADA' : 'META MENSUAL - SEDE $tienda',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: titleColor, letterSpacing: 1),
+              ),
+              Text(
+                '$pctStr%',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: pct >= 1.0 ? AppColors.success : AppColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'S/ ${ventasMes.toStringAsFixed(2)} logrados',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: valueColor),
+              ),
+              Text(
+                'Objetivo: S/ ${meta.toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 12, color: titleColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: pct > 1.0 ? 1.0 : pct,
+              minHeight: 12,
+              backgroundColor: isDev ? Colors.white10 : AppColors.gray100,
+              valueColor: AlwaysStoppedAnimation<Color>(pct >= 1.0 ? AppColors.success : AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

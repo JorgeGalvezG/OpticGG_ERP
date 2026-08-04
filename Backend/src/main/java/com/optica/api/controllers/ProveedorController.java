@@ -31,7 +31,6 @@ public class ProveedorController {
     public ResponseEntity<Proveedor> crearProveedor(@RequestBody Proveedor proveedor) {
         return ResponseEntity.ok(proveedorService.guardarProveedor(proveedor));
     }
-    //falto añadir el put
     // PUT : /api/proveedores
     @PutMapping("/{id}")
     public ResponseEntity<Proveedor> actualizarProveedor(

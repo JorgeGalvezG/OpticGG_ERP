@@ -2,6 +2,7 @@ package com.optica.api.services;
 
 import com.optica.api.models.Paciente;
 import com.optica.api.models.enums.Tienda;
+import com.optica.api.dto.PacienteReactivarDTO;
 import com.optica.api.repositories.PacienteRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,5 +76,14 @@ public class PacienteService {
 
     public List<Paciente> listarTodosVip() {
         return pacienteRepository.findByEsDestacadoTrue();
+    }
+
+    public List<PacienteReactivarDTO> listarPacientesPorReactivar(String tiendaStr) {
+        java.time.LocalDateTime fechaLimite = java.time.LocalDateTime.now().minusMonths(12);
+        if (tiendaStr.equalsIgnoreCase("ALL")) {
+            return pacienteRepository.findPacientesPorReactivarGlobal(fechaLimite);
+        } else {
+            return pacienteRepository.findPacientesPorReactivar(Tienda.valueOf(tiendaStr.toUpperCase()), fechaLimite);
+        }
     }
 }

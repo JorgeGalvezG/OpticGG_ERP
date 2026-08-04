@@ -30,4 +30,7 @@ public class ConfigTienda {
 
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
+
+    @Column(name = "meta_mensual", precision = 10, scale = 2)
+    private java.math.BigDecimal metaMensual = java.math.BigDecimal.valueOf(15000);
 }

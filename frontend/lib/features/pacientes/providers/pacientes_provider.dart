@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/paciente_model.dart';
+import '../models/paciente_reactivar_model.dart';
 import '../models/historial_paciente_dto.dart';
 import '../../../core/network/api_service.dart';
 
 class PacientesProvider with ChangeNotifier {
   List<Paciente> _pacientes = [];
   List<Paciente> _pacientesVip = [];
+  List<PacienteReactivar> _pacientesPorReactivar = [];
   HistorialPacienteDTO? _historialResumen;
 
   bool _isLoading = false;
@@ -13,6 +15,7 @@ class PacientesProvider with ChangeNotifier {
 
   List<Paciente> get pacientes => _pacientes;
   List<Paciente> get pacientesVip => _pacientesVip;
+  List<PacienteReactivar> get pacientesPorReactivar => _pacientesPorReactivar;
   HistorialPacienteDTO? get historialResumen => _historialResumen;
 
   bool get isLoading => _isLoading;
@@ -96,6 +99,19 @@ class PacientesProvider with ChangeNotifier {
     try {
       final response = await ApiService.get('/pacientes/tienda/$tienda/vip');
       _pacientesVip = (response as List).map((i) => Paciente.fromJson(i)).toList();
+      _errorMessage = '';
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false; notifyListeners();
+    }
+  }
+
+  Future<void> fetchPacientesPorReactivar(String tienda) async {
+    _isLoading = true; notifyListeners();
+    try {
+      final response = await ApiService.get('/pacientes/tienda/$tienda/reactivar');
+      _pacientesPorReactivar = (response as List).map((i) => PacienteReactivar.fromJson(i)).toList();
       _errorMessage = '';
     } catch (e) {
       _errorMessage = e.toString();

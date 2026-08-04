@@ -2,6 +2,7 @@ package com.optica.api.repositories;
 
 import com.optica.api.models.Paciente;
 import com.optica.api.models.enums.Tienda; // Asegúrate de importar el Enum
+import com.optica.api.dto.PacienteReactivarDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -50,4 +51,18 @@ public interface PacienteRepository extends JpaRepository<Paciente, Long> {
 
     // Listar todos los VIP globalmente
     List<Paciente> findByEsDestacadoTrue();
+
+    // CRM Predictivo: Buscar pacientes cuya última consulta fue hace más de 12 meses
+    @Query("SELECT new com.optica.api.dto.PacienteReactivarDTO(p.id, p.nombre, p.apellidos, p.telefono, p.tienda, MAX(c.fecha)) " +
+           "FROM Consulta c JOIN c.paciente p " +
+           "WHERE p.tienda = :tienda " +
+           "GROUP BY p.id, p.nombre, p.apellidos, p.telefono, p.tienda " +
+           "HAVING MAX(c.fecha) < :fechaLimite")
+    List<PacienteReactivarDTO> findPacientesPorReactivar(@Param("tienda") Tienda tienda, @Param("fechaLimite") java.time.LocalDateTime fechaLimite);
+
+    @Query("SELECT new com.optica.api.dto.PacienteReactivarDTO(p.id, p.nombre, p.apellidos, p.telefono, p.tienda, MAX(c.fecha)) " +
+           "FROM Consulta c JOIN c.paciente p " +
+           "GROUP BY p.id, p.nombre, p.apellidos, p.telefono, p.tienda " +
+           "HAVING MAX(c.fecha) < :fechaLimite")
+    List<PacienteReactivarDTO> findPacientesPorReactivarGlobal(@Param("fechaLimite") java.time.LocalDateTime fechaLimite);
 }

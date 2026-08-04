@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../pacientes/models/paciente_model.dart';
 import '../../pacientes/providers/pacientes_provider.dart';
@@ -296,6 +297,12 @@ class _VentasScreenState extends State<VentasScreen> {
                       onPressed: () => _abrirPagoSaldo(o),
                       tooltip: 'Cobrar Saldo',
                     ),
+                  if (o.estado == 'LISTO' && o.pacienteTelefono != null)
+                    IconButton(
+                      icon: const Icon(Icons.message_rounded, color: Colors.green, size: 20),
+                      onPressed: () => _enviarNotificacionWhatsAppListo(context, o),
+                      tooltip: 'Notificar Listo por WhatsApp',
+                    ),
                   _buildStatusActions(o),
                   IconButton(
                     icon: const Icon(Icons.print_rounded, size: 20, color: AppColors.gray400),
@@ -421,6 +428,21 @@ class _VentasScreenState extends State<VentasScreen> {
                     onPressed: () => _abrirPagoSaldo(o),
                     icon: const Icon(Icons.payments_rounded, size: 14),
                     label: const Text('Cobrar Saldo', style: TextStyle(fontSize: 11)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.withOpacity(0.1),
+                      foregroundColor: Colors.green,
+                      elevation: 0,
+                      side: const BorderSide(color: Colors.green),
+                    ),
+                  ),
+                ),
+              if (o.estado == 'LISTO' && o.pacienteTelefono != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _enviarNotificacionWhatsAppListo(context, o),
+                    icon: const Icon(Icons.message_rounded, size: 14),
+                    label: const Text('Notificar Listo', style: TextStyle(fontSize: 11)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green.withOpacity(0.1),
                       foregroundColor: Colors.green,
@@ -778,6 +800,31 @@ class _VentasScreenState extends State<VentasScreen> {
         ),
       ),
     );
+  }
+
+  void _enviarNotificacionWhatsAppListo(BuildContext context, OrdenTrabajo o) async {
+    if (o.pacienteTelefono == null) return;
+    final String cleanPhone = o.pacienteTelefono!.replaceAll(RegExp(r'\D'), '');
+    String number = cleanPhone;
+    if (cleanPhone.length == 9 && cleanPhone.startsWith('9')) {
+      number = '51$cleanPhone';
+    }
+
+    final String mensaje = "Estimado/a ${o.pacienteNombre}, le saludamos de Óptica Cubas. "
+        "Le informamos que sus lentes de la orden #${o.numeroOrden} ya se encuentran listos para ser recogidos "
+        "en nuestra sucursal. Por favor, recuerde traer su ticket de venta o DNI para la entrega. ¡Le esperamos!";
+
+    final Uri url = Uri.parse("https://wa.me/$number?text=${Uri.encodeComponent(mensaje)}");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo abrir WhatsApp. Verifique el número de teléfono.'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
   }
 }
 
