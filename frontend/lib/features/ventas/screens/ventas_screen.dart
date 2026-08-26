@@ -332,8 +332,7 @@ class _VentasScreenState extends State<VentasScreen> {
                       
                       try {
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando ticket de impresión...'), duration: Duration(seconds: 3)));
-                        await TicketPdfService.imprimirTicket(o, config);
+                        await TicketPdfService.imprimirDirectoPorRed(context, o, config);
                       } catch (e) {
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -481,8 +480,7 @@ class _VentasScreenState extends State<VentasScreen> {
                   
                   try {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando ticket de impresión...'), duration: Duration(seconds: 3)));
-                    await TicketPdfService.imprimirTicket(o, config);
+                    await TicketPdfService.imprimirDirectoPorRed(context, o, config);
                   } catch (e) {
                     ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
